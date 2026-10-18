@@ -1,0 +1,13 @@
+# Dades de les partides (es creen en engegar el servidor)
+partides/
+comunitat.json
+
+# El mapa propi de cadascú
+mapa.jpg
+mapa.jpeg
+mapa.png
+mapa.webp
+
+# Python
+__pycache__/
+*.pyc
