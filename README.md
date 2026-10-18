@@ -61,7 +61,7 @@ Al fitxer [docs/Guia-La-Comunitat.pdf](docs/Guia-La-Comunitat.pdf) tens la **gui
 
 ## El mapa
 
-Al centre de la pantalla es mostra `mapa-exemple.jpg`. Per a posar el teu, copia la imatge al costat de `comunitat.py` amb el nom `mapa.jpg` (o `mapa.png`). El `.gitignore` fa que el teu mapa no es puge al repositori.
+Al centre de la pantalla es mostra `mapa-exemple.jpg`, un mapa il·lustrat de la Terra Mitjana en valencià. Per a posar el teu, copia la imatge al costat de `comunitat.py` amb el nom `mapa.jpg` (o `mapa.png`). El `.gitignore` fa que el teu mapa no es puge al repositori.
 
 ## Les dades
 
