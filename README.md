@@ -125,8 +125,12 @@ Les propostes de millora i les correccions són benvingudes.
 
 [GPL-3.0](LICENSE) o posterior. El podeu usar, copiar, modificar i compartir lliurement. Si en publiqueu una versió modificada, també ha de ser lliure i amb el codi obert.
 
-## Avís
+## Ús d'intel·ligència artificial
 
-Els retrats dels personatges s'han fet amb IA a partir de les descripcions dels llibres, en un estil propi.
+Aquest projecte s'ha fet amb ajuda d'IA:
+- **Imatges:** el mapa d'exemple (en valencià i en castellà), el logo i els retrats dels personatges s'han generat amb IA. Els retrats parteixen de les descripcions dels llibres, amb un estil propi, i no reprodueixen cap actor ni les il·lustracions oficials del joc.
+- **Codi i documentació:** el programa, les traduccions, els README i les guies s'han escrit amb un assistent d'IA i s'han revisat a mà.
+
+## Avís
 
 Projecte de fans **no oficial**, sense relació amb Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» i els noms relacionats són marques dels seus propietaris. Aquest programa no inclou cap component del joc: per a jugar cal tindre'l.
