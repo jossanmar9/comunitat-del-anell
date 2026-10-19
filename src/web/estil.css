@@ -145,7 +145,7 @@ svg .dim{opacity:.12}
 @media (max-width:640px){
   .top{padding:10px 12px 0;gap:8px 12px}
   .brand{flex-basis:100%;padding-bottom:4px}
-  .brand svg{width:40px;height:40px}
+  .brand .logo{width:44px;height:44px}
   #camp-name{font-size:24px}
   .tabs{order:3;flex:1 1 auto}
   .who{order:2;padding-bottom:0;margin-left:auto}
@@ -165,3 +165,6 @@ svg .dim{opacity:.12}
   .faces{grid-template-columns:minmax(0,1fr)}
   .mapzoom img{min-width:700px}
 }
+
+/* Logo */
+.brand .logo{flex:none;width:56px;height:56px;display:block;filter:drop-shadow(0 2px 3px rgba(40,20,5,.35))}

@@ -30,8 +30,9 @@ pot fer canvis, no hi ha màster.
     python3 comunitat.py --port 9001
 
 Cada partida es guarda en un fitxer dins de la carpeta partides/.
-Si poses una imatge mapa.jpg (o .png) al costat d'aquest fitxer, l'app la mostra al centre;
-si no, mostra mapa-exemple.jpg.
+Si poses una imatge mapa.jpg (o .png) al costat d'aquest fitxer, l'app la mostra al centre.
+També pots posar mapa-val.jpg i mapa-es.jpg, un per idioma. Si no n'hi ha cap, mostra
+mapa-exemple-val.jpg o mapa-exemple-es.jpg segons l'idioma de qui mira.
 """
 import argparse
 import base64
@@ -397,8 +398,13 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
         if route == "/mapa":
-            for name, ctype in (("mapa.jpg", "image/jpeg"), ("mapa.jpeg", "image/jpeg"), ("mapa.png", "image/png"),
-                                ("mapa.webp", "image/webp"), ("mapa-exemple.jpg", "image/jpeg")):
+            from urllib.parse import parse_qs, urlparse
+            lang = (parse_qs(urlparse(self.path).query).get("lang") or ["val"])[0]
+            lang = "es" if lang == "es" else "val"
+            exts = (("jpg", "image/jpeg"), ("jpeg", "image/jpeg"), ("png", "image/png"), ("webp", "image/webp"))
+            cands = [(f"mapa-{lang}.{e}", c) for e, c in exts] + [(f"mapa.{e}", c) for e, c in exts]
+            cands += [(f"mapa-exemple-{lang}.jpg", "image/jpeg"), ("mapa-exemple-val.jpg", "image/jpeg")]
+            for name, ctype in cands:
                 f = DIR / name
                 if f.exists():
                     body = f.read_bytes()

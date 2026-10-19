@@ -1,22 +1,22 @@
 <div class="app">
   <header class="top">
     <div class="brand">
-      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23" fill="currentColor"/><circle cx="26" cy="26" r="13" fill="none" stroke="var(--accent-ink,#fff)" stroke-width="4"/><circle cx="26" cy="26" r="13" fill="none" stroke="var(--gold,#c9a21e)" stroke-width="1.4" stroke-dasharray="2 3"/></svg>
+      <img class="logo" src="__LOGO__" alt="" width="56" height="56">
       <div class="brand-txt">
-        <span class="eyebrow">La Comunitat de l'Anell</span>
-        <input id="camp-name" aria-label="Nom de la partida" placeholder="Nom de la partida" maxlength="80">
+        <span class="eyebrow" data-i18n="La Comunitat de l'Anell">La Comunitat de l'Anell</span>
+        <input id="camp-name" data-i18n-ph="Nom de la partida" aria-label="Nom de la partida" placeholder="Nom de la partida" maxlength="80">
       </div>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Seccions">
-      <button class="tab" role="tab" data-tab="partida">Partida</button>
-      <button class="tab" role="tab" data-tab="comunitat">Comunitat</button>
-      <button class="tab" role="tab" data-tab="partides">Partides</button>
+    <nav class="tabs" role="tablist" data-i18n-aria="Seccions" aria-label="Seccions">
+      <button class="tab" role="tab" data-tab="partida" data-i18n="Partida">Partida</button>
+      <button class="tab" role="tab" data-tab="comunitat" data-i18n="Comunitat">Comunitat</button>
+      <button class="tab" role="tab" data-tab="partides" data-i18n="Partides">Partides</button>
     </nav>
     <div class="who" id="who"></div>
   </header>
   <div class="tracks" id="tracks"></div>
   <div class="banner" id="banner" hidden></div>
-  <main id="main"><div class="empty"><b>Obrint la partida…</b>Connectant amb el servidor.</div></main>
+  <main id="main"><div class="empty"><b data-i18n="Obrint la partida…">Obrint la partida…</b><span data-i18n="Connectant amb el servidor.">Connectant amb el servidor.</span></div></main>
   <aside class="side2" id="side2"></aside>
 </div>
 <div id="modal-root"></div>

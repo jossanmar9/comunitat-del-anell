@@ -1,6 +1,10 @@
+<p align="center"><img src="logo.png" alt="Logo de La Comunitat de l'Anell" width="180"></p>
+
 # La Comunitat de l'Anell
 
-Ajudant de taula, lliure i en valencià, per a portar les partides d'**«El Señor de los Anillos: El Destino de la Comunidad»**.
+**Valencià** · [Castellano](README.es.md)
+
+Ajudant de taula, lliure i en valencià i castellà, per a portar les partides d'**«El Señor de los Anillos: El Destino de la Comunidad»**.
 
 El tauler i les peces els teniu a la taula. L'app porta els comptes:
 - l'esperança i l'amenaça;
@@ -32,6 +36,7 @@ Un ordinador fa de servidor i la resta hi entren des del navegador, mòbils incl
 - **Registre** de tot el que passa i **desfer** fins a 30 passos.
 - **Diverses partides guardades.**
 - **Adaptada al mòbil.** Tots els aparells connectats veuen els canvis al moment.
+- **En valencià i en castellà.** Cada jugador tria l'idioma amb els botons VAL i CAS, i el registre, els objectius i el mapa canvien amb ell.
 
 <p>
   <img src="docs/captures/mobil.jpg" alt="L'app en un mòbil" width="260">
@@ -57,11 +62,13 @@ python3 comunitat.py --port 9001             # un altre port
 python3 comunitat.py --partida "Divendres"   # obri (o crea) eixa partida
 ```
 
-Al fitxer [docs/Guia-La-Comunitat.pdf](docs/Guia-La-Comunitat.pdf) tens la **guia d'ús completa**, amb captures de totes les pantalles.
+Al fitxer [docs/Guia-La-Comunitat.pdf](docs/Guia-La-Comunitat.pdf) tens la **guia d'ús completa**, amb captures de totes les pantalles. En castellà: [docs/Guia-La-Comunidad.pdf](docs/Guia-La-Comunidad.pdf).
 
 ## El mapa
 
-Al centre de la pantalla es mostra `mapa-exemple.jpg`, un mapa il·lustrat de la Terra Mitjana en valencià. Per a posar el teu, copia la imatge al costat de `comunitat.py` amb el nom `mapa.jpg` (o `mapa.png`). El `.gitignore` fa que el teu mapa no es puge al repositori.
+Al centre de la pantalla es mostra un mapa il·lustrat de la Terra Mitjana: `mapa-exemple-val.jpg` en valencià o `mapa-exemple-es.jpg` en castellà, segons l'idioma de cada jugador.
+
+Per a posar el teu, copia la imatge al costat de `comunitat.py` amb el nom `mapa.jpg` (o `mapa.png`). Si el tens en els dos idiomes, anomena'ls `mapa-val.jpg` i `mapa-es.jpg`. El `.gitignore` fa que el teu mapa no es puge al repositori.
 
 ## Les dades
 
@@ -76,6 +83,7 @@ Les partides es guarden a la carpeta `partides/`, i els jugadors i les sessions 
 | `src/servidor.py` | El servidor (Python, sense dependències) |
 | `src/web/app.js` | La lògica de la pàgina |
 | `src/web/dades.js` | Personatges, objectius, escenaris i preparació |
+| `src/web/i18n.js` | Les traduccions al castellà (per a afegir un idioma, copia el bloc `es`) |
 | `src/web/estil-base.css`, `src/web/estil.css` | L'estil |
 | `src/web/cos.html` | L'estructura de la pàgina |
 
