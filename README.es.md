@@ -125,8 +125,12 @@ Las propuestas de mejora y las correcciones son bienvenidas.
 
 [GPL-3.0](LICENSE) o posterior. Lo podéis usar, copiar, modificar y compartir libremente. Si publicáis una versión modificada, también tiene que ser libre y con el código abierto.
 
-## Aviso
+## Uso de inteligencia artificial
 
-Los retratos de los personajes se han hecho con IA a partir de las descripciones de los libros, con un estilo propio.
+Este proyecto se ha hecho con ayuda de IA:
+- **Imágenes:** el mapa de ejemplo (en valenciano y en castellano), el logo y los retratos de los personajes se han generado con IA. Los retratos parten de las descripciones de los libros, con un estilo propio, y no reproducen a ningún actor ni las ilustraciones oficiales del juego.
+- **Código y documentación:** el programa, las traducciones, los README y las guías se han escrito con un asistente de IA y se han revisado a mano.
+
+## Aviso
 
 Proyecto de fans **no oficial**, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» y los nombres relacionados son marcas de sus propietarios. Este programa no incluye ningún componente del juego: para jugar hay que tenerlo.
