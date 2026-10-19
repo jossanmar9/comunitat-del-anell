@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=La Comunitat de l'Anell
+Name[es]=La Comunidad del Anillo
+GenericName=Ajudant per al joc de taula
+GenericName[es]=Ayudante para el juego de mesa
+Comment=Porta els comptes d'«El Destino de la Comunidad» amb tota la taula connectada
+Comment[es]=Lleva las cuentas de «El Destino de la Comunidad» con toda la mesa conectada
+Exec=comunitat-del-anell
+Icon=comunitat-del-anell
+Terminal=false
+Categories=Game;BoardGame;
+Keywords=joc de taula;juego de mesa;Senyor dels Anells;Señor de los Anillos;cooperatiu;partida;
+StartupWMClass=Comunitat-del-anell

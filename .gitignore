@@ -15,7 +15,11 @@ mapa-es.*
 __pycache__/
 *.pyc
 
-# PyInstaller
+# PyInstaller i paquets
 build/
 dist/
 *.spec
+
+# Web i manuals generats (els fa GitHub)
+_site/
+manuals/

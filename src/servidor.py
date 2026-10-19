@@ -17,25 +17,26 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 1.5) — servidor local per a portar partides de
+La Comunitat (versió 2.0) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
-Tot va en aquest únic fitxer: el servidor i la pàgina web. Un ordinador
-l'executa i la resta s'hi connecta des del navegador. És cooperatiu: tothom
-pot fer canvis, no hi ha màster.
+Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
+Un ordinador l'executa i la resta s'hi connecta des del navegador. És cooperatiu:
+tothom pot fer canvis, no hi ha màster.
 
 Ús (a Windows, canvia python3 per py, o fes doble clic a arrancar-windows.bat):
     python3 comunitat.py
-    python3 comunitat.py --partida "Divendres"
-    python3 comunitat.py --port 9001
+    python3 comunitat.py --partida "Divendres" --port 9001
+    python3 comunitat.py --sense-finestra       (només la terminal)
+    python3 comunitat.py --dades CARPETA         (on es guarden les partides)
 
-Cada partida es guarda en un fitxer dins de la carpeta partides/.
-Si poses una imatge mapa.jpg (o .png) al costat d'aquest fitxer, l'app la mostra al centre.
+En arrancar obri una finestreta (i la terminal) amb l'adreça i un codi QR per a entrar
+des del mòbil.
+Les dades van al costat del programa, o a la carpeta de l'usuari si el programa està
+instal·lat: cada partida a partides/<nom>.json, les partides acabades a historial.json.
+Si poses una imatge mapa.jpg (o .png) a la carpeta de dades, l'app la mostra al centre.
 També pots posar mapa-val.jpg i mapa-es.jpg, un per idioma. Si no n'hi ha cap, mostra
-mapa-exemple-val.jpg o mapa-exemple-es.jpg segons l'idioma de qui mira.
-
-En arrancar mostra un codi QR: escaneja'l amb el mòbil per a entrar sense escriure l'adreça.
-Les partides acabades (guanyades o perdudes) es guarden a historial.json.
+el mapa d'exemple de l'idioma de qui mira.
 """
 import argparse
 import base64
@@ -53,32 +54,49 @@ import unicodedata
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.5"
+VERSION = "2.0"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
-BUNDLE = Path(getattr(sys, "_MEIPASS", DIR))     # on van els mapes d'exemple dins de l'.exe
-HIST = DIR / "historial.json"   # partides acabades
-CAMP_DIR = DIR / "partides"
-TRASH_DIR = CAMP_DIR / "esborrades"
-META = DIR / "comunitat.json"     # sessions, player names, active campaign
-OLD_DATA = DIR / "no-existeix.json"
+INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
+NOM = "La Comunitat"
+
+
+def user_data_dir():
+    """La carpeta de dades de l'usuari, per a quan el programa està instal·lat."""
+    if os.name == "nt":
+        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "LaComunitat"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "La Comunitat"
+    return Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share") / "comunitat-del-anell"
+
+
+def set_data_dir(path):
+    global DATA_DIR, CAMP_DIR, TRASH_DIR, META, HIST
+    DATA_DIR = Path(path).expanduser().resolve()
+    CAMP_DIR = DATA_DIR / "partides"
+    TRASH_DIR = CAMP_DIR / "esborrades"
+    META = DATA_DIR / "comunitat.json"     # sessions, noms dels jugadors i partida oberta
+    HIST = DATA_DIR / "historial.json"     # partides acabades
+
+
+set_data_dir(user_data_dir() if INSTALLAT else DIR)
 
 lock = threading.RLock()
 state = {
-    "docs": {},        # active campaign: path -> dict
+    "docs": {},        # partida oberta: ruta -> dict
     "sessions": {},    # token -> {uid, dm}
-    "users": {},       # uid -> name (shared by every campaign)
-    "active": None,    # active campaign id
+    "users": {},       # uid -> nom (comú a totes les partides)
+    "active": None,    # id de la partida oberta
     "history": [],     # partides acabades
     "port": 8766,
 }
 clients = []
 dirty = threading.Event()
-MASTER_PASSWORD = ""
 
 
-# ---------------------------------------------------------------- storage
+# ---------------------------------------------------------------- emmagatzematge
 def write_json(path, obj):
     tmp = path.with_suffix(path.suffix + ".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
@@ -95,9 +113,13 @@ def camp_file(cid):
     return CAMP_DIR / f"{cid}.json"
 
 
-def slugify(name):
+def slugify_plain(name):
     s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
-    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:40] or "partida"
+    return re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:40]
+
+
+def slugify(name):
+    s = slugify_plain(name) or "partida"
     base, n = s, 2
     while camp_file(s).exists():
         s = f"{base}-{n}"
@@ -114,19 +136,13 @@ def list_campaigns():
     for f in sorted(CAMP_DIR.glob("*.json")):
         cid = f.stem
         try:
-            if cid == state["active"]:
-                docs = state["docs"]
-            else:
-                docs = read_json(f).get("docs", {})
+            docs = state["docs"] if cid == state["active"] else read_json(f).get("docs", {})
         except Exception:  # noqa: BLE001
             continue
         out.append({
             "id": cid,
             "name": camp_name(docs, cid),
             "updated": int(f.stat().st_mtime * 1000),
-            "characters": sum(1 for p in docs if p.startswith("characters/")),
-            "maps": sum(1 for p in docs if p.count("/") == 1 and p.startswith("maps/")),
-            "notes": sum(1 for p in docs if p.startswith("notes/")),
             "active": cid == state["active"],
         })
     out.sort(key=lambda c: (not c["active"], -c["updated"]))
@@ -155,7 +171,7 @@ def saver():
 
 
 def activate(cid):
-    """Load campaign `cid` as the active one (caller holds the lock and has saved the previous one)."""
+    """Carrega la partida `cid` com a oberta (qui crida té el lock i ja ha guardat l'anterior)."""
     try:
         docs = read_json(camp_file(cid)).get("docs", {})
     except FileNotFoundError:
@@ -171,12 +187,12 @@ def activate(cid):
 
 def new_campaign(name):
     cid = slugify(name)
-    write_json(camp_file(cid), {"docs": {"campaign/main": {"name": name, "nextSession": ""}}})
+    write_json(camp_file(cid), {"docs": {"campaign/main": {"name": name}}})
     return cid
 
 
 def load(wanted=None):
-    CAMP_DIR.mkdir(exist_ok=True)
+    CAMP_DIR.mkdir(parents=True, exist_ok=True)
     if META.exists():
         try:
             meta = read_json(META)
@@ -184,25 +200,9 @@ def load(wanted=None):
             state["users"] = meta.get("users", {})
             state["active"] = meta.get("active")
         except Exception as e:  # noqa: BLE001
-            print(f"[!] No s'ha pogut llegir taula.json ({e}). Els jugadors hauran de tornar a entrar.")
-    elif OLD_DATA.exists():
-        # Migrate a version-2 partida.json into partides/ + taula.json
-        try:
-            old = read_json(OLD_DATA)
-            docs = old.get("docs", {})
-            state["sessions"] = old.get("sessions", {})
-            for p in [p for p in docs if p.startswith("users/")]:
-                state["users"][p.split("/")[1]] = (docs.pop(p) or {}).get("name", "")
-            cid = slugify(camp_name(docs, "") or "la-meva-partida")
-            write_json(camp_file(cid), {"docs": docs})
-            state["active"] = cid
-            OLD_DATA.replace(DIR / "partida.json.v2-importada")
-            print(f"  He importat la teua partida anterior com a «{camp_name(docs, cid)}».")
-        except Exception as e:  # noqa: BLE001
-            print(f"[!] No s'ha pogut importar partida.json ({e}).")
-
+            print(f"[!] No s'ha pogut llegir comunitat.json ({e}). Els jugadors hauran de tornar a entrar.")
     if wanted:
-        state["active"] = None  # so list_campaigns reads every file from disk
+        state["active"] = None  # perquè list_campaigns llija tots els fitxers del disc
         match = None
         for c in list_campaigns():
             if wanted in (c["id"], c["name"]) or slugify_plain(wanted) == c["id"]:
@@ -214,11 +214,6 @@ def load(wanted=None):
         state["active"] = existing[0].stem if existing else new_campaign("Primera partida")
     activate(state["active"])
     save_now()
-
-
-def slugify_plain(name):
-    s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
-    return re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:40]
 
 
 # ---------------------------------------------------------------- historial
@@ -235,7 +230,7 @@ def save_history():
 
 
 def track_result(g):
-    """Apunta o desapunta una partida acabada quan canvia game/state (caller holds the lock)."""
+    """Apunta o desapunta una partida acabada quan canvia game/state (qui crida té el lock)."""
     if not isinstance(g, dict) or not g.get("created"):
         return False
     hid = f"{state['active']}:{g['created']}"
@@ -271,7 +266,7 @@ def track_result(g):
     return True
 
 
-# ---------------------------------------------------------------- helpers
+# ---------------------------------------------------------------- documents
 def valid_path(p):
     if not isinstance(p, str) or not p or len(p) > 500:
         return False
@@ -303,71 +298,15 @@ def get_doc(path):
     return state["docs"].get(path)
 
 
-def visible_to(path, doc, sess):
-    """Cooperative game: everyone sees everything."""
-    return doc
-
-
-def _unused_visible_to(path, doc, sess):
-    if doc is None:
-        return None
-    if sess["dm"]:
-        return doc
-    s = seg(path)
-    if s[0] == "dm":
-        return None
-    if s[0] == "maps":
-        mp = state["docs"].get("maps/" + s[1])
-        if not mp or not mp.get("visible"):
-            return None
-        if len(s) == 4 and doc.get("hidden"):
-            return None
-    return doc
-
-
-def can_write(path, mode, new, sess):
+def can_write(path, mode, sess):
+    """Joc cooperatiu: tothom pot canviar la partida; cadascú només el seu nom."""
     s = seg(path)
     if s[0] == "users":
         return len(s) == 2 and s[1] == sess["uid"] and mode != "delete"
     return s[0] in ("game", "map", "campaign")
-    if sess["dm"]:
-        return True
-    docs = state["docs"]
-    old = docs.get(path)
-    if s[0] in ("dm", "campaign", "combat"):
-        return False
-    if s[0] == "rolls":
-        return len(s) == 2 and s[1] == sess["uid"]
-    if s[0] == "notes":
-        return len(s) == 2
-    if s[0] == "characters" and len(s) == 2:
-        if old is not None and old.get("ownerId") != sess["uid"]:
-            return False
-        if mode != "delete":
-            merged = deep_merge(old or {}, new) if mode == "update" else new
-            if merged.get("ownerId") != sess["uid"]:
-                return False
-        return True
-    if s[0] == "maps" and len(s) == 4 and s[2] == "tokens":
-        mp = docs.get("maps/" + s[1])
-        if not mp or not mp.get("visible"):
-            return False
-
-        def mine(tok):
-            ch = docs.get("characters/" + str((tok or {}).get("charId")))
-            return bool(ch) and ch.get("ownerId") == sess["uid"]
-
-        if old is not None and not mine(old):
-            return False
-        if mode != "delete":
-            merged = deep_merge(old or {}, new) if mode == "update" else new
-            if not mine(merged) or merged.get("hidden"):
-                return False
-        return True
-    return False
 
 
-# ---------------------------------------------------------------- live updates
+# ---------------------------------------------------------------- actualitzacions en directe
 class Client:
     def __init__(self, sess):
         self.sess = sess
@@ -380,271 +319,64 @@ class Client:
             pass
 
 
-def snapshot_for(sess):
+def snapshot():
     with lock:
-        out = {}
-        for p, d in state["docs"].items():
-            v = visible_to(p, d, sess)
-            if v is not None:
-                out[p] = v
+        out = dict(state["docs"])
         for uid, name in state["users"].items():
             out["users/" + uid] = {"name": name}
         return out
 
 
-def broadcast(changed):
+def broadcast(paths):
     with lock:
-        docs = state["docs"]
-        extra = []
-        for p in changed:
-            s = seg(p)
-            if s[0] == "maps" and len(s) == 2:  # map visibility changes what tokens players see
-                pref = p + "/tokens/"
-                extra += [k for k in docs if k.startswith(pref)]
-        paths = list(dict.fromkeys(changed + extra))
         for c in list(clients):
             for p in paths:
-                c.send("doc", {"path": p, "data": visible_to(p, get_doc(p), c.sess)})
+                c.send("doc", {"path": p, "data": get_doc(p)})
 
 
-def broadcast_switch():
+def broadcast_event(kind, payload):
     with lock:
         for c in list(clients):
-            c.send("campaign", {"id": state["active"]})
+            c.send(kind, payload)
+
+
+# ---------------------------------------------------------------- mapa
+MAP_EXTS = (("jpg", "image/jpeg"), ("jpeg", "image/jpeg"), ("png", "image/png"), ("webp", "image/webp"))
+
+
+def map_image(lang):
+    """El mapa propi de la carpeta de dades (per idioma o general) o, si no n'hi ha, el d'exemple."""
+    for d in dict.fromkeys((DATA_DIR, DIR)):
+        for name in (f"mapa-{lang}", "mapa"):
+            for ext, ctype in MAP_EXTS:
+                f = d / f"{name}.{ext}"
+                if f.is_file():
+                    return f.read_bytes(), ctype
+    return MAPES[lang], "image/jpeg"
 
 
 # ---------------------------------------------------------------- QR (sense dependències)
-# Codificador QR mínim (mode byte, correcció M, versions 1-10), basat en l'algorisme
-# de l'especificació ISO/IEC 18004. N'hi ha prou per a una adreça com http://192.168.1.40:8766.
-_QR_ECC_M = (None, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26)   # codewords de correcció per bloc
-_QR_BLOCKS_M = (None, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5)          # blocs
+__QR__
 
 
-def _gf_mul(x, y):
-    z = 0
-    for i in reversed(range(8)):
-        z = (z << 1) ^ ((z >> 7) * 0x11D)
-        z ^= ((y >> i) & 1) * x
-    return z
+__FINESTRA__
 
 
-def _rs_divisor(degree):
-    res = [0] * (degree - 1) + [1]
-    root = 1
-    for _ in range(degree):
-        for j in range(len(res)):
-            res[j] = _gf_mul(res[j], root)
-            if j + 1 < len(res):
-                res[j] ^= res[j + 1]
-        root = _gf_mul(root, 0x02)
-    return res
-
-
-def _rs_remainder(data, divisor):
-    res = [0] * len(divisor)
-    for b in data:
-        factor = b ^ res.pop(0)
-        res.append(0)
-        for i, coef in enumerate(divisor):
-            res[i] ^= _gf_mul(coef, factor)
-    return res
-
-
-def _qr_raw_modules(ver):
-    r = (16 * ver + 128) * ver + 64
-    if ver >= 2:
-        na = ver // 7 + 2
-        r -= (25 * na - 10) * na - 55
-        if ver >= 7:
-            r -= 36
-    return r
-
-
-def qr_matrix(text):
-    """Torna una llista de files de booleans (True = mòdul fosc), sense marge."""
-    data = text.encode("utf-8")
-    for ver in range(1, 11):
-        cap = _qr_raw_modules(ver) // 8 - _QR_ECC_M[ver] * _QR_BLOCKS_M[ver]
-        cbits = 8 if ver <= 9 else 16
-        if 4 + cbits + 8 * len(data) <= cap * 8:
-            break
-    else:
-        raise ValueError("text massa llarg per al QR")
-    bits = []
-
-    def put(val, n):
-        bits.extend((val >> i) & 1 for i in reversed(range(n)))
-    put(0b0100, 4)
-    put(len(data), cbits)
-    for b in data:
-        put(b, 8)
-    put(0, min(4, cap * 8 - len(bits)))
-    put(0, (-len(bits)) % 8)
-    words = [int("".join(map(str, bits[i:i + 8])), 2) for i in range(0, len(bits), 8)]
-    pad = 0xEC
-    while len(words) < cap:
-        words.append(pad)
-        pad ^= 0xEC ^ 0x11
-    # blocs i correcció d'errors
-    nblocks, ecl = _QR_BLOCKS_M[ver], _QR_ECC_M[ver]
-    raw = _qr_raw_modules(ver) // 8
-    nshort = nblocks - raw % nblocks
-    short_len = raw // nblocks
-    div = _rs_divisor(ecl)
-    blocks, k = [], 0
-    for i in range(nblocks):
-        dat = words[k:k + short_len - ecl + (0 if i < nshort else 1)]
-        k += len(dat)
-        ecc = _rs_remainder(dat, div)
-        if i < nshort:
-            dat = dat + [0]
-        blocks.append(dat + ecc)
-    final = []
-    for i in range(len(blocks[0])):
-        for j, blk in enumerate(blocks):
-            if i != short_len - ecl or j >= nshort:
-                final.append(blk[i])
-    # matriu
-    size = ver * 4 + 17
-    mod = [[False] * size for _ in range(size)]
-    fun = [[False] * size for _ in range(size)]
-
-    def setf(x, y, dark):
-        mod[y][x] = bool(dark)
-        fun[y][x] = True
-    for i in range(size):
-        setf(6, i, i % 2 == 0)
-        setf(i, 6, i % 2 == 0)
-    for cx, cy in ((3, 3), (size - 4, 3), (3, size - 4)):
-        for dy in range(-4, 5):
-            for dx in range(-4, 5):
-                x, y = cx + dx, cy + dy
-                if 0 <= x < size and 0 <= y < size:
-                    setf(x, y, max(abs(dx), abs(dy)) not in (2, 4))
-    if ver > 1:
-        na = ver // 7 + 2
-        step = (ver * 8 + na * 3 + 5) // (na * 4 - 4) * 2
-        pos = list(reversed([size - 7 - i * step for i in range(na - 1)] + [6]))
-        for i, ax in enumerate(pos):
-            for j, ay in enumerate(pos):
-                if (i == 0 and j == 0) or (i == 0 and j == na - 1) or (i == na - 1 and j == 0):
-                    continue
-                for dy in range(-2, 3):
-                    for dx in range(-2, 3):
-                        setf(ax + dx, ay + dy, max(abs(dx), abs(dy)) != 1)
-
-    def draw_format(mask):
-        d = (0 << 3) | mask          # nivell M = 0b00
-        rem = d
-        for _ in range(10):
-            rem = (rem << 1) ^ ((rem >> 9) * 0x537)
-        b = ((d << 10) | rem) ^ 0x5412
-        bit = lambda i: (b >> i) & 1  # noqa: E731
-        for i in range(6):
-            setf(8, i, bit(i))
-        setf(8, 7, bit(6))
-        setf(8, 8, bit(7))
-        setf(7, 8, bit(8))
-        for i in range(9, 15):
-            setf(14 - i, 8, bit(i))
-        for i in range(8):
-            setf(size - 1 - i, 8, bit(i))
-        for i in range(8, 15):
-            setf(8, size - 15 + i, bit(i))
-        setf(8, size - 8, True)
-    draw_format(0)
-    if ver >= 7:
-        rem = ver
-        for _ in range(12):
-            rem = (rem << 1) ^ ((rem >> 11) * 0x1F25)
-        b = (ver << 12) | rem
-        for i in range(18):
-            a, c = size - 11 + i % 3, i // 3
-            setf(a, c, (b >> i) & 1)
-            setf(c, a, (b >> i) & 1)
-    i = 0
-    right = size - 1
-    while right >= 1:
-        if right == 6:
-            right = 5
-        for vert in range(size):
-            for j in range(2):
-                x = right - j
-                y = size - 1 - vert if ((right + 1) & 2) == 0 else vert
-                if not fun[y][x] and i < len(final) * 8:
-                    mod[y][x] = bool((final[i >> 3] >> (7 - (i & 7))) & 1)
-                    i += 1
-        right -= 2
-    masks = (
-        lambda x, y: (x + y) % 2 == 0, lambda x, y: y % 2 == 0, lambda x, y: x % 3 == 0,
-        lambda x, y: (x + y) % 3 == 0, lambda x, y: (x // 3 + y // 2) % 2 == 0,
-        lambda x, y: x * y % 2 + x * y % 3 == 0, lambda x, y: (x * y % 2 + x * y % 3) % 2 == 0,
-        lambda x, y: ((x + y) % 2 + x * y % 3) % 2 == 0)
-
-    def apply(m):
-        for y in range(size):
-            for x in range(size):
-                if not fun[y][x] and masks[m](x, y):
-                    mod[y][x] = not mod[y][x]
-
-    def penalty():
-        p = 0
-        for grid in (mod, list(map(list, zip(*mod)))):
-            for row in grid:
-                run, prev = 0, None
-                for v in row:
-                    if v == prev:
-                        run += 1
-                    else:
-                        if run >= 5:
-                            p += run - 2
-                        run, prev = 1, v
-                if run >= 5:
-                    p += run - 2
-                s = "".join("1" if v else "0" for v in row)
-                p += 40 * (s.count("10111010000") + s.count("00001011101"))
-        for y in range(size - 1):
-            for x in range(size - 1):
-                if mod[y][x] == mod[y][x + 1] == mod[y + 1][x] == mod[y + 1][x + 1]:
-                    p += 3
-        dark = sum(map(sum, mod))
-        p += abs(dark * 20 - size * size * 10) // (size * size) * 10
-        return p
-    best, best_p = 0, None
-    for m in range(8):
-        apply(m)
-        draw_format(m)
-        pen = penalty()
-        if best_p is None or pen < best_p:
-            best, best_p = m, pen
-        apply(m)
-    apply(best)
-    draw_format(best)
-    return mod
-
-
-def qr_svg(text, scale=8, quiet=4):
-    m = qr_matrix(text)
-    n = len(m) + quiet * 2
-    path = "".join(f"M{x + quiet},{y + quiet}h1v1h-1z" for y, row in enumerate(m) for x, v in enumerate(row) if v)
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {n} {n}" width="{n * scale}" height="{n * scale}" '
-            f'shape-rendering="crispEdges" role="img"><rect width="{n}" height="{n}" fill="#fff"/>'
-            f'<path d="{path}" fill="#000"/></svg>')
-
-
-def qr_terminal(text, quiet=2):
-    """El QR amb mitjos blocs: negre sobre blanc forçat amb colors ANSI."""
-    m = qr_matrix(text)
-    size = len(m)
-    get = lambda x, y: 0 <= x < size and 0 <= y < size and m[y][x]  # noqa: E731
-    lines = []
-    for y in range(-quiet, size + quiet, 2):
-        row = ""
-        for x in range(-quiet, size + quiet):
-            top, bot = get(x, y), get(x, y + 1)
-            row += "█" if top and bot else "▀" if top else "▄" if bot else " "
-        lines.append("  \x1b[30;107m" + row + "\x1b[0m")
-    return "\n".join(lines)
+def lan_addresses():
+    ips = set()
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("10.255.255.255", 1))
+        ips.add(s.getsockname()[0])
+        s.close()
+    except OSError:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ips.add(info[4][0])
+    except OSError:
+        pass
+    return sorted(ip for ip in ips if not ip.startswith("127."))
 
 
 def lan_urls():
@@ -659,14 +391,18 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    def _json(self, code, obj):
-        body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+    def _send(self, code, body, ctype, extra=None):
         self.send_response(code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
         self.end_headers()
         self.wfile.write(body)
+
+    def _json(self, code, obj):
+        body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+        self._send(code, body, "application/json; charset=utf-8", {"Cache-Control": "no-store"})
 
     def _body(self):
         n = int(self.headers.get("Content-Length") or 0)
@@ -674,73 +410,43 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("massa gran")
         return json.loads(self.rfile.read(n) or b"{}")
 
+    def _query(self):
+        return parse_qs(urlparse(self.path).query)
+
     def _session(self):
-        tok = self.headers.get("X-Taula-Token") or ""
-        if not tok:
-            from urllib.parse import parse_qs, urlparse
-            tok = (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
+        tok = self.headers.get("X-Taula-Token") or (self._query().get("t") or [""])[0]
         with lock:
             return state["sessions"].get(tok)
 
+    # -- GET
     def do_GET(self):
         route = self.path.split("?")[0]
         if route in ("/", "/index.html"):
-            body = PAGE_BYTES
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-            self.send_header("X-Taula-Version", VERSION)
-            self.end_headers()
-            self.wfile.write(body)
-            return
+            return self._send(200, PAGE_BYTES, "text/html; charset=utf-8",
+                              {"Cache-Control": "no-store", "X-Taula-Version": VERSION})
         if route == "/mapa":
-            from urllib.parse import parse_qs, urlparse
-            lang = (parse_qs(urlparse(self.path).query).get("lang") or ["val"])[0]
-            lang = "es" if lang == "es" else "val"
-            exts = (("jpg", "image/jpeg"), ("jpeg", "image/jpeg"), ("png", "image/png"), ("webp", "image/webp"))
-            cands = [(f"mapa-{lang}.{e}", c) for e, c in exts] + [(f"mapa.{e}", c) for e, c in exts]
-            cands += [(f"mapa-exemple-{lang}.jpg", "image/jpeg"), ("mapa-exemple-val.jpg", "image/jpeg")]
-            files = [(DIR / n, c) for n, c in cands] + [(BUNDLE / n, c) for n, c in cands if "exemple" in n]
-            for f, ctype in files:
-                if f.exists():
-                    body = f.read_bytes()
-                    self.send_response(200)
-                    self.send_header("Content-Type", ctype)
-                    self.send_header("Content-Length", str(len(body)))
-                    self.send_header("Cache-Control", "no-cache")
-                    self.end_headers()
-                    self.wfile.write(body)
-                    return
-            return self._json(404, {"error": "No hi ha cap mapa.jpg"})
+            lang = "es" if (self._query().get("lang") or ["val"])[0] == "es" else "val"
+            body, ctype = map_image(lang)
+            return self._send(200, body, ctype, {"Cache-Control": "no-cache"})
         if route == "/api/hello":
             return self._json(200, {"taula": 1, "version": VERSION})
         if route == "/api/invite":
             urls = lan_urls() or [f"http://localhost:{state['port']}"]
             return self._json(200, {"list": [{"url": u, "svg": qr_svg(u)} for u in urls]})
+        sess = self._session()
+        if route in ("/api/history", "/api/campaigns", "/api/snapshot", "/api/events") and not sess:
+            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
         if route == "/api/history":
-            sess = self._session()
-            if not sess:
-                return self._json(401, {"error": "Sessió no vàlida"})
             with lock:
                 return self._json(200, {"list": list(reversed(state["history"]))})
         if route == "/api/campaigns":
-            sess = self._session()
-            if not sess:
-                return self._json(401, {"error": "Sessió no vàlida"})
             with lock:
                 return self._json(200, {"active": state["active"], "list": list_campaigns()})
         if route == "/api/snapshot":
-            sess = self._session()
-            if not sess:
-                return self._json(401, {"error": "Sessió no vàlida"})
             with lock:
-                return self._json(200, {"me": {"uid": sess["uid"], "dm": sess["dm"]},
-                                        "campaign": state["active"], "docs": snapshot_for(sess)})
+                return self._json(200, {"me": {"uid": sess["uid"], "dm": True},
+                                        "campaign": state["active"], "docs": snapshot()})
         if route == "/api/events":
-            sess = self._session()
-            if not sess:
-                return self._json(401, {"error": "Sessió no vàlida"})
             return self._events(sess)
         self._json(404, {"error": "No trobat"})
 
@@ -751,7 +457,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.send_header("X-Accel-Buffering", "no")
         self.end_headers()
-        # Padding pushes the stream past antivirus/proxy buffers that hold small responses back.
+        # El farciment fa passar el flux pels antivirus i intermediaris que retenen les respostes curtes.
         try:
             self.wfile.write(b":" + b" " * 4096 + b"\nretry: 3000\n\n")
             self.wfile.flush()
@@ -760,8 +466,7 @@ class Handler(BaseHTTPRequestHandler):
         c = Client(sess)
         with lock:
             clients.append(c)
-            first = {"me": {"uid": sess["uid"], "dm": sess["dm"]}, "campaign": state["active"],
-                     "docs": snapshot_for(sess)}
+            first = {"me": {"uid": sess["uid"], "dm": True}, "campaign": state["active"], "docs": snapshot()}
         try:
             self._sse("snapshot", first)
             while True:
@@ -782,6 +487,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(f"event: {kind}\ndata: {data}\n\n".encode("utf-8"))
         self.wfile.flush()
 
+    # -- POST
     def do_POST(self):
         route = self.path.split("?")[0]
         try:
@@ -790,8 +496,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"error": "Petició mal formada"})
         if route == "/api/join":
             return self._join(body)
+        sess = self._session()
+        if not sess:
+            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
         if route == "/api/write":
-            return self._write(body)
+            return self._write(body, sess)
         if route == "/api/campaigns":
             return self._campaigns(body)
         if route == "/api/history":
@@ -800,7 +509,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def _join(self, body):
         name = str(body.get("name") or "").strip()[:40]
-        pw = str(body.get("password") or "")
         old_tok = str(body.get("token") or "")
         with lock:
             sess = state["sessions"].get(old_tok)
@@ -810,25 +518,16 @@ class Handler(BaseHTTPRequestHandler):
                 if not name:
                     return self._json(400, {"error": "Escriu el teu nom."})
                 tok = secrets.token_urlsafe(24)
-                sess = {"uid": "u" + secrets.token_hex(6), "dm": True}
+                sess = {"uid": "u" + secrets.token_hex(6)}
                 state["sessions"][tok] = sess
-            if pw:
-                if not secrets.compare_digest(pw, MASTER_PASSWORD):
-                    if tok != old_tok:
-                        state["sessions"].pop(tok, None)
-                    return self._json(403, {"error": "La contrasenya del màster no és correcta."})
-                sess["dm"] = True
             if name:
                 state["users"][sess["uid"]] = name
             dirty.set()
         if name:
             broadcast(["users/" + sess["uid"]])
-        return self._json(200, {"token": tok, "uid": sess["uid"], "dm": sess["dm"]})
+        return self._json(200, {"token": tok, "uid": sess["uid"], "dm": True})
 
-    def _write(self, body):
-        sess = self._session()
-        if not sess:
-            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+    def _write(self, body, sess):
         path, mode, data = body.get("path"), body.get("mode"), body.get("data")
         if not valid_path(path) or mode not in ("set", "update", "delete"):
             return self._json(400, {"error": "Petició mal formada"})
@@ -838,8 +537,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(413, {"error": "Document massa gran"})
         with lock:
             if body.get("camp") and body.get("camp") != state["active"]:
-                return self._json(409, {"error": "El màster ha canviat de partida."})
-            if not can_write(path, mode, data, sess):
+                return self._json(409, {"error": "S'ha obert una altra partida."})
+            if not can_write(path, mode, sess):
                 return self._json(403, {"error": "No tens permís per a canviar això."})
             if seg(path)[0] == "users":
                 merged = deep_merge(get_doc(path) or {}, data) if mode == "update" else data
@@ -859,9 +558,6 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
     def _history(self, body):
-        sess = self._session()
-        if not sess:
-            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
         hid = str(body.get("id") or "")
         with lock:
             if body.get("action") == "delete":
@@ -870,11 +566,6 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"list": list(reversed(state["history"]))})
 
     def _campaigns(self, body):
-        sess = self._session()
-        if not sess:
-            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
-        if not sess["dm"]:
-            return self._json(403, {"error": "No pots gestionar les partides."})
         action = body.get("action")
         name = str(body.get("name") or "").strip()[:80]
         cid = str(body.get("id") or "")
@@ -903,8 +594,7 @@ class Handler(BaseHTTPRequestHandler):
                 new_name = name or (camp_name(docs, cid) + " (còpia)")
                 docs = dict(docs)
                 docs["campaign/main"] = {**(docs.get("campaign/main") or {}), "name": new_name}
-                new_id = slugify(new_name)
-                write_json(camp_file(new_id), {"docs": docs})
+                write_json(camp_file(slugify(new_name)), {"docs": docs})
             elif action == "delete":
                 if cid == state["active"]:
                     return self._json(400, {"error": "No pots esborrar la partida oberta. Obri'n una altra primer."})
@@ -918,7 +608,7 @@ class Handler(BaseHTTPRequestHandler):
             result = {"active": state["active"], "list": list_campaigns()}
         if switched:
             save_now()
-            broadcast_switch()
+            broadcast_event("campaign", {"id": state["active"]})
         return self._json(200, result)
 
 
@@ -931,26 +621,11 @@ class Server(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
-def lan_addresses():
-    ips = set()
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("10.255.255.255", 1))
-        ips.add(s.getsockname()[0])
-        s.close()
-    except OSError:
-        pass
-    try:
-        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
-            ips.add(info[4][0])
-    except OSError:
-        pass
-    return sorted(ip for ip in ips if not ip.startswith("127."))
-
-
 def main():
-    global MASTER_PASSWORD
-    for stream in (sys.stdout, sys.stderr):  # Windows consoles may not speak UTF-8
+    for name in ("stdout", "stderr"):  # l'executable de Windows no té terminal
+        if getattr(sys, name) is None:
+            setattr(sys, name, open(os.devnull, "w", encoding="utf-8"))
+    for stream in (sys.stdout, sys.stderr):  # les consoles de Windows potser no parlen UTF-8
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:  # noqa: BLE001
@@ -959,31 +634,43 @@ def main():
         os.system("")  # activa els colors ANSI de la consola de Windows (per al QR)
     ap = argparse.ArgumentParser(description="Servidor local de La Comunitat")
     ap.add_argument("--port", type=int, default=8766)
-    ap.add_argument("--master-password", default=os.environ.get("TAULA_MASTER_PASSWORD", ""))
     ap.add_argument("--partida", default="", help="nom de la partida que s'obri en arrancar (la crea si no existeix)")
-    ap.add_argument("--sense-qr", action="store_true", help="no mostra el codi QR en arrancar")
-    ap.add_argument("--sense-navegador", action="store_true", help="(.exe) no obri el navegador en arrancar")
+    ap.add_argument("--dades", default=os.environ.get("COMUNITAT_DADES", ""),
+                    help="carpeta on es guarden les partides (per defecte, al costat del programa, "
+                         "o a la carpeta de l'usuari si està instal·lat)")
+    ap.add_argument("--sense-finestra", action="store_true", help="no obri la finestra: només la terminal")
+    ap.add_argument("--sense-navegador", action="store_true", help="no obri el navegador en arrancar")
+    ap.add_argument("--sense-qr", action="store_true", help="no mostra el codi QR a la terminal")
+    ap.add_argument("--idioma", choices=("ca", "es"), help="idioma de la finestra (per defecte, el del sistema)")
     a = ap.parse_args()
+    if a.dades.strip():
+        set_data_dir(a.dades.strip())
+    amb_finestra = not a.sense_finestra and hi_ha_finestra()
+    idioma = a.idioma or idioma_sistema()
     state["port"] = a.port
-    MASTER_PASSWORD = secrets.token_hex(8)  # cooperative game: nobody uses it
     try:
         srv = Server(("0.0.0.0", a.port), Handler)
     except OSError:
-        print(
-            f"\n  El port {a.port} ja està en ús: hi ha un altre programa (potser La Comunitat ja oberta) escoltant-hi.\n"
-            f"  Tanca'l, o arranca en un altre port:   python3 comunitat.py --port 9001\n")
-        if FROZEN:
-            input("  Prem Intro per a tancar.")
+        print(f"\n  El port {a.port} ja està en ús: hi ha un altre programa (potser La Comunitat ja oberta) escoltant-hi.\n"
+              f"  Tanca'l, o arranca en un altre port:   python3 comunitat.py --port 9001\n")
+        if amb_finestra:
+            T = FINESTRA_TEXTOS[idioma]
+            avis_finestra(T["port_t"], T["port_q"].format(p=a.port))
         sys.exit(1)
     load(a.partida.strip() or None)
     load_history()
     threading.Thread(target=saver, daemon=True).start()
+    try:  # en apagar l'ordinador o tancar la sessió (Linux), es guarda igual que amb Ctrl+C
+        import signal
+        signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    except Exception:  # noqa: BLE001
+        pass
     print(f"\n  La Comunitat (versió {VERSION}) està en marxa.\n")
     print(f"  En aquest ordinador:   http://localhost:{a.port}")
     urls = lan_urls()
     for u in urls:
         print(f"  Des de la xarxa:       {u}")
-    if urls and not a.sense_qr:
+    if urls and not a.sense_qr and not amb_finestra:
         print("\n  Escaneja aquest codi amb el mòbil per a entrar:\n")
         try:
             print(qr_terminal(urls[0]))
@@ -991,12 +678,18 @@ def main():
             pass
     print()
     print(f"  Partida oberta:         {camp_name(state['docs'], state['active'])}")
-    print(f"  Partides guardades a:   {CAMP_DIR}")
-    print("\n  Prem Ctrl+C per a aturar-lo" + (" o tanca aquesta finestra" if FROZEN else "") + ".\n")
-    if FROZEN and not a.sense_navegador:
-        threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{a.port}")).start()
+    print(f"  Dades guardades a:      {DATA_DIR}")
     try:
-        srv.serve_forever()
+        if amb_finestra:
+            print("\n  Tanca la finestra de La Comunitat per a aturar-la.\n")
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            finestra(a.port, idioma, obrir_navegador=not a.sense_navegador)
+            srv.shutdown()
+        else:
+            print("\n  Prem Ctrl+C per a aturar-la" + (" o tanca aquesta finestra" if os.name == "nt" else "") + ".\n")
+            if FROZEN and not a.sense_navegador:
+                threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{a.port}")).start()
+            srv.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
@@ -1004,10 +697,21 @@ def main():
         print("\n  Partida guardada. Fins la pròxima!\n")
 
 
-# ---------------------------------------------------------------- web page (gzip + base64)
+# ---------------------------------------------------------------- pàgina web i mapes d'exemple (base64)
 PAGE_BYTES = gzip.decompress(base64.b64decode("""
 __PAGE__
 """))
+MAPES = {
+    "val": base64.b64decode("""
+__MAPA_VAL__
+"""),
+    "es": base64.b64decode("""
+__MAPA_ES__
+"""),
+}
+ICONA_PNG = "".join("""
+__ICONA__
+""".split())
 
 if __name__ == "__main__":
     main()

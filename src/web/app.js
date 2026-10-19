@@ -385,9 +385,10 @@ function renderPlay(){
   </div>  </div>`;
 }
 let MAP_OK=null;
-const mapSrc=()=>'mapa?lang='+LANG;
+let OFFLINE=false;
+const mapSrc=()=>OFFLINE?'mapa-exemple-'+(LANG==='es'?'es':'val')+'.jpg':'mapa?lang='+LANG;
 function mapPanel(){
-  if(MAP_OK===false)return `<div class="empty"><b>${esc(t('Sense mapa'))}</b>${t('Posa una imatge anomenada <code>mapa.jpg</code> al costat de <code>comunitat.py</code> i recarrega la pàgina.')}</div>`;
+  if(MAP_OK===false)return `<div class="empty"><b>${esc(t('Sense mapa'))}</b>${t('Posa una imatge anomenada <code>mapa.jpg</code> a la carpeta de dades de La Comunitat i recarrega la pàgina.')}</div>`;
   return `<figure class="mapfig"><button class="mapbtn" id="map-open" aria-label="${esc(t('Ampliar el mapa'))}"><img src="${mapSrc()}" alt="${esc(t('Mapa de la Terra Mitjana'))}" id="map-img"></button><figcaption class="small muted">${esc(t('Fes clic per a ampliar-lo.'))}</figcaption></figure>`;
 }
 document.addEventListener('error',e=>{if(e.target&&e.target.id==='map-img'){MAP_OK=false;const c=$('#mapcol');if(c)c.innerHTML=mapPanel()}},true);
@@ -697,9 +698,9 @@ async function boot(){
   let ok=false;
   if(/^https?:$/.test(location.protocol)){try{const r=await fetch('api/hello',{cache:'no-store'});ok=r.ok}catch(_){}}
   if(!ok){
-    S.uid='local';mem.set('users/local',{name:t('Tu')});
+    OFFLINE=true;S.uid='local';mem.set('users/local',{name:t('Tu')});
     mem.set('game/state',newGame({level:'intro',players:[{name:t('Tu'),chars:['frodosam','legolas']},{name:t('Company'),chars:['gandalf','aragorn']}],objectives:OBJECTIVES.slice(0,3)}));
-    showBanner(t('Mode de prova: obri la pàgina a través del servidor (python3 comunitat.py) perquè es guarde i es compartisca.'));
+    showBanner(t("Mode de prova: res no es guarda ni es comparteix. Per a jugar, obri l'app des del programa La Comunitat."));
     startSubs();return;
   }
   let tok=lsGet('cm-token'),me=null;

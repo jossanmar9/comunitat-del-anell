@@ -211,7 +211,7 @@ const I18N={es:{
 "Límit de mà":"Límite de mano",
 "Set cartes. Els esdeveniments es poden jugar en qualsevol moment.":"Siete cartas. Los eventos se pueden jugar en cualquier momento.",
 "Sense mapa":"Sin mapa",
-"Posa una imatge anomenada <code>mapa.jpg</code> al costat de <code>comunitat.py</code> i recarrega la pàgina.":"Pon una imagen llamada <code>mapa.jpg</code> junto a <code>comunitat.py</code> y recarga la página.",
+"Posa una imatge anomenada <code>mapa.jpg</code> a la carpeta de dades de La Comunitat i recarrega la pàgina.":"Pon una imagen llamada <code>mapa.jpg</code> en la carpeta de datos de La Comunidad y recarga la página.",
 "Ampliar el mapa":"Ampliar el mapa",
 "Mapa de la Terra Mitjana":"Mapa de la Tierra Media",
 "Fes clic per a ampliar-lo.":"Haz clic para ampliarlo.",
@@ -318,7 +318,7 @@ const I18N={es:{
 "Entrar":"Entrar",
 "No s'ha pogut entrar.":"No se ha podido entrar.",
 "No es pot contactar amb el servidor.":"No se puede contactar con el servidor.",
-"Mode de prova: obri la pàgina a través del servidor (python3 comunitat.py) perquè es guarde i es compartisca.":"Modo de prueba: abre la página a través del servidor (python3 comunitat.py) para que se guarde y se comparta.",
+"Mode de prova: res no es guarda ni es comparteix. Per a jugar, obri l'app des del programa La Comunitat.":"Modo de prueba: no se guarda ni se comparte nada. Para jugar, abre la app desde el programa La Comunidad.",
 // --- errors del servidor ---
 "Escriu el teu nom.":"Escribe tu nombre.",
 "No pots esborrar la partida oberta. Obri'n una altra primer.":"No puedes borrar la partida abierta. Abre otra primero.",
@@ -328,6 +328,10 @@ const I18N={es:{
 "Sessió no vàlida. Torna a entrar.":"Sesión no válida. Vuelve a entrar.",
 "No tens permís per a canviar això.":"No tienes permiso para cambiar esto.",
 "Petició mal formada":"Petición mal formada",
+"No trobat":"No encontrado",
+"Document massa gran":"Documento demasiado grande",
+"S'ha obert una altra partida.":"Se ha abierto otra partida.",
+"Acció desconeguda.":"Acción desconocida.",
 // --- dades: personatges i llocs ---
 "Frodo i Sam":"Frodo y Sam",
 "Merry i Pippin":"Merry y Pippin",
