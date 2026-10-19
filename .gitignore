@@ -1,6 +1,7 @@
 # Dades de les partides (es creen en engegar el servidor)
 partides/
 comunitat.json
+historial.json
 
 # El mapa propi de cadascú
 mapa.jpg
@@ -13,3 +14,8 @@ mapa-es.*
 # Python
 __pycache__/
 *.pyc
+
+# PyInstaller
+build/
+dist/
+*.spec
