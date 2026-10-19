@@ -5,6 +5,7 @@ del servidor src/servidor.py, perquè tot el programa siga un sol fitxer.
 Ús:  python3 build.py
 """
 import base64
+import json
 import gzip
 from pathlib import Path
 
@@ -20,13 +21,21 @@ def data_uri(name):
     return "data:image/png;base64," + base64.b64encode((WEB / name).read_bytes()).decode()
 
 
+def portraits():
+    """Els retrats de src/web/personatges/*.webp com a const PORTRAITS = {id: data-uri}."""
+    out = {}
+    for f in sorted((WEB / "personatges").glob("*.webp")):
+        out[f.stem] = "data:image/webp;base64," + base64.b64encode(f.read_bytes()).decode()
+    return "const PORTRAITS=" + json.dumps(out) + ";"
+
+
 def main():
     page = (
         "<title>Comunitat de l'Anell</title>\n"
         + read("fonts.html")
         + "<style>\n" + read("estil-base.css") + "\n" + read("estil.css") + "</style>\n"
         + read("cos.html").replace("__LOGO__", data_uri("logo.png"))
-        + "<script>\n" + read("i18n.js") + "\n" + read("dades.js") + "\n" + read("app.js") + "\n</script>\n"
+        + "<script>\n" + portraits() + "\n" + read("i18n.js") + "\n" + read("dades.js") + "\n" + read("app.js") + "\n</script>\n"
     )
     html = (
         '<!doctype html>\n<html lang="ca">\n<head>\n<meta charset="utf-8">\n'

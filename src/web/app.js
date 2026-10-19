@@ -163,6 +163,12 @@ function newGame(cfg){
 // El nom d'un personatge sempre es pren de les dades actuals (així es tradueix).
 const charName=c=>t((CHARACTERS.find(x=>x.id===c.id)||c).name);
 const charStart=c=>t((CHARACTERS.find(x=>x.id===c.id)||c).start);
+// Retrat d'un personatge (o les inicials si no n'hi ha).
+function portrait(id,size=48,cls=''){
+  const c=CHARACTERS.find(x=>x.id===id)||{id,name:id,color:'#888'},nm=t(c.name),src=(typeof PORTRAITS!=='undefined')&&PORTRAITS[id];
+  return src?`<img class="portrait ${cls}" src="${src}" width="${size}" height="${size}" alt="${esc(nm)}" title="${esc(nm)}" loading="lazy">`
+    :`<span class="portrait av-fb ${cls}" style="width:${size}px;height:${size}px;background:${c.color};font-size:${Math.round(size*.36)}px" title="${esc(nm)}">${esc(initials(nm))}</span>`;
+}
 const playerName=(p,i)=>p&&p.name?p.name:t('Participant {n}',{n:i+1});
 
 /* ================= modal ================= */
@@ -393,7 +399,7 @@ function renderSide(){
   const el=$('#side2');
   if(!G){el.innerHTML=`<h2>${esc(t('El torn'))}</h2><p class="muted small">${esc(t('Prepara una partida per a començar.'))}</p>`+logHtml();return}
   const TR=G.turn,p=G.players[TR.p],mine=G.chars.filter(c=>c.player===TR.p),n=threatNow(G);
-  el.innerHTML=`<div><span class="eyebrow">${esc(t('Ronda {n} · torn de',{n:G.round}))}</span><div class="turn-who">${esc(playerName(p,TR.p))}</div><span class="muted small">${mine.map(c=>esc(charName(c))).join(' · ')}</span></div>
+  el.innerHTML=`<div><span class="eyebrow">${esc(t('Ronda {n} · torn de',{n:G.round}))}</span><div class="turn-who">${esc(playerName(p,TR.p))}</div><div class="turn-chars">${mine.map(c=>`<span>${portrait(c.id,44)}<span class="small">${esc(charName(c))}</span></span>`).join('')}</div></div>
     <ol class="steps">
       <li class="${TR.step===0?'cur':'done'}"><div><b>${esc(t('Fes 4 + 1 accions'))}</b><div class="muted small">${esc(t(G.solo?'4 amb el personatge del testimoni i 1 amb Frodo i Sam.':"4 amb un personatge i 1 amb l'altre."))}</div>
         <div class="apips">${[0,1,2,3].map(i=>`<button class="apip ${i<TR.a[0]?'used':''}" data-ap="0:${i}" aria-label="${esc(t('Acció {n}',{n:i+1}))}">${i+1}</button>`).join('')}<button class="apip sep ${TR.a[1]?'used':''}" data-ap="1:0" aria-label="${esc(t('Acció extra'))}">+1</button></div>
@@ -462,7 +468,7 @@ function renderCommunity(){
       ${SETUP_STEPS.map(([a,d],i)=>`<div class="obj ${G.setup[i]?'done':''}"><input type="checkbox" data-setup="${i}" ${G.setup[i]?'checked':''} aria-label="${esc(t(a))}"><span><span class="on">${esc(t(a))}</span><br><span class="small muted">${esc(t(d))}</span></span></div>`).join('')}
     </section>
     <section class="panel tool"><h2>${esc(t('La Comunitat'))}</h2>
-      ${G.players.map((p,i)=>`<div><h3>${esc(playerName(p,i))}${G.turn.p===i?' · '+esc(t('torn')):''}</h3>${G.chars.filter(c=>c.player===i).map(c=>`<div class="row" style="justify-content:space-between;margin-top:6px"><span class="cchip"><span class="av" style="background:${c.color}">${esc(initials(charName(c)))}</span>${esc(charName(c))}</span><span class="small muted">${esc(t('Comença a {x}',{x:charStart(c)}))}</span></div>`).join('')}</div>`).join('')}
+      ${G.players.map((p,i)=>`<div><h3>${esc(playerName(p,i))}${G.turn.p===i?' · '+esc(t('torn')):''}</h3>${G.chars.filter(c=>c.player===i).map(c=>`<div class="row" style="justify-content:space-between;margin-top:6px"><span class="pchar">${portrait(c.id,64)}<b>${esc(charName(c))}</b></span><span class="small muted">${esc(t('Comença a {x}',{x:charStart(c)}))}</span></div>`).join('')}</div>`).join('')}
     </section>
     ${G.result?`<section class="panel tool"><h2>${esc(t('Resum de la partida'))}</h2>${summaryHtml()}</section>`:''}
     <section class="panel tool"><h2>${esc(t('Partida'))}</h2>
@@ -492,9 +498,9 @@ function drawSetupPlayers(){
   const opts=sel=>CHARACTERS.map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(t(c.name))}</option>`).join('');
   if(n===1){
     const def=['frodosam','legolas','arwen','gandalf','gimli'];
-    box.innerHTML=`<div class="prow" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><label class="field"><span>${esc(t('Participant'))}</span><input class="in" id="sp-name-0" value="${esc(mem.get('users/'+S.uid)?.name||'')}"></label>${def.map((d,i)=>`<label class="field"><span>${esc(t('Personatge {n}',{n:i+1}))}</span><select class="in" id="sp-c-0-${i}" ${i===0?'disabled':''}>${opts(d)}</select></label>`).join('')}</div><p class="small muted" style="margin:0">${esc(t('En solitari portes Frodo i Sam i 4 personatges més.'))}</p>`;return;
+    box.innerHTML=`<div class="prow" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><label class="field"><span>${esc(t('Participant'))}</span><input class="in" id="sp-name-0" value="${esc(mem.get('users/'+S.uid)?.name||'')}"></label>${def.map((d,i)=>`<label class="field"><span>${esc(t('Personatge {n}',{n:i+1}))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-0-${i}">${portrait(d,36)}</span><select class="in" id="sp-c-0-${i}" ${i===0?'disabled':''}>${opts(d)}</select></span></label>`).join('')}</div><p class="small muted" style="margin:0">${esc(t('En solitari portes Frodo i Sam i 4 personatges més.'))}</p>`;return;
   }
-  box.innerHTML=Array.from({length:n},(_,i)=>`<div class="prow"><label class="field"><span>${esc(t('Participant {n}',{n:i+1}))}</span><input class="in" id="sp-name-${i}" value="${i===0?esc(mem.get('users/'+S.uid)?.name||''):''}" placeholder="${esc(t('Nom'))}"></label><label class="field"><span>${esc(t('Personatge'))}</span><select class="in" id="sp-c-${i}-0">${opts(SUGGESTED[i][0])}</select></label><label class="field"><span>${esc(t('Personatge'))}</span><select class="in" id="sp-c-${i}-1">${opts(SUGGESTED[i][1])}</select></label></div>`).join('');
+  box.innerHTML=Array.from({length:n},(_,i)=>`<div class="prow"><label class="field"><span>${esc(t('Participant {n}',{n:i+1}))}</span><input class="in" id="sp-name-${i}" value="${i===0?esc(mem.get('users/'+S.uid)?.name||''):''}" placeholder="${esc(t('Nom'))}"></label>${[0,1].map(k=>`<label class="field"><span>${esc(t('Personatge'))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-${i}-${k}">${portrait(SUGGESTED[i][k],36)}</span><select class="in" id="sp-c-${i}-${k}">${opts(SUGGESTED[i][k])}</select></span></label>`).join('')}</div>`).join('');
 }
 function drawSetupObjs(fill){
   const lv=LEVELS[$('#sf-level').value],k=lv.obj-1,cur=fill||$$('[data-obj]').map(s=>s.value);
@@ -542,7 +548,8 @@ function drawHistory(list){
       <div class="cc-head"><span class="sum-res ${h.result}" style="font-size:20px">${esc(t(h.result==='win'?'Victòria':'Derrota'))}</span><span class="small muted">${esc(new Date(h.ended).toLocaleDateString(LANG==='es'?'es':'ca',{day:'numeric',month:'short',year:'numeric'}))}</span></div>
       <p style="margin:0"><b>${esc(h.camp||'')}</b> · ${esc(t(LEVELS[h.level]?.name||''))}${sc?' · '+esc(t(sc)):''}</p>
       <p class="small muted" style="margin:0">${esc(t('{r} · {d} · esperança {h} · objectius {o}',{r:pl(h.rounds||0,'ronda','rondes'),d:dur(h.ended-h.created),h:h.hope??'?',o:`${h.done}/${(h.objectives||[]).length+1}`}))}</p>
-      <p class="small muted" style="margin:0">${h.players.map((p,i)=>esc(p||t('Participant {n}',{n:i+1}))).join(', ')} — ${h.chars.map(id=>esc(t((CHARACTERS.find(c=>c.id===id)||{name:id}).name))).join(', ')}</p>
+      <div class="hist-chars">${h.chars.map(id=>portrait(id,34)).join('')}</div>
+      <p class="small muted" style="margin:0">${h.players.map((p,i)=>esc(p||t('Participant {n}',{n:i+1}))).join(', ')}</p>
       <div class="row"><button class="btn sm danger" data-hdel="${esc(h.id)}">${esc(t("Llevar de l'historial"))}</button></div></article>`}).join('')}</div>`;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-hdel]');if(!b)return;armed(b,async()=>{try{drawHistory(await histApi({action:'delete',id:b.dataset.hdel}))}catch(err){toast(err.message)}},t('Prem de nou per a llevar-la'))});
@@ -595,6 +602,7 @@ document.addEventListener('change',e=>{
   if(x.dataset.setup!=null&&G){const i=+x.dataset.setup;G.setup[i]=x.checked;write('game/state',G);renderCommunity();return}
   if(!$('#setup-form'))return;
   if(x.id==='sf-np'){lsSet('cm-np',x.value);drawSetupPlayers()}
+  if(x.id&&x.id.startsWith('sp-c-')){const pv=$(`[data-pv="${x.id}"]`);if(pv)pv.innerHTML=portrait(x.value,36)}
   if(x.id==='sf-level')drawSetupObjs();
   if(x.id==='sf-scen'&&x.value!==''){const sc=SCENARIOS[+x.value];$('#sf-level').value=sc.level[0];drawSetupObjs(sc.obj.map(i=>OBJECTIVES[i]))}
 });

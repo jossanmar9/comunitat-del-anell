@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 1.4) — servidor local per a portar partides de
+La Comunitat (versió 1.5) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor i la pàgina web. Un ordinador
@@ -54,7 +54,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "1.4"
+VERSION = "1.5"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 BUNDLE = Path(getattr(sys, "_MEIPASS", DIR))     # on van els mapes d'exemple dins de l'.exe

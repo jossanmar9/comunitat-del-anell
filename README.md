@@ -37,6 +37,7 @@ Un ordinador fa de servidor i la resta hi entren des del navegador, mòbils incl
 - **Resum en acabar:** rondes, durada, on s'ha perdut l'esperança, tirades i objectius.
 - **Historial** de totes les partides acabades, amb victòries i derrotes per dificultat.
 - **Diverses partides guardades.**
+- **Retrats il·lustrats** dels 13 personatges jugables.
 - **Entrar amb un QR:** el servidor el mostra en arrancar, i també des del botó de l'app.
 - **Mode fosc**, automàtic o triat a mà.
 - **Adaptada al mòbil.** Tots els aparells connectats veuen els canvis al moment.
@@ -46,6 +47,8 @@ Un ordinador fa de servidor i la resta hi entren des del navegador, mòbils incl
   <img src="docs/captures/mobil.jpg" alt="L'app en un mòbil" width="260">
   <img src="docs/captures/cerca-modal.jpg" alt="Anotar una tirada de cerca" width="420">
 </p>
+
+<p align="center"><img src="docs/captures/personatges.webp" alt="Els retrats dels personatges" width="640"></p>
 
 ## Com s'usa
 
@@ -94,6 +97,7 @@ Les partides es guarden a la carpeta `partides/`, els jugadors i les sessions a 
 | `src/servidor.py` | El servidor (Python, sense dependències) |
 | `src/web/app.js` | La lògica de la pàgina |
 | `src/web/dades.js` | Personatges, objectius, escenaris i preparació |
+| `src/web/personatges/` | Els retrats dels personatges (WebP de 200 px) |
 | `src/web/i18n.js` | Les traduccions al castellà (per a afegir un idioma, copia el bloc `es`) |
 | `src/web/estil-base.css`, `src/web/estil.css` | L'estil |
 | `src/web/cos.html` | L'estructura de la pàgina |
@@ -109,8 +113,8 @@ python3 build.py
 L'executable el fa GitHub automàticament ([`.github/workflows/windows-exe.yml`](.github/workflows/windows-exe.yml)). Només cal pujar una etiqueta:
 
 ```bash
-git tag v1.4
-git push origin v1.4
+git tag v1.5
+git push origin v1.5
 ```
 
 Al cap d'uns minuts, `LaComunitat-windows.zip` apareix a [Releases](../../releases).
@@ -122,5 +126,7 @@ Les propostes de millora i les correccions són benvingudes.
 [GPL-3.0](LICENSE) o posterior. El podeu usar, copiar, modificar i compartir lliurement. Si en publiqueu una versió modificada, també ha de ser lliure i amb el codi obert.
 
 ## Avís
+
+Els retrats dels personatges s'han fet amb IA a partir de les descripcions dels llibres, en un estil propi.
 
 Projecte de fans **no oficial**, sense relació amb Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» i els noms relacionats són marques dels seus propietaris. Aquest programa no inclou cap component del joc: per a jugar cal tindre'l.

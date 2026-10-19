@@ -37,6 +37,7 @@ Un ordenador hace de servidor y los demás entran desde el navegador, móviles i
 - **Resumen al terminar:** rondas, duración, dónde se ha perdido la Esperanza, tiradas y objetivos.
 - **Historial** de todas las partidas terminadas, con victorias y derrotas por dificultad.
 - **Varias partidas guardadas.**
+- **Retratos ilustrados** de los 13 personajes jugables.
 - **Entrar con un QR:** el servidor lo muestra al arrancar, y también desde el botón de la app.
 - **Modo oscuro**, automático o elegido a mano.
 - **Adaptada al móvil.** Todos los dispositivos conectados ven los cambios al momento.
@@ -46,6 +47,8 @@ Un ordenador hace de servidor y los demás entran desde el navegador, móviles i
   <img src="docs/captures/es/mobil.jpg" alt="La app en un móvil" width="260">
   <img src="docs/captures/es/cerca-modal.jpg" alt="Anotar una tirada de búsqueda" width="420">
 </p>
+
+<p align="center"><img src="docs/captures/personatges.webp" alt="Los retratos de los personajes" width="640"></p>
 
 ## Cómo se usa
 
@@ -94,6 +97,7 @@ Las partidas se guardan en la carpeta `partides/`, los jugadores y las sesiones 
 | `src/servidor.py` | El servidor (Python, sin dependencias) |
 | `src/web/app.js` | La lógica de la página |
 | `src/web/dades.js` | Personajes, objetivos, escenarios y preparación |
+| `src/web/personatges/` | Los retratos de los personajes (WebP de 200 px) |
 | `src/web/i18n.js` | Las traducciones al castellano (para añadir un idioma, copia el bloque `es`) |
 | `src/web/estil-base.css`, `src/web/estil.css` | El estilo |
 | `src/web/cos.html` | La estructura de la página |
@@ -109,8 +113,8 @@ python3 build.py
 El ejecutable lo hace GitHub automáticamente ([`.github/workflows/windows-exe.yml`](.github/workflows/windows-exe.yml)). Solo hay que subir una etiqueta:
 
 ```bash
-git tag v1.4
-git push origin v1.4
+git tag v1.5
+git push origin v1.5
 ```
 
 Al cabo de unos minutos, `LaComunitat-windows.zip` aparece en [Releases](../../releases).
@@ -122,5 +126,7 @@ Las propuestas de mejora y las correcciones son bienvenidas.
 [GPL-3.0](LICENSE) o posterior. Lo podéis usar, copiar, modificar y compartir libremente. Si publicáis una versión modificada, también tiene que ser libre y con el código abierto.
 
 ## Aviso
+
+Los retratos de los personajes se han hecho con IA a partir de las descripciones de los libros, con un estilo propio.
 
 Proyecto de fans **no oficial**, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» y los nombres relacionados son marcas de sus propietarios. Este programa no incluye ningún componente del juego: para jugar hay que tenerlo.
