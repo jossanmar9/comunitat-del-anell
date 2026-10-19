@@ -168,3 +168,32 @@ svg .dim{opacity:.12}
 
 /* Logo */
 .brand .logo{flex:none;width:56px;height:56px;display:block;filter:drop-shadow(0 2px 3px rgba(40,20,5,.35))}
+
+/* --- 1.4: icones de capçalera, QR, resum i historial --- */
+.chip.ico{padding:6px 9px;font-size:15px;line-height:1;min-width:34px;justify-content:center}
+.chip.ico svg{display:block}
+.qr-box{align-self:center;background:#fff;padding:10px;border-radius:6px;border:1px solid var(--line-2);line-height:0}
+.qr-box svg{width:min(260px,62vw);height:auto;display:block}
+.qr-url{margin:0;text-align:center;font:500 20px/1.2 var(--f-label);letter-spacing:.03em;word-break:break-all;user-select:all}
+.banner.endstate{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.sum{display:flex;flex-direction:column;gap:10px}
+.sum h3{margin:6px 0 0}
+.sum-res{margin:0;font:400 30px/1.1 var(--f-display)}
+.sum-res.win{color:var(--good)}.sum-res.lose{color:var(--blood)}
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sum-grid>div{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.sum-grid b{font:400 24px/1.1 var(--f-head)}
+.sum-grid span{font:500 12px/1.2 var(--f-label);letter-spacing:.04em;color:var(--muted)}
+.sum-t{border-collapse:collapse;width:100%;font-size:15px}
+.sum-t td,.sum-t th{padding:5px 6px;border-bottom:1px dotted var(--line-2);text-align:left}
+.sum-t th{font:500 12px/1.2 var(--f-label);letter-spacing:.05em;color:var(--gold)}
+.sum-t .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sum-o{list-style:none;padding:0;margin:0;display:grid;gap:3px}
+.sum-o li{color:var(--muted)}.sum-o li.done{color:var(--ink)}
+.hist-top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.hist-top .hist-lv{max-width:420px}
+.hist-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.hist-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px;background:var(--surface);border:1px solid var(--line-2);border-left:4px solid var(--line-2);border-radius:var(--r);min-width:0}
+.hist-card.win{border-left-color:var(--good)}.hist-card.lose{border-left-color:var(--blood)}
+@media (max-width:620px){.sum-grid{grid-template-columns:repeat(2,1fr)}.hist-list{grid-template-columns:1fr}}
+#hist{display:flex;flex-direction:column;gap:16px}

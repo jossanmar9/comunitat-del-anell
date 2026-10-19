@@ -34,7 +34,11 @@ Un ordenador hace de servidor y los demás entran desde el navegador, móviles i
   - los 24 objetivos;
   - la lista de preparación del tablero, paso a paso.
 - **Registro** de todo lo que pasa y **deshacer** hasta 30 pasos.
+- **Resumen al terminar:** rondas, duración, dónde se ha perdido la Esperanza, tiradas y objetivos.
+- **Historial** de todas las partidas terminadas, con victorias y derrotas por dificultad.
 - **Varias partidas guardadas.**
+- **Entrar con un QR:** el servidor lo muestra al arrancar, y también desde el botón de la app.
+- **Modo oscuro**, automático o elegido a mano.
 - **Adaptada al móvil.** Todos los dispositivos conectados ven los cambios al momento.
 - **En castellano y en valenciano.** Cada jugador elige el idioma con los botones CAS y VAL, y el registro, los objetivos y el mapa cambian con él.
 
@@ -45,6 +49,12 @@ Un ordenador hace de servidor y los demás entran desde el navegador, móviles i
 
 ## Cómo se usa
 
+### En Windows, sin instalar nada
+
+Descarga `LaComunitat-windows.zip` de la sección [Releases](../../releases), descomprímelo y haz doble clic en `LaComunitat.exe`. Se abre una ventana con la dirección y el QR, y el navegador ya con la app. Windows puede avisar de que es un programa de un editor desconocido: pulsa «Más información» y «Ejecutar de todas formas».
+
+### Con Python (Linux, Mac o Windows)
+
 Solo hace falta **Python 3.8 o más nuevo**. No hay que instalar nada más.
 
 ```bash
@@ -53,13 +63,14 @@ python3 comunitat.py
 
 En Windows, haz doble clic en `arrancar-windows.bat`. Antes tienes que instalar Python desde python.org y marcar «Add python.exe to PATH».
 
-Al arrancar, el servidor muestra la dirección para los demás, por ejemplo `http://192.168.1.40:8766` (los mensajes de la terminal están en valenciano: es la línea «Des de la xarxa»). Cada jugador la abre en el navegador y entra con su nombre.
+Al arrancar, el servidor muestra la dirección para los demás, por ejemplo `http://192.168.1.40:8766` (los mensajes de la terminal están en valenciano: es la línea «Des de la xarxa»). Debajo sale un **código QR**: cada jugador lo escanea con el móvil (o escribe la dirección) y entra con su nombre. El botón del QR, arriba a la derecha de la app, lo vuelve a mostrar.
 
 Opciones:
 
 ```bash
 python3 comunitat.py --port 9001           # otro puerto
 python3 comunitat.py --partida "Viernes"   # abre (o crea) esa partida
+python3 comunitat.py --sense-qr            # no muestra el QR en la terminal
 ```
 
 En el archivo [docs/Guia-La-Comunidad.pdf](docs/Guia-La-Comunidad.pdf) tienes la **guía de uso completa**, con capturas de todas las pantallas.
@@ -72,7 +83,7 @@ Para poner el tuyo, copia la imagen junto a `comunitat.py` con el nombre `mapa.j
 
 ## Los datos
 
-Las partidas se guardan en la carpeta `partides/`, y los jugadores y las sesiones en `comunitat.json`. Para hacer una copia de seguridad, cópialo todo.
+Las partidas se guardan en la carpeta `partides/`, los jugadores y las sesiones en `comunitat.json`, y las partidas terminadas en `historial.json`. Para hacer una copia de seguridad, cópialo todo.
 
 ## Modificar el programa
 
@@ -92,6 +103,17 @@ Después de cambiar algo, vuelve a generar el programa con:
 ```bash
 python3 build.py
 ```
+
+### Publicar una versión para Windows
+
+El ejecutable lo hace GitHub automáticamente ([`.github/workflows/windows-exe.yml`](.github/workflows/windows-exe.yml)). Solo hay que subir una etiqueta:
+
+```bash
+git tag v1.4
+git push origin v1.4
+```
+
+Al cabo de unos minutos, `LaComunitat-windows.zip` aparece en [Releases](../../releases).
 
 Las propuestas de mejora y las correcciones son bienvenidas.
 

@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 1.3) — servidor local per a portar partides de
+La Comunitat (versió 1.4) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor i la pàgina web. Un ordinador
@@ -33,6 +33,9 @@ Cada partida es guarda en un fitxer dins de la carpeta partides/.
 Si poses una imatge mapa.jpg (o .png) al costat d'aquest fitxer, l'app la mostra al centre.
 També pots posar mapa-val.jpg i mapa-es.jpg, un per idioma. Si no n'hi ha cap, mostra
 mapa-exemple-val.jpg o mapa-exemple-es.jpg segons l'idioma de qui mira.
+
+En arrancar mostra un codi QR: escaneja'l amb el mòbil per a entrar sense escriure l'adreça.
+Les partides acabades (guanyades o perdudes) es guarden a historial.json.
 """
 import argparse
 import base64
@@ -47,11 +50,15 @@ import sys
 import threading
 import time
 import unicodedata
+import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "1.3"
-DIR = Path(__file__).resolve().parent
+VERSION = "1.4"
+FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
+DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
+BUNDLE = Path(getattr(sys, "_MEIPASS", DIR))     # on van els mapes d'exemple dins de l'.exe
+HIST = DIR / "historial.json"   # partides acabades
 CAMP_DIR = DIR / "partides"
 TRASH_DIR = CAMP_DIR / "esborrades"
 META = DIR / "comunitat.json"     # sessions, player names, active campaign
@@ -63,6 +70,8 @@ state = {
     "sessions": {},    # token -> {uid, dm}
     "users": {},       # uid -> name (shared by every campaign)
     "active": None,    # active campaign id
+    "history": [],     # partides acabades
+    "port": 8766,
 }
 clients = []
 dirty = threading.Event()
@@ -212,6 +221,56 @@ def slugify_plain(name):
     return re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:40]
 
 
+# ---------------------------------------------------------------- historial
+def load_history():
+    if HIST.exists():
+        try:
+            state["history"] = read_json(HIST).get("list", [])
+        except Exception as e:  # noqa: BLE001
+            print(f"[!] No s'ha pogut llegir historial.json ({e}).")
+
+
+def save_history():
+    write_json(HIST, {"list": state["history"]})
+
+
+def track_result(g):
+    """Apunta o desapunta una partida acabada quan canvia game/state (caller holds the lock)."""
+    if not isinstance(g, dict) or not g.get("created"):
+        return False
+    hid = f"{state['active']}:{g['created']}"
+    hist = state["history"]
+    old = next((h for h in hist if h["id"] == hid), None)
+    res = g.get("result")
+    if res not in ("win", "lose"):
+        if old:
+            hist.remove(old)
+            return True
+        return False
+    if old and old["result"] == res:
+        return False
+    objs = [o for o in g.get("objectives", []) if isinstance(o, dict)]
+    rec = {
+        "id": hid,
+        "camp": camp_name(state["docs"], state["active"]),
+        "result": res,
+        "level": g.get("level"),
+        "players": [str((p or {}).get("name") or "") for p in g.get("players", [])],
+        "chars": [str((c or {}).get("id") or "") for c in g.get("chars", [])],
+        "objectives": [str(o.get("name") or "") for o in objs if not o.get("ring")],
+        "done": sum(1 for o in objs if o.get("done")),
+        "rounds": g.get("round"),
+        "hope": g.get("hope"),
+        "created": g.get("created"),
+        "ended": g.get("ended") or int(time.time() * 1000),
+    }
+    if old:
+        hist[hist.index(old)] = rec
+    else:
+        hist.append(rec)
+    return True
+
+
 # ---------------------------------------------------------------- helpers
 def valid_path(p):
     if not isinstance(p, str) or not p or len(p) > 500:
@@ -354,6 +413,244 @@ def broadcast_switch():
             c.send("campaign", {"id": state["active"]})
 
 
+# ---------------------------------------------------------------- QR (sense dependències)
+# Codificador QR mínim (mode byte, correcció M, versions 1-10), basat en l'algorisme
+# de l'especificació ISO/IEC 18004. N'hi ha prou per a una adreça com http://192.168.1.40:8766.
+_QR_ECC_M = (None, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26)   # codewords de correcció per bloc
+_QR_BLOCKS_M = (None, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5)          # blocs
+
+
+def _gf_mul(x, y):
+    z = 0
+    for i in reversed(range(8)):
+        z = (z << 1) ^ ((z >> 7) * 0x11D)
+        z ^= ((y >> i) & 1) * x
+    return z
+
+
+def _rs_divisor(degree):
+    res = [0] * (degree - 1) + [1]
+    root = 1
+    for _ in range(degree):
+        for j in range(len(res)):
+            res[j] = _gf_mul(res[j], root)
+            if j + 1 < len(res):
+                res[j] ^= res[j + 1]
+        root = _gf_mul(root, 0x02)
+    return res
+
+
+def _rs_remainder(data, divisor):
+    res = [0] * len(divisor)
+    for b in data:
+        factor = b ^ res.pop(0)
+        res.append(0)
+        for i, coef in enumerate(divisor):
+            res[i] ^= _gf_mul(coef, factor)
+    return res
+
+
+def _qr_raw_modules(ver):
+    r = (16 * ver + 128) * ver + 64
+    if ver >= 2:
+        na = ver // 7 + 2
+        r -= (25 * na - 10) * na - 55
+        if ver >= 7:
+            r -= 36
+    return r
+
+
+def qr_matrix(text):
+    """Torna una llista de files de booleans (True = mòdul fosc), sense marge."""
+    data = text.encode("utf-8")
+    for ver in range(1, 11):
+        cap = _qr_raw_modules(ver) // 8 - _QR_ECC_M[ver] * _QR_BLOCKS_M[ver]
+        cbits = 8 if ver <= 9 else 16
+        if 4 + cbits + 8 * len(data) <= cap * 8:
+            break
+    else:
+        raise ValueError("text massa llarg per al QR")
+    bits = []
+
+    def put(val, n):
+        bits.extend((val >> i) & 1 for i in reversed(range(n)))
+    put(0b0100, 4)
+    put(len(data), cbits)
+    for b in data:
+        put(b, 8)
+    put(0, min(4, cap * 8 - len(bits)))
+    put(0, (-len(bits)) % 8)
+    words = [int("".join(map(str, bits[i:i + 8])), 2) for i in range(0, len(bits), 8)]
+    pad = 0xEC
+    while len(words) < cap:
+        words.append(pad)
+        pad ^= 0xEC ^ 0x11
+    # blocs i correcció d'errors
+    nblocks, ecl = _QR_BLOCKS_M[ver], _QR_ECC_M[ver]
+    raw = _qr_raw_modules(ver) // 8
+    nshort = nblocks - raw % nblocks
+    short_len = raw // nblocks
+    div = _rs_divisor(ecl)
+    blocks, k = [], 0
+    for i in range(nblocks):
+        dat = words[k:k + short_len - ecl + (0 if i < nshort else 1)]
+        k += len(dat)
+        ecc = _rs_remainder(dat, div)
+        if i < nshort:
+            dat = dat + [0]
+        blocks.append(dat + ecc)
+    final = []
+    for i in range(len(blocks[0])):
+        for j, blk in enumerate(blocks):
+            if i != short_len - ecl or j >= nshort:
+                final.append(blk[i])
+    # matriu
+    size = ver * 4 + 17
+    mod = [[False] * size for _ in range(size)]
+    fun = [[False] * size for _ in range(size)]
+
+    def setf(x, y, dark):
+        mod[y][x] = bool(dark)
+        fun[y][x] = True
+    for i in range(size):
+        setf(6, i, i % 2 == 0)
+        setf(i, 6, i % 2 == 0)
+    for cx, cy in ((3, 3), (size - 4, 3), (3, size - 4)):
+        for dy in range(-4, 5):
+            for dx in range(-4, 5):
+                x, y = cx + dx, cy + dy
+                if 0 <= x < size and 0 <= y < size:
+                    setf(x, y, max(abs(dx), abs(dy)) not in (2, 4))
+    if ver > 1:
+        na = ver // 7 + 2
+        step = (ver * 8 + na * 3 + 5) // (na * 4 - 4) * 2
+        pos = list(reversed([size - 7 - i * step for i in range(na - 1)] + [6]))
+        for i, ax in enumerate(pos):
+            for j, ay in enumerate(pos):
+                if (i == 0 and j == 0) or (i == 0 and j == na - 1) or (i == na - 1 and j == 0):
+                    continue
+                for dy in range(-2, 3):
+                    for dx in range(-2, 3):
+                        setf(ax + dx, ay + dy, max(abs(dx), abs(dy)) != 1)
+
+    def draw_format(mask):
+        d = (0 << 3) | mask          # nivell M = 0b00
+        rem = d
+        for _ in range(10):
+            rem = (rem << 1) ^ ((rem >> 9) * 0x537)
+        b = ((d << 10) | rem) ^ 0x5412
+        bit = lambda i: (b >> i) & 1  # noqa: E731
+        for i in range(6):
+            setf(8, i, bit(i))
+        setf(8, 7, bit(6))
+        setf(8, 8, bit(7))
+        setf(7, 8, bit(8))
+        for i in range(9, 15):
+            setf(14 - i, 8, bit(i))
+        for i in range(8):
+            setf(size - 1 - i, 8, bit(i))
+        for i in range(8, 15):
+            setf(8, size - 15 + i, bit(i))
+        setf(8, size - 8, True)
+    draw_format(0)
+    if ver >= 7:
+        rem = ver
+        for _ in range(12):
+            rem = (rem << 1) ^ ((rem >> 11) * 0x1F25)
+        b = (ver << 12) | rem
+        for i in range(18):
+            a, c = size - 11 + i % 3, i // 3
+            setf(a, c, (b >> i) & 1)
+            setf(c, a, (b >> i) & 1)
+    i = 0
+    right = size - 1
+    while right >= 1:
+        if right == 6:
+            right = 5
+        for vert in range(size):
+            for j in range(2):
+                x = right - j
+                y = size - 1 - vert if ((right + 1) & 2) == 0 else vert
+                if not fun[y][x] and i < len(final) * 8:
+                    mod[y][x] = bool((final[i >> 3] >> (7 - (i & 7))) & 1)
+                    i += 1
+        right -= 2
+    masks = (
+        lambda x, y: (x + y) % 2 == 0, lambda x, y: y % 2 == 0, lambda x, y: x % 3 == 0,
+        lambda x, y: (x + y) % 3 == 0, lambda x, y: (x // 3 + y // 2) % 2 == 0,
+        lambda x, y: x * y % 2 + x * y % 3 == 0, lambda x, y: (x * y % 2 + x * y % 3) % 2 == 0,
+        lambda x, y: ((x + y) % 2 + x * y % 3) % 2 == 0)
+
+    def apply(m):
+        for y in range(size):
+            for x in range(size):
+                if not fun[y][x] and masks[m](x, y):
+                    mod[y][x] = not mod[y][x]
+
+    def penalty():
+        p = 0
+        for grid in (mod, list(map(list, zip(*mod)))):
+            for row in grid:
+                run, prev = 0, None
+                for v in row:
+                    if v == prev:
+                        run += 1
+                    else:
+                        if run >= 5:
+                            p += run - 2
+                        run, prev = 1, v
+                if run >= 5:
+                    p += run - 2
+                s = "".join("1" if v else "0" for v in row)
+                p += 40 * (s.count("10111010000") + s.count("00001011101"))
+        for y in range(size - 1):
+            for x in range(size - 1):
+                if mod[y][x] == mod[y][x + 1] == mod[y + 1][x] == mod[y + 1][x + 1]:
+                    p += 3
+        dark = sum(map(sum, mod))
+        p += abs(dark * 20 - size * size * 10) // (size * size) * 10
+        return p
+    best, best_p = 0, None
+    for m in range(8):
+        apply(m)
+        draw_format(m)
+        pen = penalty()
+        if best_p is None or pen < best_p:
+            best, best_p = m, pen
+        apply(m)
+    apply(best)
+    draw_format(best)
+    return mod
+
+
+def qr_svg(text, scale=8, quiet=4):
+    m = qr_matrix(text)
+    n = len(m) + quiet * 2
+    path = "".join(f"M{x + quiet},{y + quiet}h1v1h-1z" for y, row in enumerate(m) for x, v in enumerate(row) if v)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {n} {n}" width="{n * scale}" height="{n * scale}" '
+            f'shape-rendering="crispEdges" role="img"><rect width="{n}" height="{n}" fill="#fff"/>'
+            f'<path d="{path}" fill="#000"/></svg>')
+
+
+def qr_terminal(text, quiet=2):
+    """El QR amb mitjos blocs: negre sobre blanc forçat amb colors ANSI."""
+    m = qr_matrix(text)
+    size = len(m)
+    get = lambda x, y: 0 <= x < size and 0 <= y < size and m[y][x]  # noqa: E731
+    lines = []
+    for y in range(-quiet, size + quiet, 2):
+        row = ""
+        for x in range(-quiet, size + quiet):
+            top, bot = get(x, y), get(x, y + 1)
+            row += "█" if top and bot else "▀" if top else "▄" if bot else " "
+        lines.append("  \x1b[30;107m" + row + "\x1b[0m")
+    return "\n".join(lines)
+
+
+def lan_urls():
+    return [f"http://{ip}:{state['port']}" for ip in lan_addresses()]
+
+
 # ---------------------------------------------------------------- HTTP
 class Handler(BaseHTTPRequestHandler):
     server_version = "Comunitat/" + VERSION
@@ -404,8 +701,8 @@ class Handler(BaseHTTPRequestHandler):
             exts = (("jpg", "image/jpeg"), ("jpeg", "image/jpeg"), ("png", "image/png"), ("webp", "image/webp"))
             cands = [(f"mapa-{lang}.{e}", c) for e, c in exts] + [(f"mapa.{e}", c) for e, c in exts]
             cands += [(f"mapa-exemple-{lang}.jpg", "image/jpeg"), ("mapa-exemple-val.jpg", "image/jpeg")]
-            for name, ctype in cands:
-                f = DIR / name
+            files = [(DIR / n, c) for n, c in cands] + [(BUNDLE / n, c) for n, c in cands if "exemple" in n]
+            for f, ctype in files:
                 if f.exists():
                     body = f.read_bytes()
                     self.send_response(200)
@@ -418,6 +715,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"error": "No hi ha cap mapa.jpg"})
         if route == "/api/hello":
             return self._json(200, {"taula": 1, "version": VERSION})
+        if route == "/api/invite":
+            urls = lan_urls() or [f"http://localhost:{state['port']}"]
+            return self._json(200, {"list": [{"url": u, "svg": qr_svg(u)} for u in urls]})
+        if route == "/api/history":
+            sess = self._session()
+            if not sess:
+                return self._json(401, {"error": "Sessió no vàlida"})
+            with lock:
+                return self._json(200, {"list": list(reversed(state["history"]))})
         if route == "/api/campaigns":
             sess = self._session()
             if not sess:
@@ -488,6 +794,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._write(body)
         if route == "/api/campaigns":
             return self._campaigns(body)
+        if route == "/api/history":
+            return self._history(body)
         self._json(404, {"error": "No trobat"})
 
     def _join(self, body):
@@ -544,9 +852,22 @@ class Handler(BaseHTTPRequestHandler):
                     docs[path] = data
                 else:
                     docs[path] = deep_merge(docs.get(path) or {}, data)
+                if path == "game/state" and track_result(docs.get(path)):
+                    save_history()
             dirty.set()
         broadcast([path])
         return self._json(200, {"ok": True})
+
+    def _history(self, body):
+        sess = self._session()
+        if not sess:
+            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+        hid = str(body.get("id") or "")
+        with lock:
+            if body.get("action") == "delete":
+                state["history"] = [h for h in state["history"] if h["id"] != hid]
+                save_history()
+            return self._json(200, {"list": list(reversed(state["history"]))})
 
     def _campaigns(self, body):
         sess = self._session()
@@ -634,29 +955,46 @@ def main():
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:  # noqa: BLE001
             pass
+    if os.name == "nt":
+        os.system("")  # activa els colors ANSI de la consola de Windows (per al QR)
     ap = argparse.ArgumentParser(description="Servidor local de La Comunitat")
     ap.add_argument("--port", type=int, default=8766)
     ap.add_argument("--master-password", default=os.environ.get("TAULA_MASTER_PASSWORD", ""))
     ap.add_argument("--partida", default="", help="nom de la partida que s'obri en arrancar (la crea si no existeix)")
+    ap.add_argument("--sense-qr", action="store_true", help="no mostra el codi QR en arrancar")
+    ap.add_argument("--sense-navegador", action="store_true", help="(.exe) no obri el navegador en arrancar")
     a = ap.parse_args()
+    state["port"] = a.port
     MASTER_PASSWORD = secrets.token_hex(8)  # cooperative game: nobody uses it
     try:
         srv = Server(("0.0.0.0", a.port), Handler)
     except OSError:
-        sys.exit(
-            f"\n  El port {a.port} ja està en ús: hi ha un altre programa (potser un servidor antic) escoltant-hi.\n"
-            f"  Per a veure quin és:   ss -ltnp | grep {a.port}\n"
-            f"  O arranca en un altre port:   python3 comunitat.py --port 9001\n")
+        print(
+            f"\n  El port {a.port} ja està en ús: hi ha un altre programa (potser La Comunitat ja oberta) escoltant-hi.\n"
+            f"  Tanca'l, o arranca en un altre port:   python3 comunitat.py --port 9001\n")
+        if FROZEN:
+            input("  Prem Intro per a tancar.")
+        sys.exit(1)
     load(a.partida.strip() or None)
+    load_history()
     threading.Thread(target=saver, daemon=True).start()
     print(f"\n  La Comunitat (versió {VERSION}) està en marxa.\n")
     print(f"  En aquest ordinador:   http://localhost:{a.port}")
-    for ip in lan_addresses():
-        print(f"  Des de la xarxa:       http://{ip}:{a.port}")
+    urls = lan_urls()
+    for u in urls:
+        print(f"  Des de la xarxa:       {u}")
+    if urls and not a.sense_qr:
+        print("\n  Escaneja aquest codi amb el mòbil per a entrar:\n")
+        try:
+            print(qr_terminal(urls[0]))
+        except Exception:  # noqa: BLE001
+            pass
     print()
     print(f"  Partida oberta:         {camp_name(state['docs'], state['active'])}")
     print(f"  Partides guardades a:   {CAMP_DIR}")
-    print("\n  Prem Ctrl+C per a aturar-lo.\n")
+    print("\n  Prem Ctrl+C per a aturar-lo" + (" o tanca aquesta finestra" if FROZEN else "") + ".\n")
+    if FROZEN and not a.sense_navegador:
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{a.port}")).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

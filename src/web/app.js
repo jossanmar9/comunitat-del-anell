@@ -64,6 +64,33 @@ function setLang(l){
 const langSwitch=()=>`<span class="langsw" role="group" aria-label="${esc(t('Idioma'))}"><button class="chip${LANG==='val'?' dm':''}" data-lang="val" aria-pressed="${LANG==='val'}">VAL</button><button class="chip${LANG==='es'?' dm':''}" data-lang="es" aria-pressed="${LANG==='es'}">CAS</button></span>`;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-lang]');if(b)setLang(b.dataset.lang)});
 
+/* ================= tema (auto / clar / fosc) ================= */
+let THEME=lsGet('cm-theme')||'auto';
+function applyTheme(){if(THEME==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',THEME)}
+applyTheme();
+const THEME_NEXT={auto:'light',light:'dark',dark:'auto'};
+const THEME_LBL={auto:'Tema: automàtic',light:'Tema: clar',dark:'Tema: fosc'};
+const THEME_ICO={auto:'◐',light:'☀',dark:'☾'};
+const themeBtn=()=>`<button class="chip ico" id="theme" title="${esc(t(THEME_LBL[THEME]))}" aria-label="${esc(t(THEME_LBL[THEME]))}">${THEME_ICO[THEME]}</button>`;
+document.addEventListener('click',e=>{if(!e.target.closest('#theme'))return;THEME=THEME_NEXT[THEME];lsSet('cm-theme',THEME);applyTheme();renderHeader();toast(t(THEME_LBL[THEME]))});
+
+/* ================= convidar amb QR ================= */
+const QR_ICON='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M1 1h6v6H1zm1.5 1.5v3h3v-3zM9 1h6v6H9zm1.5 1.5v3h3v-3zM1 9h6v6H1zm1.5 1.5v3h3v-3zM9 9h2v2H9zm2 2h2v2h-2zm2-2h2v2h-2zm-4 4h2v2H9zm4 0h2v2h-2z"/></svg>';
+async function inviteModal(){
+  let d;try{const r=await fetch('api/invite',{cache:'no-store'});d=await r.json()}catch(_){toast(t('No es pot contactar amb el servidor.'));return}
+  const list=d.list||[];let i=0;
+  const draw=m=>{$('#qr-box',m).innerHTML=list[i].svg;$('#qr-url',m).textContent=list[i].url;$$('[data-qri]',m).forEach(b=>b.setAttribute('aria-pressed',+b.dataset.qri===i))};
+  openModal(`<h2>${esc(t('Convida a la taula'))}</h2>
+    <p class="muted" style="margin:0">${esc(t("Escaneja el codi amb la càmera del mòbil, o escriu l'adreça al navegador. Heu d'estar a la mateixa wifi."))}</p>
+    <div class="qr-box" id="qr-box"></div><p class="qr-url" id="qr-url"></p>
+    ${list.length>1?`<div class="row" style="justify-content:center"><span class="small muted">${esc(t("Si no funciona, prova una altra adreça:"))}</span>${list.map((x,j)=>`<button class="btn sm" data-qri="${j}">${j+1}</button>`).join('')}</div>`:''}
+    <div class="foot"><button class="btn pri" id="qr-close">${esc(t('Tancar'))}</button></div>`,(m,close)=>{
+    if(!list.length){$('#qr-box',m).textContent=t("No he trobat cap adreça de xarxa.");}else draw(m);
+    m.addEventListener('click',e=>{const b=e.target.closest('[data-qri]');if(b){i=+b.dataset.qri;draw(m)}if(e.target.id==='qr-close')close()});
+  });
+}
+document.addEventListener('click',e=>{if(e.target.closest('#invite'))inviteModal()});
+
 const BATTLE_FACES=[['rout','Rebutjar',"Retira 1 tropa de l'Ombra."],['tie','Taules',"Retira 1 de l'Ombra i 1 aliada."],['over','Arrossegats',"Retira 1 aliada (s'ignora en un refugi)."],['naz','Natzgûl!','Si hi ha natzguls a la regió, retira 2 aliades.']];
 const SEARCH_FACES=[['slip',"Frodo s'escapoleix",'Sense efecte.'],['tired','Fatiga',"Perd 1 d'esperança."],['seen','Al descobert',"Perd 1 d'esperança (s'ignora en un refugi)."],['call','Convocatòria','Si hi ha natzguls, 1 torna a Mordor.']];
 
@@ -104,7 +131,7 @@ function hopeDelta(s,d,log,why){
   if(!d)return;const before=s.hope;s.hope=clamp(s.hope+d,0,s.hopeMax);const real=s.hope-before;
   if(real)log.push({k:"{d} d'esperança: {why}. Ara {h}.",v:{d:(real>0?'+':'')+real,why,h:s.hope},c:real<0?'bad':'good'});
   else if(d>0)log.push({k:"L'esperança ja és al màxim ({why}).",v:{why}});
-  if(s.hope<=0&&!s.result){s.result='lose';log.push({k:"Frodo ha perdut tota l'esperança. La partida s'ha perdut.",c:'bad'})}
+  if(s.hope<=0&&!s.result){s.result='lose';s.ended=Date.now();log.push({k:"Frodo ha perdut tota l'esperança. La partida s'ha perdut.",c:'bad'})}
 }
 function commit(label,fn){
   if(!G)return null;
@@ -112,14 +139,14 @@ function commit(label,fn){
   UNDO.push({label,state:before});if(UNDO.length>30)UNDO.shift();
   const ts=Date.now(),who=mem.get('users/'+S.uid)?.name||'';
   if(!log.length)log.push({k:'{x}.',v:{x:label}});
-  LOG=[...log.map(e=>({...e,ts,who})).reverse(),...LOG].slice(0,250);
+  LOG=[...log.map(e=>({...e,ts,who})).reverse(),...LOG].slice(0,600);
   write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});
   renderAll();return extra;
 }
 function undo(){
   if(!UNDO.length){toast(t('No hi ha res per desfer.'));return}
   const u=UNDO.pop();G=u.state;
-  LOG=[{k:'Desfet: {x}.',v:{x:u.label},ts:Date.now()},...LOG].slice(0,250);
+  LOG=[{k:'Desfet: {x}.',v:{x:u.label},ts:Date.now()},...LOG].slice(0,600);
   write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});renderAll();
 }
 function newGame(cfg){
@@ -186,7 +213,7 @@ function doSearch({ring=false,doom=false,label}={}){
       if(res.seen){if(s.calc.haven)log.push({k:'Al descobert ignorat: Frodo és en un refugi.'});else hopeDelta(s,-res.seen,log,M('al descobert ({n})',{n:res.seen}))}
       if(res.call&&!s.calc.mordor&&s.calc.naz){const k=Math.min(res.call,s.calc.naz);log.push({k:'Al tauler: torna {n} de la regió de Frodo a Mordor.',v:{n:M(k===1?'1 natzgûl':'{k} natzguls',{k})}});s.calc.naz-=k}
     }else log.push({k:"Tirada de cerca: no hi havia natzguls ni tropes de l'Ombra, no cal tirar."});
-    if(doom&&s.hope>=1){s.result='win';s.objectives.forEach(o=>{if(o.ring)o.done=true});log.push({k:"L'Anell Únic ha estat destruït! La Comunitat guanya la partida.",c:'good'})}
+    if(doom&&s.hope>=1){s.result='win';s.ended=Date.now();s.objectives.forEach(o=>{if(o.ring)o.done=true});log.push({k:"L'Anell Únic ha estat destruït! La Comunitat guanya la partida.",c:'good'})}
   });
   if(!n){finish(null);return}
   diceModal({title:t(doom?"Destruir l'Anell Únic":ring?"Frodo es posa l'Anell":'Tirada de cerca'),
@@ -277,7 +304,7 @@ function shadowCardFlow(){
 function renderHeader(){
   const n=$('#camp-name');if(document.activeElement!==n)n.value=CAMP?.name||'';
   $$('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===st.tab));
-  $('#who').innerHTML=langSwitch()+(S.token?`<span class="chip">${esc(mem.get('users/'+S.uid)?.name||'')}</span><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
+  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip ico" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}</button>`:'')+(S.token?`<span class="chip">${esc(mem.get('users/'+S.uid)?.name||'')}</span><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
 }
 function renderTracks(){
   const el=$('#tracks');
@@ -293,7 +320,7 @@ function renderTracks(){
     <div class="trk"><span class="lbl">${esc(t('Ronda'))}</span><span class="mono">${G.round}</span></div>
     <button class="btn sm" id="undo" ${UNDO.length?'':'disabled'} title="${UNDO.length?esc(t('Desfer: {x}',{x:UNDO[UNDO.length-1].label})):''}">${esc(t('Desfer'))}</button>`;
   const b=$('#banner');
-  if(G.result){b.hidden=false;b.className='banner endstate '+G.result;b.textContent=G.result==='win'?t("L'Anell ha estat destruït. La Comunitat ha guanyat!"):t("Frodo ha perdut tota l'esperança. L'Ombra s'estén per la Terra Mitjana.")}
+  if(G.result){b.hidden=false;b.className='banner endstate '+G.result;b.innerHTML=`<span>${esc(G.result==='win'?t("L'Anell ha estat destruït. La Comunitat ha guanyat!"):t("Frodo ha perdut tota l'esperança. L'Ombra s'estén per la Terra Mitjana."))}</span> <button class="btn sm" id="sum-open">${esc(t('Veure el resum'))}</button>`}
   else if(b.classList.contains('endstate')){b.hidden=true;b.className='banner'}
 }
 const step=(id,label,val)=>`<span class="k">${esc(t(label))}</span><span class="stepper"><button class="mini" data-cdec="${id}" aria-label="${esc(t('Menys'))}">−</button><b>${val}</b><button class="mini" data-cinc="${id}" aria-label="${esc(t('Més'))}">+</button></span>`;
@@ -382,6 +409,50 @@ function renderSide(){
 const logText=e=>e.k!=null?t(e.k,e.v):(e.t||'');
 function logHtml(){return `<h3>${esc(t('Registre'))}</h3><ol class="log2">${LOG.slice(0,100).map(e=>`<li class="${e.c||''}"><time>${ago(e.ts)}${e.who?' · '+esc(e.who):''}</time>${esc(logText(e))}</li>`).join('')||`<li class="muted">${esc(t('Encara no ha passat res.'))}</li>`}</ol>`}
 
+/* --- resum de la partida --- */
+const HOPE_KEY="{d} d'esperança: {why}. Ara {h}.";
+function scenarioOf(objs){const set=objs.slice().sort().join('|');const sc=SCENARIOS.find(x=>x.obj.map(i=>OBJECTIVES[i]).sort().join('|')===set);return sc?sc.name:null}
+function dur(ms){if(!(ms>0))return '—';const m=Math.round(ms/60000);if(m<60)return t('{n} min',{n:m});const h=Math.floor(m/60);return t('{h} h {m} min',{h,m:m%60})}
+function gameStats(){
+  const lost={},won={};let nLost=0,nWon=0,searches=0,battles=0,shadow=0;
+  for(const e of LOG){
+    if(e.k===HOPE_KEY&&e.v){const d=parseInt(e.v.d,10)||0,why=T(e.v.why)||'—';if(d<0){lost[why]=(lost[why]||0)-d;nLost-=d}else{won[why]=(won[why]||0)+d;nWon+=d}}
+    else if(e.k&&e.k.startsWith('Tirada de cerca:'))searches++;
+    else if(e.k&&e.k.startsWith('Batalla{atac}'))battles++;
+    else if(e.k&&e.k.startsWith("Carta d'Ombra resolta ("))shadow++;
+  }
+  return {lost,won,nLost,nWon,searches,battles,shadow};
+}
+function summaryHtml(){
+  const g=G,st2=gameStats(),objs=g.objectives.filter(o=>!o.ring),sc=scenarioOf(objs.map(o=>o.name));
+  const rows=(o,sign)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([w,n])=>`<tr><td>${esc(w)}</td><td class="num">${sign}${n}</td></tr>`).join('');
+  return `<div class="sum">
+    <p class="sum-res ${g.result||''}">${esc(g.result==='win'?t('Victòria'):g.result==='lose'?t('Derrota'):t('En joc'))}</p>
+    <p class="muted" style="margin:0">${esc(t(LEVELS[g.level]?.name||''))}${sc?' · '+esc(t(sc)):''} · ${g.players.map((p,i)=>esc(playerName(p,i))).join(', ')}</p>
+    <div class="sum-grid">
+      <div><b>${g.round}</b><span>${esc(t(g.round===1?'ronda':'rondes'))}</span></div>
+      <div><b>${dur((g.ended||Date.now())-g.created)}</b><span>${esc(t('de joc'))}</span></div>
+      <div><b>${g.hope}/${g.hopeMax}</b><span>${esc(t('esperança final'))}</span></div>
+      <div><b>${g.objectives.filter(o=>o.done).length}/${g.objectives.length}</b><span>${esc(t('objectius'))}</span></div>
+      <div><b>${st2.searches}</b><span>${esc(t('tirades de cerca'))}</span></div>
+      <div><b>${st2.battles}</b><span>${esc(t('batalles'))}</span></div>
+      <div><b>${g.skies.drawn}/${g.skies.total}</b><span>${esc(t('cels enfosquits'))}</span></div>
+      <div><b>${st2.shadow}</b><span>${esc(t("cartes d'Ombra"))}</span></div>
+    </div>
+    ${st2.nLost?`<h3>${esc(t("On s'ha perdut l'esperança"))} <span class="muted">(−${st2.nLost})</span></h3><table class="sum-t">${rows(st2.lost,'−')}</table>`:''}
+    ${st2.nWon?`<h3>${esc(t("On s'ha guanyat"))} <span class="muted">(+${st2.nWon})</span></h3><table class="sum-t">${rows(st2.won,'+')}</table>`:''}
+    <h3>${esc(t('Objectius'))}</h3><ul class="sum-o">${g.objectives.map(o=>`<li class="${o.done?'done':''}">${o.done?'✓':'·'} ${esc(t(o.name))}</li>`).join('')}</ul>
+  </div>`;
+}
+function summaryModal(){if(!G)return;openModal(`<h2>${esc(t('Resum de la partida'))}</h2>${summaryHtml()}<div class="foot"><button class="btn" id="sum-hist">${esc(t("Veure l'historial"))}</button><button class="btn pri" id="sum-close">${esc(t('Tancar'))}</button></div>`,(m,close)=>{$('#sum-close',m).onclick=close;$('#sum-hist',m).onclick=()=>{close();st.tab='partides';lsSet('cm-tab2','partides');renderHeader();renderTab()}})}
+document.addEventListener('click',e=>{if(e.target.closest('#sum-open'))summaryModal()});
+let lastResult=null;
+function checkResult(){
+  const key=G&&G.result?G.created+':'+G.result:null;
+  if(key&&lastResult!==null&&key!==lastResult){const go=()=>{if($('.modal'))setTimeout(go,500);else summaryModal()};setTimeout(go,300)}
+  lastResult=key||'';
+}
+
 /* --- Comunitat tab --- */
 function renderCommunity(){
   if(!G||st.forceSetup){renderSetup();return}
@@ -393,6 +464,7 @@ function renderCommunity(){
     <section class="panel tool"><h2>${esc(t('La Comunitat'))}</h2>
       ${G.players.map((p,i)=>`<div><h3>${esc(playerName(p,i))}${G.turn.p===i?' · '+esc(t('torn')):''}</h3>${G.chars.filter(c=>c.player===i).map(c=>`<div class="row" style="justify-content:space-between;margin-top:6px"><span class="cchip"><span class="av" style="background:${c.color}">${esc(initials(charName(c)))}</span>${esc(charName(c))}</span><span class="small muted">${esc(t('Comença a {x}',{x:charStart(c)}))}</span></div>`).join('')}</div>`).join('')}
     </section>
+    ${G.result?`<section class="panel tool"><h2>${esc(t('Resum de la partida'))}</h2>${summaryHtml()}</section>`:''}
     <section class="panel tool"><h2>${esc(t('Partida'))}</h2>
       <p class="muted small" style="margin:0">${esc(t('Dificultat {a} · {b} al mazo · començada {c}.',{a:t(LEVELS[G.level]?.name||''),b:pl(G.skies.total,'cel enfosquit','cels enfosquits'),c:ago(G.created)}))}</p>
       <button class="btn danger" id="re-setup">${esc(t('Preparar una partida nova'))}</button>
@@ -437,9 +509,12 @@ async function campApi(body){
 async function renderCamps(){
   $('#main').innerHTML=`<div class="camps"><div><h2 style="font-size:32px">${esc(t('Partides guardades'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Cada partida guarda les pistes, el torn, els objectius i el registre. Quan n'obris una, tots els que estan connectats hi passen."))}</p></div>
     <form class="panel camp-new" id="camp-new"><label class="field"><span>${esc(t('Partida nova'))}</span><input class="in" id="cn-name" required maxlength="80" placeholder="${esc(t('Divendres amb la colla'))}"></label><button class="btn pri" type="submit">${esc(t('Crear i obrir'))}</button></form>
-    <div id="camp-list" class="camp-list"><p class="muted">${esc(t('Carregant…'))}</p></div></div>`;
+    <div id="camp-list" class="camp-list"><p class="muted">${esc(t('Carregant…'))}</p></div>
+    <div><h2 style="font-size:32px">${esc(t('Historial'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Les partides acabades, guanyades o perdudes, de totes les partides guardades."))}</p></div>
+    <div id="hist"><p class="muted">${esc(t('Carregant…'))}</p></div></div>`;
   if(!S.token){$('#camp-list').innerHTML=`<p class="muted">${esc(t("Obri l'app des del servidor per a gestionar partides."))}</p>`;return}
   try{drawCampList(await campApi())}catch(e){$('#camp-list').innerHTML=`<p class="small" style="color:var(--blood)">${esc(e.message)}</p>`}
+  loadHistory();
 }
 function drawCampList(d){
   const box=$('#camp-list');if(!box)return;
@@ -447,6 +522,30 @@ function drawCampList(d){
     <p class="muted small" style="margin:0;font-style:italic">${esc(t('Darrer canvi {x}',{x:ago(c.updated)}))}</p>
     <div class="row" style="margin-top:6px">${c.active?'':`<button class="btn pri sm" data-copen="${c.id}">${esc(t('Obrir'))}</button>`}<button class="btn sm" data-cdup="${c.id}">${esc(t('Duplicar'))}</button>${c.active?'':`<button class="btn sm danger" data-cdel="${c.id}">${esc(t('Esborrar'))}</button>`}</div></article>`).join('');
 }
+
+async function histApi(body){
+  const opt=body?{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:JSON.stringify(body)}:{headers:{'X-Taula-Token':S.token},cache:'no-store'};
+  const r=await fetch('api/history',opt);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(t(d.error||"No s'ha pogut fer."));return d.list||[];
+}
+async function loadHistory(){try{drawHistory(await histApi())}catch(e){const h=$('#hist');if(h)h.innerHTML=`<p class="small" style="color:var(--blood)">${esc(e.message)}</p>`}}
+function drawHistory(list){
+  const box=$('#hist');if(!box)return;
+  if(!list.length){box.innerHTML=`<p class="muted">${esc(t('Encara no heu acabat cap partida.'))}</p>`;return}
+  const wins=list.filter(h=>h.result==='win').length;
+  const by={};list.forEach(h=>{const k=h.level||'?';by[k]=by[k]||{w:0,n:0};by[k].n++;if(h.result==='win')by[k].w++});
+  const lvRows=Object.keys(LEVELS).filter(k=>by[k]).map(k=>`<tr><td>${esc(t(LEVELS[k].name))}</td><td class="num">${by[k].n}</td><td class="num">${by[k].w}</td><td class="num">${Math.round(by[k].w*100/by[k].n)}%</td></tr>`).join('');
+  box.innerHTML=`<div class="hist-top">
+      <div class="sum-grid" style="max-width:520px"><div><b>${list.length}</b><span>${esc(t('partides'))}</span></div><div><b>${wins}</b><span>${esc(t('victòries'))}</span></div><div><b>${list.length-wins}</b><span>${esc(t('derrotes'))}</span></div><div><b>${Math.round(wins*100/list.length)}%</b><span>${esc(t('guanyades'))}</span></div></div>
+      <table class="sum-t hist-lv"><tr><th>${esc(t('Dificultat'))}</th><th class="num">${esc(t('Jugades'))}</th><th class="num">${esc(t('Guanyades'))}</th><th class="num">%</th></tr>${lvRows}</table>
+    </div>
+    <div class="hist-list">${list.map(h=>{const sc=scenarioOf(h.objectives||[]);return `<article class="hist-card ${h.result}">
+      <div class="cc-head"><span class="sum-res ${h.result}" style="font-size:20px">${esc(t(h.result==='win'?'Victòria':'Derrota'))}</span><span class="small muted">${esc(new Date(h.ended).toLocaleDateString(LANG==='es'?'es':'ca',{day:'numeric',month:'short',year:'numeric'}))}</span></div>
+      <p style="margin:0"><b>${esc(h.camp||'')}</b> · ${esc(t(LEVELS[h.level]?.name||''))}${sc?' · '+esc(t(sc)):''}</p>
+      <p class="small muted" style="margin:0">${esc(t('{r} · {d} · esperança {h} · objectius {o}',{r:pl(h.rounds||0,'ronda','rondes'),d:dur(h.ended-h.created),h:h.hope??'?',o:`${h.done}/${(h.objectives||[]).length+1}`}))}</p>
+      <p class="small muted" style="margin:0">${h.players.map((p,i)=>esc(p||t('Participant {n}',{n:i+1}))).join(', ')} — ${h.chars.map(id=>esc(t((CHARACTERS.find(c=>c.id===id)||{name:id}).name))).join(', ')}</p>
+      <div class="row"><button class="btn sm danger" data-hdel="${esc(h.id)}">${esc(t("Llevar de l'historial"))}</button></div></article>`}).join('')}</div>`;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-hdel]');if(!b)return;armed(b,async()=>{try{drawHistory(await histApi({action:'delete',id:b.dataset.hdel}))}catch(err){toast(err.message)}},t('Prem de nou per a llevar-la'))});
 
 function renderTab(){if(!st.loaded)return;if(st.tab==='partida')renderPlay();else if(st.tab==='comunitat')renderCommunity();else renderCamps()}
 function renderAll(){renderHeader();renderTracks();renderSide();if(st.tab!=='partides')renderTab()}
@@ -579,7 +678,7 @@ function startSubs(){
   watchDoc('campaign/main',d=>{CAMP=d;renderHeader()});
   watchDoc('game/state',d=>{const ng=d&&d.v===2?d:null;
     const focused=document.activeElement&&document.activeElement.closest('#main')&&document.activeElement.matches('input,select');
-    G=ng;if(st.loaded){renderHeader();renderTracks();renderSide();if(!focused&&!$('.modal')&&st.tab!=='partides')renderTab()}});
+    G=ng;if(st.loaded){renderHeader();renderTracks();renderSide();if(!focused&&!$('.modal')&&st.tab!=='partides')renderTab()}checkResult()});
   watchDoc('game/log',d=>{LOG=d?.list||[];if(st.loaded)renderSide()});
   watchDoc('game/undo',d=>{UNDO=d?.stack||[];if(st.loaded)renderTracks()});
   setTimeout(()=>{st.loaded=true;renderAll();renderTab()},30);
