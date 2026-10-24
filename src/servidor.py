@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 2.0) — servidor local per a portar partides de
+La Comunitat (versió 2.1) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
@@ -27,19 +27,22 @@ tothom pot fer canvis, no hi ha màster.
 Ús (a Windows, canvia python3 per py, o fes doble clic a arrancar-windows.bat):
     python3 comunitat.py
     python3 comunitat.py --partida "Divendres" --port 9001
-    python3 comunitat.py --sense-finestra       (només la terminal)
+    python3 comunitat.py --navegador            (l'app al navegador, amb la finestreta del QR)
+    python3 comunitat.py --sense-finestra       (només el terminal)
     python3 comunitat.py --dades CARPETA         (on es guarden les partides)
 
-En arrancar obri una finestreta (i la terminal) amb l'adreça i un codi QR per a entrar
-des del mòbil.
+En arrancar obri l'app en una finestra pròpia (a Windows amb WebView2, a Linux amb WebKitGTK).
+Si no es pot, obri una finestreta amb l'adreça i un codi QR, i l'app al navegador.
 Les dades van al costat del programa, o a la carpeta de l'usuari si el programa està
-instal·lat: cada partida a partides/<nom>.json, les partides acabades a historial.json.
+instal·lat: cada partida a partides/<nom>.json, les partides acabades a historial.json i
+còpies de seguretat automàtiques a copies/<nom>/.
 Si poses una imatge mapa.jpg (o .png) a la carpeta de dades, l'app la mostra al centre.
 També pots posar mapa-val.jpg i mapa-es.jpg, un per idioma. Si no n'hi ha cap, mostra
 el mapa d'exemple de l'idioma de qui mira.
 """
 import argparse
 import base64
+import copy
 import gzip
 import json
 import os
@@ -56,7 +59,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.0"
+VERSION = "2.1"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
@@ -83,6 +86,11 @@ def set_data_dir(path):
 
 set_data_dir(user_data_dir() if INSTALLAT else DIR)
 
+BACKUP_KEEP = 15            # còpies que es guarden de cada partida
+BACKUP_EVERY = 30 * 60      # mentre es juga, una còpia cada mitja hora (si hi ha hagut canvis)
+BACKUP_RE = re.compile(r"\d{8}-\d{6}(?:-\d+)?-[a-z]+")
+MAX_IMPORT = 5 * 1024 * 1024
+
 lock = threading.RLock()
 state = {
     "docs": {},        # partida oberta: ruta -> dict
@@ -91,6 +99,7 @@ state = {
     "active": None,    # id de la partida oberta
     "history": [],     # partides acabades
     "port": 8766,
+    "last_backup": 0,  # quan s'ha fet l'última còpia automàtica de la partida oberta
 }
 clients = []
 dirty = threading.Event()
@@ -166,6 +175,11 @@ def saver():
         dirty.clear()
         try:
             save_now()
+            if time.time() - state["last_backup"] > BACKUP_EVERY:
+                with lock:
+                    cid, docs = state["active"], copy.deepcopy(state["docs"])
+                    state["last_backup"] = time.time()
+                make_backup(cid, docs, "partida")
         except Exception as e:  # noqa: BLE001
             print(f"[!] No s'ha pogut guardar: {e}")
 
@@ -183,6 +197,11 @@ def activate(cid):
         docs = {}
     state["docs"] = docs
     state["active"] = cid
+    state["last_backup"] = time.time()
+    try:
+        make_backup(cid, docs, "obrir")
+    except OSError as e:
+        print(f"[!] No s'ha pogut fer la còpia de seguretat de {cid}: {e}")
 
 
 def new_campaign(name):
@@ -214,6 +233,93 @@ def load(wanted=None):
         state["active"] = existing[0].stem if existing else new_campaign("Primera partida")
     activate(state["active"])
     save_now()
+
+
+# ---------------------------------------------------------------- còpies de seguretat
+def backup_dir(cid):
+    return DATA_DIR / "copies" / cid
+
+
+def make_backup(cid, docs, reason):
+    """Guarda una còpia de la partida a copies/<partida>/ i esborra les més antigues."""
+    if not cid or not docs or len(docs) <= 1:     # una partida acabada de crear encara no té res a guardar
+        return None
+    d = backup_dir(cid)
+    d.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    name, n = f"{stamp}-{reason}", 2
+    while (d / f"{name}.json").exists():
+        name, n = f"{stamp}-{n}-{reason}", n + 1
+    write_json(d / f"{name}.json", {"docs": docs})
+    for old in sorted(d.glob("*.json"), key=lambda f: (f.stat().st_mtime_ns, f.name))[:-BACKUP_KEEP]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+    return name
+
+
+def list_backups(cid):
+    d = backup_dir(cid)
+    if not d.exists():
+        return []
+    out = []
+    for f in sorted(d.glob("*.json"), key=lambda f: (f.stat().st_mtime_ns, f.name), reverse=True):
+        if not BACKUP_RE.fullmatch(f.stem):
+            continue
+        st_ = f.stat()
+        out.append({"id": f.stem, "ts": int(st_.st_mtime * 1000), "reason": f.stem.rsplit("-", 1)[1]})
+    return out
+
+
+def campaign_docs(cid):
+    """Els documents d'una partida (la oberta, des de la memòria)."""
+    if cid == state["active"]:
+        return copy.deepcopy(state["docs"])
+    return read_json(camp_file(cid)).get("docs", {})
+
+
+# ---------------------------------------------------------------- exportar i importar
+class ImportError_(Exception):
+    pass
+
+
+NO_ES_PARTIDA = "El fitxer no és una partida de La Comunitat."
+
+
+def check_docs(docs):
+    if not isinstance(docs, dict) or len(docs) > 5000:
+        raise ImportError_(NO_ES_PARTIDA)
+    for k, v in docs.items():
+        if not valid_path(k) or not isinstance(v, dict) or seg(k)[0] not in ("game", "map", "campaign"):
+            raise ImportError_(NO_ES_PARTIDA)
+    return docs
+
+
+def export_json(cid):
+    docs = campaign_docs(cid)
+    name = camp_name(docs, cid)
+    info = {"format": "comunitat-del-anell", "versio": 1, "programa": VERSION, "nom": name,
+            "exportada": time.strftime("%Y-%m-%d %H:%M"), "docs": docs}
+    return name, json.dumps(info, ensure_ascii=False, indent=1).encode("utf-8")
+
+
+def import_campaign(data):
+    """Crea una partida nova a partir d'un fitxer exportat (o d'un .json de partides/ o de copies/). Torna l'id."""
+    try:
+        info = json.loads(data.decode("utf-8-sig"))
+    except Exception as e:  # noqa: BLE001
+        raise ImportError_(NO_ES_PARTIDA) from e
+    if not isinstance(info, dict):
+        raise ImportError_(NO_ES_PARTIDA)
+    docs = check_docs(info.get("docs"))
+    name = camp_name(docs, "") or str(info.get("nom") or "")[:80] or "Partida importada"
+    if any(c["name"] == name for c in list_campaigns()):
+        name = f"{name} (importada)"
+    docs["campaign/main"] = {**(docs.get("campaign/main") or {}), "name": name}
+    cid = slugify(name)
+    write_json(camp_file(cid), {"docs": docs})
+    return cid
 
 
 # ---------------------------------------------------------------- historial
@@ -429,12 +535,15 @@ class Handler(BaseHTTPRequestHandler):
             body, ctype = map_image(lang)
             return self._send(200, body, ctype, {"Cache-Control": "no-cache"})
         if route == "/api/hello":
-            return self._json(200, {"taula": 1, "version": VERSION})
+            out = {"taula": 1, "version": VERSION, "local": self._local()}
+            if out["local"]:
+                out["dades"] = str(DATA_DIR)
+            return self._json(200, out)
         if route == "/api/invite":
             urls = lan_urls() or [f"http://localhost:{state['port']}"]
             return self._json(200, {"list": [{"url": u, "svg": qr_svg(u)} for u in urls]})
         sess = self._session()
-        if route in ("/api/history", "/api/campaigns", "/api/snapshot", "/api/events") and not sess:
+        if route in ("/api/history", "/api/campaigns", "/api/snapshot", "/api/events", "/api/export") and not sess:
             return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
         if route == "/api/history":
             with lock:
@@ -448,7 +557,26 @@ class Handler(BaseHTTPRequestHandler):
                                         "campaign": state["active"], "docs": snapshot()})
         if route == "/api/events":
             return self._events(sess)
+        if route == "/api/export":
+            return self._export()
         self._json(404, {"error": "No trobat"})
+
+    def _local(self):
+        """La petició ve d'aquest mateix ordinador (la finestra pròpia o un navegador en el servidor)?"""
+        return self.client_address[0].startswith("127.") or self.client_address[0] == "::1"
+
+    def _export(self):
+        cid = (self._query().get("id") or [""])[0]
+        with lock:
+            if not re.fullmatch(r"[a-z0-9-]{1,60}", cid) or not camp_file(cid).exists():
+                return self._json(404, {"error": "Aquesta partida ja no existeix."})
+            if cid == state["active"]:
+                save_now()
+            name, blob = export_json(cid)
+        fname = (slugify_plain(name) or "partida") + "-" + time.strftime("%Y%m%d") + ".json"
+        # application/octet-stream perquè tots els navegadors i finestres el guarden com a fitxer
+        return self._send(200, blob, "application/octet-stream",
+                          {"Content-Disposition": f'attachment; filename="{fname}"', "Cache-Control": "no-store"})
 
     def _events(self, sess):
         self.send_response(200)
@@ -490,6 +618,8 @@ class Handler(BaseHTTPRequestHandler):
     # -- POST
     def do_POST(self):
         route = self.path.split("?")[0]
+        if route == "/api/import":
+            return self._import()
         try:
             body = self._body()
         except Exception:  # noqa: BLE001
@@ -505,7 +635,28 @@ class Handler(BaseHTTPRequestHandler):
             return self._campaigns(body)
         if route == "/api/history":
             return self._history(body)
+        if route == "/api/carpeta":
+            if not self._local():
+                return self._json(403, {"error": "La carpeta de dades només es pot obrir des de l'ordinador principal."})
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            obrir_carpeta(DATA_DIR)
+            return self._json(200, {"ok": True, "dades": str(DATA_DIR)})
         self._json(404, {"error": "No trobat"})
+
+    def _import(self):
+        if not self._session():
+            return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+        n = int(self.headers.get("Content-Length") or 0)
+        if n > MAX_IMPORT:
+            return self._json(413, {"error": "El fitxer és massa gran."})
+        data = self.rfile.read(n) if n else b""
+        with lock:
+            try:
+                cid = import_campaign(data)
+            except ImportError_ as e:
+                return self._json(400, {"error": str(e)})
+            result = {"active": state["active"], "list": list_campaigns(), "imported": cid}
+        return self._json(200, result)
 
     def _join(self, body):
         name = str(body.get("name") or "").strip()[:40]
@@ -602,6 +753,33 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json(404, {"error": "Aquesta partida ja no existeix."})
                 TRASH_DIR.mkdir(exist_ok=True)
                 camp_file(cid).replace(TRASH_DIR / f"{cid}-{time.strftime('%Y%m%d-%H%M%S')}.json")
+            elif action == "backups":
+                if not camp_file(cid).exists():
+                    return self._json(404, {"error": "Aquesta partida ja no existeix."})
+                return self._json(200, {"id": cid, "list": list_backups(cid)})
+            elif action == "backup":
+                if not camp_file(cid).exists():
+                    return self._json(404, {"error": "Aquesta partida ja no existeix."})
+                if cid == state["active"]:
+                    save_now()
+                make_backup(cid, campaign_docs(cid), "ma")
+                return self._json(200, {"id": cid, "list": list_backups(cid)})
+            elif action == "restore":
+                bid = str(body.get("backup") or "")
+                bf = backup_dir(cid) / f"{bid}.json"
+                if not camp_file(cid).exists() or not BACKUP_RE.fullmatch(bid) or not bf.exists():
+                    return self._json(404, {"error": "Aquesta còpia ja no existeix."})
+                try:
+                    docs = check_docs(read_json(bf).get("docs"))
+                except Exception:  # noqa: BLE001
+                    return self._json(400, {"error": "La còpia està danyada."})
+                make_backup(cid, campaign_docs(cid), "abans")     # per si de cas, una còpia del que hi havia
+                if cid == state["active"]:
+                    state["docs"] = docs
+                    save_now()
+                    switched = True
+                else:
+                    write_json(camp_file(cid), {"docs": docs})
             else:
                 return self._json(400, {"error": "Acció desconeguda."})
             dirty.set()
@@ -638,22 +816,25 @@ def main():
     ap.add_argument("--dades", default=os.environ.get("COMUNITAT_DADES", ""),
                     help="carpeta on es guarden les partides (per defecte, al costat del programa, "
                          "o a la carpeta de l'usuari si està instal·lat)")
-    ap.add_argument("--sense-finestra", action="store_true", help="no obri la finestra: només la terminal")
+    ap.add_argument("--navegador", action="store_true",
+                    help="obri l'app al navegador, amb la finestreta de l'adreça i el QR, en compte de la finestra pròpia")
+    ap.add_argument("--sense-finestra", action="store_true", help="no obri cap finestra: només el terminal")
     ap.add_argument("--sense-navegador", action="store_true", help="no obri el navegador en arrancar")
-    ap.add_argument("--sense-qr", action="store_true", help="no mostra el codi QR a la terminal")
-    ap.add_argument("--idioma", choices=("ca", "es"), help="idioma de la finestra (per defecte, el del sistema)")
+    ap.add_argument("--sense-qr", action="store_true", help="no mostra el codi QR al terminal")
+    ap.add_argument("--idioma", choices=("ca", "es"), default="ca",
+                    help="idioma de les finestres i els avisos: ca (valencià, per defecte) o es (castellà)")
     a = ap.parse_args()
     if a.dades.strip():
         set_data_dir(a.dades.strip())
-    amb_finestra = not a.sense_finestra and hi_ha_finestra()
-    idioma = a.idioma or idioma_sistema()
+    pantalla = not a.sense_finestra and hi_ha_pantalla()
+    idioma = a.idioma
     state["port"] = a.port
     try:
         srv = Server(("0.0.0.0", a.port), Handler)
     except OSError:
         print(f"\n  El port {a.port} ja està en ús: hi ha un altre programa (potser La Comunitat ja oberta) escoltant-hi.\n"
               f"  Tanca'l, o arranca en un altre port:   python3 comunitat.py --port 9001\n")
-        if amb_finestra:
+        if pantalla:
             T = FINESTRA_TEXTOS[idioma]
             avis_finestra(T["port_t"], T["port_q"].format(p=a.port))
         sys.exit(1)
@@ -670,29 +851,39 @@ def main():
     urls = lan_urls()
     for u in urls:
         print(f"  Des de la xarxa:       {u}")
-    if urls and not a.sense_qr and not amb_finestra:
-        print("\n  Escaneja aquest codi amb el mòbil per a entrar:\n")
-        try:
-            print(qr_terminal(urls[0]))
-        except Exception:  # noqa: BLE001
-            pass
     print()
     print(f"  Partida oberta:         {camp_name(state['docs'], state['active'])}")
     print(f"  Dades guardades a:      {DATA_DIR}")
+
+    def mostra_qr():
+        if urls and not a.sense_qr:
+            print("\n  Escaneja aquest codi amb el mòbil per a entrar:\n")
+            try:
+                print(qr_terminal(urls[0]))
+            except Exception:  # noqa: BLE001
+                pass
+
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        if amb_finestra:
-            print("\n  Tanca la finestra de La Comunitat per a aturar-la.\n")
-            threading.Thread(target=srv.serve_forever, daemon=True).start()
-            finestra(a.port, idioma, obrir_navegador=not a.sense_navegador)
-            srv.shutdown()
-        else:
+        feta = False
+        if pantalla and not a.navegador:
+            print("\n  S'obri la finestra de La Comunitat. Tanca-la per a aturar-la.\n")
+            feta = finestra_app(a.port, idioma)
+        if not feta and pantalla and hi_ha_finestra():
+            print("\n  Tanca la finestreta de La Comunitat per a aturar-la.\n")
+            finestra_adreca(a.port, idioma, obrir_navegador=not a.sense_navegador)
+            feta = True
+        if not feta:
+            mostra_qr()
             print("\n  Prem Ctrl+C per a aturar-la" + (" o tanca aquesta finestra" if os.name == "nt" else "") + ".\n")
-            if FROZEN and not a.sense_navegador:
+            if pantalla and not a.sense_navegador:
                 threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{a.port}")).start()
-            srv.serve_forever()
+            while True:
+                time.sleep(3600)
     except KeyboardInterrupt:
         pass
     finally:
+        srv.shutdown()
         save_now()
         print("\n  Partida guardada. Fins la pròxima!\n")
 

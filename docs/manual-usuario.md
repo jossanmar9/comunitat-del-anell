@@ -28,30 +28,23 @@ La app no sustituye al juego. Las cartas, las Tropas, los Nazgûl y el Ojo de Sa
 
 ## Arrancar La Comunidad
 
-Abre **La Comunidad del Anillo** desde el menú Inicio (Windows) o desde el menú de aplicaciones (Linux). Se abren dos cosas:
+Abre **La Comunidad del Anillo** desde el menú Inicio (Windows) o desde el menú de aplicaciones (Linux). La app se abre en **una ventana propia**, sin navegador: este ordenador es el «principal», el que hace de servidor, y desde aquí se puede jugar igual que desde un móvil.
 
-- **La ventana de La Comunidad**, con la dirección para los demás y un código QR. Mientras esté abierta, La Comunidad funciona.
-- **El navegador**, ya con la app.
+- Mientras la ventana esté abierta, La Comunidad funciona. Cuando la cierras, te pregunta si quieres cerrarla, lo guarda todo y los jugadores se desconectan.
+- El botón **Invitar**, arriba a la derecha, muestra la dirección para los demás, por ejemplo `http://192.168.1.40:8766`, y el **código QR** que la lleva dentro.
+- En la pestaña **Partidas**, el apartado **En este ordenador** dice dónde se guarda todo y tiene el botón **Abrir la carpeta de datos**.
 
-En la ventana encontrarás:
-
-- **La dirección para los demás**, por ejemplo `http://192.168.1.40:8766`, con un botón para copiarla, y el **código QR** que la lleva dentro.
-- **La partida abierta.**
-- Los botones **Abrir en el navegador**, **Carpeta de datos** (abre la carpeta donde se guarda todo) y **Detener**.
-
-Para terminar, pulsa **Detener** o cierra la ventana. Antes de cerrarse lo guarda todo, y los jugadores se desconectan.
-
-> Si La Comunidad se usa desde un terminal (por ejemplo, en un ordenador sin pantalla), la misma información, con el QR, sale en el terminal (en valenciano). Consulta las opciones en la [guía de instalación](guia-instalacion.md).
+> Si en este ordenador no se puede abrir la ventana propia (consulta [Si algo no funciona](#si-algo-no-funciona)), se abre una ventanita con la dirección, el QR y la partida abierta, y la app en el navegador. También la puedes elegir a propósito con la opción `--navegador`. Y en un ordenador sin pantalla, la misma información, con el QR, sale en el terminal (en valenciano). Consulta las opciones en la [guía de instalación](guia-instalacion.md).
 
 ## Entrar desde los dispositivos
 
-1. Con la cámara del móvil, escanea el QR de la ventana. También puedes escribir en el navegador la dirección para los demás, por ejemplo `http://192.168.1.40:8766`.
+1. Con la cámara del móvil, escanea el QR del botón **Invitar** del ordenador principal. También puedes escribir en el navegador la dirección para los demás, por ejemplo `http://192.168.1.40:8766`.
 2. Escribe tu nombre y pulsa **Entrar**. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
 3. El navegador recuerda quién eres. La próxima vez entrarás directamente.
 
 Para entrar con otro nombre, pulsa **Salir**, arriba a la derecha, y vuelve a entrar.
 
-Si llega alguien con la partida empezada, pulsa el botón del QR de arriba a la derecha: muestra el código en grande para que lo escanee.
+Si llega alguien con la partida empezada, pulsa el botón del QR de arriba a la derecha (en el ordenador principal, **Invitar**): muestra el código en grande para que lo escanee.
 
 ![La pantalla de entrada.](imatges/es/01-entrada.jpg)
 
@@ -237,7 +230,11 @@ En la pestaña **Partidas** puedes tener guardadas todas las que quieras:
 - **Crear** y abrir una nueva.
 - **Abrir** otra. Todos los que están conectados pasan a ella solos.
 - **Duplicar**, para probar algo sin tocar la original.
+- **Copias**: las copias de seguridad de la partida, para volver a una anterior (más abajo).
+- **Exportar**: guarda la partida en un archivo `.json`, para pasarla a otro ordenador o guardarla aparte.
 - **Borrar.** No se pierde: va a la carpeta `partides/esborrades/` de la carpeta de datos y se puede recuperar moviendo el archivo a `partides/`.
+
+Con **Importar → Elegir el archivo…** se añade una partida exportada, de este o de otro ordenador. Se crea como partida nueva: no sustituye a ninguna.
 
 El nombre de la partida se cambia escribiendo directamente en el título de arriba.
 
@@ -251,9 +248,13 @@ Si una partida se ha apuntado por error, **Quitar del historial** la borra. Si d
 
 ![El historial.](imatges/es/20-historial.jpg)
 
-### Copia de seguridad
+### Copias de seguridad
 
-Todo se guarda en la **carpeta de datos**, que se abre con el botón **Carpeta de datos** de la ventana. Dentro están la carpeta `partides`, el archivo `comunitat.json` (los jugadores) e `historial.json` (las partidas terminadas). Para hacer una copia de seguridad, o para pasarlo todo a otro ordenador, copia esa carpeta entera. La [guía de instalación](guia-instalacion.md) dice dónde está en cada sistema.
+La Comunidad hace copias de cada partida ella sola: una cada vez que se abre y, mientras jugáis, una cada media hora. Se guardan las 15 últimas de cada partida.
+
+El botón **Copias** de cada partida las muestra con la fecha y la hora. **Restaurar** devuelve la partida a ese momento (antes se hace una copia de lo que había, por si acaso), y **Hacer una copia ahora** hace una a mano, por ejemplo antes de probar algo.
+
+Todo se guarda en la **carpeta de datos**, que se abre con el botón **Abrir la carpeta de datos** de la pestaña Partidas, en el ordenador principal. Dentro están la carpeta `partides`, la carpeta `copies`, el archivo `comunitat.json` (los jugadores) e `historial.json` (las partidas terminadas). Para guardarlo todo aparte, o para pasarlo todo a otro ordenador, copia esa carpeta entera. La [guía de instalación](guia-instalacion.md) dice dónde está en cada sistema.
 
 ## Móvil, mapa, idioma y tema
 
@@ -277,7 +278,7 @@ Usa imágenes que puedas usar: si compartes el programa, no pongas mapas de otra
 
 La app está en castellano y en valenciano. Los botones **CAS** y **VAL**, arriba a la derecha, cambian el idioma solo en tu dispositivo; cada jugador puede tener el suyo. El registro, los objetivos y el mapa también cambian.
 
-La ventana de La Comunidad sale en el idioma del ordenador (castellano o, si no, valenciano).
+Los avisos de la ventana (por ejemplo, al cerrarla) salen en valenciano. Para tenerlos en castellano, arranca con la opción `--idioma es`.
 
 ### Modo oscuro
 
@@ -287,6 +288,7 @@ El botón de la luna (◐ ☀ ☾) cambia entre el tema automático (el del sist
 
 | Qué pasa | Qué hacer |
 |---|---|
+| No se abre la ventana propia, sino la ventanita del QR y el navegador | En Windows, falta el componente **WebView2** de Microsoft, que traen Windows 11 y Windows 10 actualizado: instala «Microsoft Edge WebView2 Runtime» desde la web de Microsoft. En Linux, faltan GTK y WebKitGTK: la [guía de instalación](guia-instalacion.md) explica cómo instalarlos. Mientras tanto, La Comunidad funciona igual en el navegador. |
 | Los demás no pueden entrar | Tienen que estar en la misma wifi que el servidor. Revisa el cortafuegos: en Windows, permite La Comunidad en «Redes privadas» y comprueba que la wifi está configurada como privada. En Linux, `sudo ufw allow 8766/tcp`. Algunas redes de invitados no dejan que los dispositivos se vean entre ellos. |
 | «El puerto ya está en uso» | Ya hay otra Comunidad abierta. Ciérrala, o arranca en otro puerto: `--port 9001`. |
 | Aparece «Se ha perdido la conexión con el servidor» | La Comunidad se ha cerrado o el ordenador se ha dormido. Cuando la vuelvas a abrir, la página se reconecta sola y no se pierde nada. |

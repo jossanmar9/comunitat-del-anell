@@ -10,7 +10,7 @@ La Comunitat és una pàgina web que funciona a casa, sense Internet. Un ordinad
 
 L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sauron continuen al tauler de cartó. L'app s'encarrega dels comptes que s'oblidaven o feien perdre temps:
 
-- l'esperança, l'amenaça, les cartes del mazo i quantes vegades s'ha enfosquit el cel;
+- l'esperança, l'amenaça, les cartes de la baralla i quantes vegades s'ha enfosquit el cel;
 - els passos de cada torn i quantes cartes d'Ombra s'han de resoldre;
 - quants daus s'han de tirar en una cerca o en una batalla, i què es perd amb el resultat;
 - els objectius, la preparació del tauler i un registre de tot el que passa, amb un botó per a desfer.
@@ -28,30 +28,23 @@ L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sau
 
 ## Arrancar La Comunitat
 
-Obri **La Comunitat de l'Anell** des del menú Inici (Windows) o des del menú d'aplicacions (Linux). S'obrin dues coses:
+Obri **La Comunitat de l'Anell** des del menú Inici (Windows) o des del menú d'aplicacions (Linux). L'app s'obri en **una finestra pròpia**, sense navegador: aquest ordinador és el «principal», el que fa de servidor, i des d'ací es pot jugar igual que des d'un mòbil.
 
-- **La finestra de La Comunitat**, amb l'adreça per als altres i un codi QR. Mentre estiga oberta, La Comunitat funciona.
-- **El navegador**, ja amb l'app.
+- Mentre la finestra estiga oberta, La Comunitat funciona. Quan la tanques, et pregunta si vols tancar-la, ho guarda tot i els jugadors es desconnecten.
+- El botó **Convida**, dalt a la dreta, mostra l'adreça per als altres, per exemple `http://192.168.1.40:8766`, i el **codi QR** que la porta dins.
+- A la pestanya **Partides**, l'apartat **En aquest ordinador** diu on es guarda tot i té el botó **Obrir la carpeta de dades**.
 
-En la finestra trobaràs:
-
-- **L'adreça per als altres**, per exemple `http://192.168.1.40:8766`, amb un botó per a copiar-la, i el **codi QR** que la porta dins.
-- **La partida oberta.**
-- Els botons **Obrir al navegador**, **Carpeta de dades** (obri la carpeta on es guarda tot) i **Aturar**.
-
-Per a acabar, prem **Aturar** o tanca la finestra. Abans de tancar-se ho guarda tot, i els jugadors es desconnecten.
-
-> Si La Comunitat es fa servir des d'un terminal (per exemple, en un ordinador sense pantalla), la mateixa informació, amb el QR, ix al terminal. Vegeu les opcions a la [guia d'instal·lació](guia-installacio.md).
+> Si en aquest ordinador no es pot obrir la finestra pròpia (vegeu [Si alguna cosa no va](#si-alguna-cosa-no-va)), s'obri una finestreta amb l'adreça, el QR i la partida oberta, i l'app al navegador. També la pots triar a propòsit amb l'opció `--navegador`. I en un ordinador sense pantalla, la mateixa informació, amb el QR, ix al terminal. Vegeu les opcions a la [guia d'instal·lació](guia-installacio.md).
 
 ## Entrar des dels aparells
 
-1. Amb la càmera del mòbil, escaneja el QR de la finestra. També pots escriure al navegador l'adreça per als altres, per exemple `http://192.168.1.40:8766`.
+1. Amb la càmera del mòbil, escaneja el QR del botó **Convida** de l'ordinador principal. També pots escriure al navegador l'adreça per als altres, per exemple `http://192.168.1.40:8766`.
 2. Escriu el teu nom i prem **Entrar**. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
 3. El navegador recorda qui eres. La pròxima vegada entraràs directament.
 
 Per a entrar amb un altre nom, prem **Eixir**, dalt a la dreta, i torna a entrar.
 
-Si arriba algú amb la partida començada, prem el botó del QR de dalt a la dreta: mostra el codi en gran perquè l'escanege.
+Si arriba algú amb la partida començada, prem el botó del QR de dalt a la dreta (a l'ordinador principal, **Convida**): mostra el codi en gran perquè l'escanege.
 
 ![La pantalla d'entrada.](imatges/ca/01-entrada.jpg)
 
@@ -101,8 +94,8 @@ La barra de dalt porta les pistes:
 |---|---|
 | **Esperança** | Comença en 6, el màxim és 8. Si arriba a 0, perdeu. Els botons − i + la corregeixen a mà. |
 | **Amenaça** | La casella marcada diu quantes cartes d'Ombra es roben en cada torn (2, 2, 3, 3, 4, 4, 5). Puja sola amb *El cel s'enfosqueix*. |
-| **Cel enfosquit** | Quantes cartes d'*El cel s'enfosqueix* han eixit, del total que hi ha al mazo. |
-| **Mazo** | Les cartes que queden al mazo de joc. Baixa sola quan robeu i es pot corregir. |
+| **Cel enfosquit** | Quantes cartes d'*El cel s'enfosqueix* han eixit, del total que hi ha a la baralla. |
+| **Baralla** | Les cartes que queden a la baralla de joc. Baixa sola quan robeu i es pot corregir. |
 | **Objectius** | Completats del total. |
 | **Desfer** | Anul·la l'últim canvi. Pots desfer fins a 30 passos enrere. |
 
@@ -115,7 +108,7 @@ La columna de la dreta (al mòbil, just davall de les pistes) segueix l'ordre de
 ![Els passos del torn.](imatges/ca/07-torn.jpg)
 
 1. **Fes 4 + 1 accions.** Toca els cercles per a portar el compte: 4 amb un personatge i 1 amb l'altre. Quan acabes, prem **Fet**.
-2. **Roba 2 cartes de joc.** Prem **He robat 2 cartes**: el mazo baixa 2. Si no en queden prou, resta 1 d'esperança per cada carta que falta.
+2. **Roba 2 cartes de joc.** Prem **He robat 2 cartes**: la baralla baixa 2. Si no en queden prou, resta 1 d'esperança per cada carta que falta.
 3. Si robes *El cel s'enfosqueix*, prem el botó del mateix nom (vegeu més avall).
 4. **Roba les cartes d'Ombra.** Resol-les al tauler i prem **Resoldre una carta d'Ombra** per a cada una. El comptador diu quantes en falten.
 5. **Passa al següent torn.** Si encara queden cartes d'Ombra, el botó t'avisa i has de prémer-lo dues vegades.
@@ -237,7 +230,11 @@ A la pestanya **Partides** pots tindre totes les que vulgues guardades:
 - **Crear** i obrir una de nova.
 - **Obrir** una altra. Tots els que estan connectats hi passen sols.
 - **Duplicar**, per a provar alguna cosa sense tocar l'original.
+- **Còpies**: les còpies de seguretat de la partida, per a tornar a una d'abans (vegeu més avall).
+- **Exportar**: guarda la partida en un fitxer `.json`, per a passar-la a un altre ordinador o guardar-la a part.
 - **Esborrar.** No es perd: va a la carpeta `partides/esborrades/` de la carpeta de dades i es pot recuperar movent el fitxer a `partides/`.
+
+Amb **Importar → Triar el fitxer…** s'afig una partida exportada, d'aquest o d'un altre ordinador. Es crea com a partida nova: no en substitueix cap.
 
 El nom de la partida es canvia escrivint directament al títol de dalt.
 
@@ -251,9 +248,13 @@ Si una partida s'ha apuntat per error, **Llevar de l'historial** l'esborra. Si d
 
 ![L'historial.](imatges/ca/20-historial.jpg)
 
-### Còpia de seguretat
+### Còpies de seguretat
 
-Tot es guarda a la **carpeta de dades**, que s'obri amb el botó **Carpeta de dades** de la finestra. Dins hi ha la carpeta `partides`, el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Per a fer una còpia de seguretat, o per a passar-ho tot a un altre ordinador, copia eixa carpeta sencera. La [guia d'instal·lació](guia-installacio.md) diu on és en cada sistema.
+La Comunitat fa còpies de cada partida tota sola: una cada vegada que s'obri i, mentre jugueu, una cada mitja hora. Se'n guarden les 15 últimes de cada partida.
+
+El botó **Còpies** de cada partida les mostra amb la data i l'hora. **Restaurar** torna la partida a eixe moment (abans es fa una còpia del que hi havia, per si de cas), i **Fer una còpia ara** en fa una a mà, per exemple abans de provar alguna cosa.
+
+Tot es guarda a la **carpeta de dades**, que s'obri amb el botó **Obrir la carpeta de dades** de la pestanya Partides, a l'ordinador principal. Dins hi ha la carpeta `partides`, la carpeta `copies`, el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Per a guardar-ho tot a part, o per a passar-ho tot a un altre ordinador, copia eixa carpeta sencera. La [guia d'instal·lació](guia-installacio.md) diu on és en cada sistema.
 
 ## Mòbil, mapa, idioma i tema
 
@@ -277,7 +278,7 @@ Fes servir imatges que pugues usar: si comparteixes el programa, no hi poses map
 
 L'app està en valencià i en castellà. Els botons **VAL** i **CAS**, dalt a la dreta, canvien l'idioma només en el teu aparell; cada jugador pot tindre el seu. El registre, els objectius i el mapa també canvien.
 
-La finestra de La Comunitat surt en l'idioma de l'ordinador (castellà o, si no, valencià).
+Els avisos de la finestra (per exemple, en tancar-la) ixen en valencià. Per a tindre'ls en castellà, arranca amb l'opció `--idioma es`.
 
 ### Mode fosc
 
@@ -287,6 +288,7 @@ El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del siste
 
 | Què passa | Què fer |
 |---|---|
+| No s'obri la finestra pròpia, sinó la finestreta del QR i el navegador | A Windows, falta el component **WebView2** de Microsoft, que porten Windows 11 i Windows 10 actualitzat: instal·la «Microsoft Edge WebView2 Runtime» des de la web de Microsoft. A Linux, falten GTK i WebKitGTK: la [guia d'instal·lació](guia-installacio.md) diu com instal·lar-los. Mentrestant, La Comunitat funciona igual al navegador. |
 | Els altres no hi poden entrar | Han d'estar a la mateixa wifi que el servidor. Revisa el tallafoc: a Windows, permet La Comunitat a «Xarxes privades» i comprova que la wifi està configurada com a privada. A Linux, `sudo ufw allow 8766/tcp`. Algunes xarxes de convidats no deixen que els aparells es vegen entre ells. |
 | «El port ja està en ús» | Ja hi ha una altra Comunitat oberta. Tanca-la, o arranca en un altre port: `--port 9001`. |
 | Apareix «S'ha perdut la connexió amb el servidor» | La Comunitat s'ha tancat o l'ordinador s'ha adormit. Quan tornes a obrir-la, la pàgina es reconnecta sola i no es perd res. |

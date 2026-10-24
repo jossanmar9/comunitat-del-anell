@@ -95,7 +95,7 @@ const BATTLE_FACES=[['rout','Rebutjar',"Retira 1 tropa de l'Ombra."],['tie','Tau
 const SEARCH_FACES=[['slip',"Frodo s'escapoleix",'Sense efecte.'],['tired','Fatiga',"Perd 1 d'esperança."],['seen','Al descobert',"Perd 1 d'esperança (s'ignora en un refugi)."],['call','Convocatòria','Si hi ha natzguls, 1 torna a Mordor.']];
 
 /* ================= store ================= */
-const S={uid:null,token:null,camp:null,es:null};
+const S={uid:null,token:null,camp:null,es:null,local:false,dades:''};
 const st={tab:lsGet('cm-tab2')||'partida',loaded:false,forceSetup:false};
 let G=null,LOG=[],UNDO=[],CAMP=null;
 const mem=new Map(),memL=new Set();
@@ -262,7 +262,7 @@ function skiesFlow(){
       <li><div><b>${esc(t("A l'empara de la foscor."))}</b> ${esc(t("Posa 3 tropes de l'Ombra al lloc de la carta. N'hi ha prou a la reserva?"))}
         <div class="row" style="margin-top:8px"><span class="small">${esc(t('Tropes que falten'))}</span><span class="stepper"><button class="mini" id="mdec">−</button><b id="miss">0</b><button class="mini" id="minc">+</button></span></div>
         <p class="small muted" style="margin:6px 0 0">${esc(t("Si hi ha tropes aliades en eixe lloc, fes després una tirada de batalla provocada per l'Ombra."))}</p></div></li>
-      <li><div><b>${esc(t("El perill s'intensifica."))}</b> ${esc(t("Barreja els descarts d'Ombra i posa'ls damunt del mazo d'Ombra."))}</div></li>
+      <li><div><b>${esc(t("El perill s'intensifica."))}</b> ${esc(t("Barreja els descarts d'Ombra i posa'ls damunt de la baralla d'Ombra."))}</div></li>
     </ol>
     <div class="foot"><button class="btn" id="sk-cancel">${esc(t('Cancel·lar'))}</button><button class="btn pri" id="sk-ok">${esc(t('Fet'))}</button></div>`,(m,close)=>{
     let miss=0;
@@ -285,7 +285,7 @@ function skiesFlow(){
 }
 function shadowCardFlow(){
   openModal(`<h2>${esc(t("Carta d'Ombra"))}</h2>
-    <p class="muted" style="margin:0">${esc(t("Mira la bandera que es veu al mazo d'Ombra."))}</p>
+    <p class="muted" style="margin:0">${esc(t("Mira la bandera que es veu a la baralla d'Ombra."))}</p>
     <div class="faces">
       <div class="face" style="display:block"><div class="fn">${esc(t('Bandera roja: Avançar'))}</div><div class="fd">${esc(t("Mou totes les tropes de l'Ombra de la línia indicada 1 espai en la direcció de la fletxa, començant per les més avançades. Les del final no es mouen. Després, batalla a cada lloc de la línia amb tropes de les dues bandes (de la més avançada cap enrere). Si l'Ombra ocupa un refugi sense aliades, el perds."))}</div></div>
       <div class="face" style="display:block"><div class="fn">${esc(t('Bandera negra: Reforçar'))}</div><div class="fd">${esc(t("1 tropa de l'Ombra al lloc indicat (no si el vau capturar). Si hi ha aliades, batalla. Després, l'ordre especial: l'Ull a la regió de Frodo (o tirada de cerca si ja hi és) · acosta 2 natzguls a Frodo · desplega 3 natzguls de Mordor a la regió de l'Ull."))}</div></div>
@@ -310,7 +310,7 @@ function shadowCardFlow(){
 function renderHeader(){
   const n=$('#camp-name');if(document.activeElement!==n)n.value=CAMP?.name||'';
   $$('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===st.tab));
-  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip ico" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}</button>`:'')+(S.token?`<span class="chip">${esc(mem.get('users/'+S.uid)?.name||'')}</span><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
+  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip${S.local?'':' ico'}" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}${S.local?`<span class="inv-t">${esc(t('Convida'))}</span>`:''}</button>`:'')+(S.token?`<span class="chip">${esc(mem.get('users/'+S.uid)?.name||'')}</span><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
 }
 function renderTracks(){
   const el=$('#tracks');
@@ -321,7 +321,7 @@ function renderTracks(){
     <div class="trk"><span class="lbl">${esc(t('Amenaça'))}</span><button class="mini" data-thr="-1" aria-label="${esc(t('Baixar amenaça'))}">−</button>
       <span class="pips">${G.threat.map((v,i)=>`<i class="pip thr ${i===G.threatIdx?'on':''}">${v}</i>`).join('')}</span><button class="mini" data-thr="1" aria-label="${esc(t('Pujar amenaça'))}">+</button></div>
     <div class="trk"><span class="lbl">${esc(t('Cel enfosquit'))}</span><span class="mono">${G.skies.drawn}/${G.skies.total}</span></div>
-    <div class="trk"><span class="lbl">${esc(t('Mazo'))}</span><button class="mini" data-deck="-1" aria-label="${esc(t('Una carta menys'))}">−</button><span class="mono">${G.deck}</span><button class="mini" data-deck="1" aria-label="${esc(t('Una carta més'))}">+</button></div>
+    <div class="trk"><span class="lbl">${esc(t('Baralla'))}</span><button class="mini" data-deck="-1" aria-label="${esc(t('Una carta menys'))}">−</button><span class="mono">${G.deck}</span><button class="mini" data-deck="1" aria-label="${esc(t('Una carta més'))}">+</button></div>
     <div class="trk"><span class="lbl">${esc(t('Objectius'))}</span><span class="mono">${G.objectives.filter(o=>o.done).length}/${G.objectives.length}</span></div>
     <div class="trk"><span class="lbl">${esc(t('Ronda'))}</span><span class="mono">${G.round}</span></div>
     <button class="btn sm" id="undo" ${UNDO.length?'':'disabled'} title="${UNDO.length?esc(t('Desfer: {x}',{x:UNDO[UNDO.length-1].label})):''}">${esc(t('Desfer'))}</button>`;
@@ -358,7 +358,7 @@ function renderPlay(){
         ${hev(-3,'refugi perdut','Refugi perdut')}
         ${hev(2,'fortalesa capturada','Fortalesa capturada')}
         ${hev(-1,"falta una tropa de l'Ombra a la reserva","Falta una tropa de l'Ombra")}
-        ${hev(-1,'falta una carta de joc al mazo','Falta una carta de joc')}
+        ${hev(-1,'falta una carta de joc a la baralla','Falta una carta de joc')}
         ${hev(-1,'objectiu o habilitat','Altres')}
         ${hev(1,'objectiu o habilitat','Altres')}
       </div>
@@ -405,7 +405,7 @@ function renderSide(){
       <li class="${TR.step===0?'cur':'done'}"><div><b>${esc(t('Fes 4 + 1 accions'))}</b><div class="muted small">${esc(t(G.solo?'4 amb el personatge del testimoni i 1 amb Frodo i Sam.':"4 amb un personatge i 1 amb l'altre."))}</div>
         <div class="apips">${[0,1,2,3].map(i=>`<button class="apip ${i<TR.a[0]?'used':''}" data-ap="0:${i}" aria-label="${esc(t('Acció {n}',{n:i+1}))}">${i+1}</button>`).join('')}<button class="apip sep ${TR.a[1]?'used':''}" data-ap="1:0" aria-label="${esc(t('Acció extra'))}">+1</button></div>
         ${TR.step===0?`<div class="row" style="margin-top:8px"><button class="btn sm" id="acts-done">${esc(t('Fet'))}</button></div>`:''}</div></li>
-      <li class="${TR.step===1?'cur':TR.step>1?'done':''}"><div><b>${esc(t('Roba 2 cartes de joc'))}</b><div class="muted small">${esc(t('Queden {n} al mazo. Si en robes un cel enfosquit, resol-lo.',{n:G.deck}))}</div>
+      <li class="${TR.step===1?'cur':TR.step>1?'done':''}"><div><b>${esc(t('Roba 2 cartes de joc'))}</b><div class="muted small">${esc(t('Queden {n} a la baralla. Si en robes un cel enfosquit, resol-lo.',{n:G.deck}))}</div>
         <div class="row" style="margin-top:8px"><button class="btn sm ${TR.step===1?'pri':''}" id="draw2">${esc(t('He robat 2 cartes'))}</button><button class="btn sm" id="skies">${esc(t("El cel s'enfosqueix!"))}</button></div></div></li>
       <li class="${TR.step===2?'cur':''}"><div><b>${esc(t("Roba {n} d'Ombra",{n:pl(n,'carta','cartes')}))}</b><div class="muted small">${esc(t('Resoltes: {a} de {b}.',{a:TR.shadow,b:n}))}</div>
         <div class="row" style="margin-top:8px"><button class="btn sm ${TR.step===2&&TR.shadow<n?'pri':''}" id="shadow-card">${esc(t("Resoldre una carta d'Ombra"))}</button></div></div></li>
@@ -473,7 +473,7 @@ function renderCommunity(){
     </section>
     ${G.result?`<section class="panel tool"><h2>${esc(t('Resum de la partida'))}</h2>${summaryHtml()}</section>`:''}
     <section class="panel tool"><h2>${esc(t('Partida'))}</h2>
-      <p class="muted small" style="margin:0">${esc(t('Dificultat {a} · {b} al mazo · començada {c}.',{a:t(LEVELS[G.level]?.name||''),b:pl(G.skies.total,'cel enfosquit','cels enfosquits'),c:ago(G.created)}))}</p>
+      <p class="muted small" style="margin:0">${esc(t('Dificultat {a} · {b} a la baralla · començada {c}.',{a:t(LEVELS[G.level]?.name||''),b:pl(G.skies.total,'cel enfosquit','cels enfosquits'),c:ago(G.created)}))}</p>
       <button class="btn danger" id="re-setup">${esc(t('Preparar una partida nova'))}</button>
       <p class="small muted" style="margin:0">${esc(t('Per a conservar aquesta partida i començar-ne una altra, fes servir la pestanya Partides.'))}</p>
     </section></div>`;
@@ -481,7 +481,7 @@ function renderCommunity(){
 function renderSetup(){
   const n=+(lsGet('cm-np')||2);
   $('#main').innerHTML=`<div class="camps" style="max-width:1000px">
-    <div><h2 style="font-size:32px">${esc(t('Preparar la partida'))}</h2><p class="muted" style="margin:6px 0 0;max-width:66ch">${esc(t("Tria la dificultat, els participants i els objectius. L'app calcula el mazo de joc i et guia en la preparació del tauler."))}</p></div>
+    <div><h2 style="font-size:32px">${esc(t('Preparar la partida'))}</h2><p class="muted" style="margin:6px 0 0;max-width:66ch">${esc(t("Tria la dificultat, els participants i els objectius. L'app calcula la baralla de joc i et guia en la preparació del tauler."))}</p></div>
     <form class="panel" id="setup-form" style="display:flex;flex-direction:column;gap:16px">
       <div class="row" style="align-items:flex-end;gap:16px">
         <label class="field"><span>${esc(t('Dificultat'))}</span><select class="in" id="sf-level">${Object.entries(LEVELS).map(([k,v])=>`<option value="${k}" ${k==='intro'?'selected':''}>${esc(t('{a} · {b} cels enfosquits · {c} objectius',{a:t(v.name),b:v.skies,c:v.obj}))}</option>`).join('')}</select></label>
@@ -515,10 +515,13 @@ async function campApi(body){
 }
 async function renderCamps(){
   $('#main').innerHTML=`<div class="camps"><div><h2 style="font-size:32px">${esc(t('Partides guardades'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Cada partida guarda les pistes, el torn, els objectius i el registre. Quan n'obris una, tots els que estan connectats hi passen."))}</p></div>
-    <form class="panel camp-new" id="camp-new"><label class="field"><span>${esc(t('Partida nova'))}</span><input class="in" id="cn-name" required maxlength="80" placeholder="${esc(t('Divendres amb la colla'))}"></label><button class="btn pri" type="submit">${esc(t('Crear i obrir'))}</button></form>
+    <div class="camp-tools"><form class="panel camp-new" id="camp-new"><label class="field"><span>${esc(t('Partida nova'))}</span><input class="in" id="cn-name" required maxlength="80" placeholder="${esc(t('Divendres amb la colla'))}"></label><button class="btn pri" type="submit">${esc(t('Crear i obrir'))}</button></form>
+    <div class="panel camp-imp"><span class="field-l">${esc(t('Importar'))}</span><p class="small muted" style="margin:0">${esc(t("Una partida exportada des d'aquest o d'un altre ordinador."))}</p><label class="btn sm" style="align-self:flex-start">${esc(t('Triar el fitxer…'))}<input type="file" id="camp-imp" accept=".json,application/json" hidden></label></div></div>
     <div id="camp-list" class="camp-list"><p class="muted">${esc(t('Carregant…'))}</p></div>
+    ${S.local?`<div class="panel here"><div><span class="field-l">${esc(t('En aquest ordinador'))}</span><p class="small" style="margin:4px 0 0">${esc(t("Les partides, l'historial, les còpies de seguretat i el teu mapa es guarden a:"))}</p><p class="small path">${esc(S.dades)}</p></div><button class="btn sm" id="open-data">${esc(t('Obrir la carpeta de dades'))}</button></div>`:''}
     <div><h2 style="font-size:32px">${esc(t('Historial'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Les partides acabades, guanyades o perdudes, de totes les partides guardades."))}</p></div>
-    <div id="hist"><p class="muted">${esc(t('Carregant…'))}</p></div></div>`;
+    <div id="hist"><p class="muted">${esc(t('Carregant…'))}</p></div>
+    ${S.version?`<p class="small muted" style="margin:0">${esc(t("La Comunitat de l'Anell · versió {v}",{v:S.version}))}</p>`:''}</div>`;
   if(!S.token){$('#camp-list').innerHTML=`<p class="muted">${esc(t("Obri l'app des del servidor per a gestionar partides."))}</p>`;return}
   try{drawCampList(await campApi())}catch(e){$('#camp-list').innerHTML=`<p class="small" style="color:var(--blood)">${esc(e.message)}</p>`}
   loadHistory();
@@ -526,8 +529,8 @@ async function renderCamps(){
 function drawCampList(d){
   const box=$('#camp-list');if(!box)return;
   box.innerHTML=d.list.map(c=>`<article class="camp-card${c.active?' on':''}"><div class="cc-head"><h3 class="cc-name">${esc(c.name)}</h3>${c.active?`<span class="chip dm">${esc(t('Oberta'))}</span>`:''}</div>
-    <p class="muted small" style="margin:0;font-style:italic">${esc(t('Darrer canvi {x}',{x:ago(c.updated)}))}</p>
-    <div class="row" style="margin-top:6px">${c.active?'':`<button class="btn pri sm" data-copen="${c.id}">${esc(t('Obrir'))}</button>`}<button class="btn sm" data-cdup="${c.id}">${esc(t('Duplicar'))}</button>${c.active?'':`<button class="btn sm danger" data-cdel="${c.id}">${esc(t('Esborrar'))}</button>`}</div></article>`).join('');
+    <p class="muted small" style="margin:0;font-style:italic">${esc(t('Últim canvi {x}',{x:ago(c.updated)}))}</p>
+    <div class="row" style="margin-top:6px">${c.active?'':`<button class="btn pri sm" data-copen="${c.id}">${esc(t('Obrir'))}</button>`}<button class="btn sm" data-cdup="${c.id}">${esc(t('Duplicar'))}</button><button class="btn sm" data-cbak="${c.id}" data-cname="${esc(c.name)}">${esc(t('Còpies'))}</button><a class="btn sm" href="api/export?id=${encodeURIComponent(c.id)}&amp;t=${encodeURIComponent(S.token||'')}" download>${esc(t('Exportar'))}</a>${c.active?'':`<button class="btn sm danger" data-cdel="${c.id}">${esc(t('Esborrar'))}</button>`}</div></article>`).join('');
 }
 
 async function histApi(body){
@@ -565,14 +568,14 @@ document.addEventListener('click',e=>{
   if(x.closest('#tracks')&&G){
     const hp=x.closest('[data-hope]');if(hp){const d=+hp.dataset.hope;commit(M("{d} d'esperança",{d:(d>0?'+':'')+d}),(s,log)=>hopeDelta(s,d,log,M('canvi manual')));return}
     const th=x.closest('[data-thr]');if(th){const d=+th.dataset.thr;commit(M("Canviar l'amenaça"),(s,log)=>{s.threatIdx=clamp(s.threatIdx+d,0,s.threat.length-1);log.push({k:"Amenaça: {n} cartes d'Ombra per torn.",v:{n:threatNow(s)}})});return}
-    const dk=x.closest('[data-deck]');if(dk){commit(M('Ajustar el mazo'),(s,log)=>{s.deck=Math.max(0,s.deck+(+dk.dataset.deck));log.push({k:'Mazo de joc: {n} cartes.',v:{n:s.deck}})});return}
+    const dk=x.closest('[data-deck]');if(dk){commit(M('Ajustar la baralla'),(s,log)=>{s.deck=Math.max(0,s.deck+(+dk.dataset.deck));log.push({k:'Baralla de joc: {n} cartes.',v:{n:s.deck}})});return}
     if(x.id==='undo'){undo();return}
   }
   // sidebar
   if(x.closest('#side2')&&G){
     const ap=x.closest('[data-ap]');if(ap){const[w,i]=ap.dataset.ap.split(':').map(Number);commit(M("Comptador d'accions"),(s,log)=>{const cur=s.turn.a[w];s.turn.a[w]=(i<cur)?i:i+1;log.push({k:"Accions: {a} de 4 i {b} d'1.",v:{a:s.turn.a[0],b:s.turn.a[1]}})});return}
     if(x.id==='acts-done'){commit(M('Accions fetes'),(s,log)=>{s.turn.step=1;log.push({k:'Accions fetes.'})});return}
-    if(x.id==='draw2'){commit(M('Robar 2 cartes'),(s,log)=>{const can=Math.min(2,s.deck);s.deck-=can;log.push({k:'Es roben {a} cartes de joc. Queden {b}.',v:{a:can,b:s.deck}});if(can<2)hopeDelta(s,-(2-can),log,M("el mazo de joc s'ha acabat"));s.turn.step=Math.max(s.turn.step,2)});return}
+    if(x.id==='draw2'){commit(M('Robar 2 cartes'),(s,log)=>{const can=Math.min(2,s.deck);s.deck-=can;log.push({k:'Es roben {a} cartes de joc. Queden {b}.',v:{a:can,b:s.deck}});if(can<2)hopeDelta(s,-(2-can),log,M("la baralla de joc s'ha acabat"));s.turn.step=Math.max(s.turn.step,2)});return}
     if(x.id==='skies'){skiesFlow();return}
     if(x.id==='shadow-card'){shadowCardFlow();return}
     if(x.id==='next-turn'){
@@ -621,7 +624,7 @@ document.addEventListener('submit',async e=>{
     if(objs.length<LEVELS[level].obj-1){toast(t('Tria {n} objectius.',{n:LEVELS[level].obj-1}));return}
     const before=G;G=newGame({level,players,objectives:objs});
     UNDO=before?[{label:M('Preparar una partida nova'),state:before}]:[];
-    LOG=[{k:'Partida preparada: {a}, {b}. Mazo de joc: {c} cartes. Mira la pestanya Comunitat per a preparar el tauler.',v:{a:LEVELS[level].name,b:M(n===1?'1 participant':'{n} participants',{n}),c:G.deck},ts:Date.now(),who:mem.get('users/'+S.uid)?.name||''}];
+    LOG=[{k:'Partida preparada: {a}, {b}. Baralla de joc: {c} cartes. Mira la pestanya Comunitat per a preparar el tauler.',v:{a:LEVELS[level].name,b:M(n===1?'1 participant':'{n} participants',{n}),c:G.deck},ts:Date.now(),who:mem.get('users/'+S.uid)?.name||''}];
     write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});
     st.forceSetup=false;st.tab='comunitat';lsSet('cm-tab2','comunitat');renderAll();return;
   }
@@ -629,13 +632,41 @@ document.addEventListener('submit',async e=>{
 });
 document.addEventListener('click',async e=>{
   if(st.tab!=='partides')return;
-  const o=e.target.closest('[data-copen]'),du=e.target.closest('[data-cdup]'),de=e.target.closest('[data-cdel]');
+  const o=e.target.closest('[data-copen]'),du=e.target.closest('[data-cdup]'),de=e.target.closest('[data-cdel]'),bk=e.target.closest('[data-cbak]');
+  if(bk){backupsModal(bk.dataset.cbak,bk.dataset.cname);return}
+  if(e.target.id==='open-data'){try{const r=await fetch('api/carpeta',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:'{}'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(t(d.error||"No s'ha pogut fer."))}catch(err){toast(err.message)}return}
   try{
     if(o){o.disabled=true;lsSet('cm-tab2','partida');await campApi({action:'switch',id:o.dataset.copen})}
     if(du){drawCampList(await campApi({action:'duplicate',id:du.dataset.cdup}));toast(t('Partida duplicada.'))}
     if(de)armed(de,async()=>{try{drawCampList(await campApi({action:'delete',id:de.dataset.cdel}));toast(t('Partida esborrada. Està a la carpeta partides/esborrades si la necessites.'))}catch(err){toast(err.message)}},t('Prem de nou per a esborrar'));
   }catch(err){toast(err.message);if(o)o.disabled=false}
 });
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='camp-imp'||!e.target.files.length)return;
+  const f=e.target.files[0];e.target.value='';
+  if(f.size>5*1024*1024){toast(t('El fitxer és massa gran.'));return}
+  try{const r=await fetch('api/import',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:await f.arrayBuffer()});const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(t(d.error||"No s'ha pogut fer."));drawCampList(d);toast(t('Partida importada. Obri-la quan vulgues.'))}
+  catch(err){toast(err.message)}
+});
+async function backupsModal(id,name){
+  let d;try{d=await campApi({action:'backups',id})}catch(err){toast(err.message);return}
+  const why={obrir:"en obrir-la",partida:'mentre es jugava',ma:'feta a mà',abans:'abans de restaurar'};
+  const when=ts=>new Date(ts).toLocaleString(LANG==='es'?'es':'ca',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const rows=l=>l.length?`<ul class="bak-list">${l.map(b=>`<li><span><b>${esc(when(b.ts))}</b> <span class="small muted">${esc(t(why[b.reason]||b.reason))}</span></span><button class="btn sm" data-brest="${esc(b.id)}">${esc(t('Restaurar'))}</button></li>`).join('')}</ul>`:`<p class="muted" style="margin:0">${esc(t('Encara no hi ha cap còpia. Se\'n fa una cada vegada que obris la partida i cada mitja hora mentre jugueu.'))}</p>`;
+  openModal(`<h2>${esc(t('Còpies de seguretat'))}</h2><p class="muted" style="margin:0"><b>${esc(name)}</b> · ${esc(t('Es guarden les 15 últimes. Si restaures una còpia, abans es fa una còpia del que hi ha ara.'))}</p>
+    <div id="bak-box">${rows(d.list||[])}</div>
+    <div class="foot"><button class="btn" id="bak-now">${esc(t('Fer una còpia ara'))}</button><button class="btn pri" id="bak-close">${esc(t('Tancar'))}</button></div>`,(m,close)=>{
+    m.addEventListener('click',async e=>{
+      if(e.target.id==='bak-close'){close();return}
+      try{
+        if(e.target.id==='bak-now'){const r=await campApi({action:'backup',id});$('#bak-box',m).innerHTML=rows(r.list||[]);toast(t('Còpia feta.'))}
+        const b=e.target.closest('[data-brest]');
+        if(b)armed(b,async()=>{try{await campApi({action:'restore',id,backup:b.dataset.brest});close();toast(t('Partida restaurada.'));if(st.tab==='partides')renderCamps()}catch(err){toast(err.message)}},t('Prem de nou per a restaurar'));
+      }catch(err){toast(err.message)}
+    });
+  });
+}
 function nextTurn(){commit(M('Torn següent'),(s,log)=>{const np=(s.turn.p+1)%s.players.length;if(np===0)s.round++;s.turn={p:np,step:0,a:[0,0],shadow:0};log.push({k:'Torn de {x}.',v:{x:s.players[np].name||M('Participant {n}',{n:np+1})}})})}
 $('.tabs').addEventListener('click',e=>{const x=e.target.closest('[data-tab]');if(!x)return;st.tab=x.dataset.tab;st.forceSetup=false;lsSet('cm-tab2',st.tab);renderHeader();renderTab()});
 $('#camp-name').addEventListener('input',e=>{CAMP={...(CAMP||{}),name:e.target.value};clearTimeout(window.__cn);window.__cn=setTimeout(()=>write('campaign/main',CAMP),500)});
@@ -696,7 +727,7 @@ function startSubs(){
 async function boot(){
   applyStatic();renderHeader();
   let ok=false;
-  if(/^https?:$/.test(location.protocol)){try{const r=await fetch('api/hello',{cache:'no-store'});ok=r.ok}catch(_){}}
+  if(/^https?:$/.test(location.protocol)){try{const r=await fetch('api/hello',{cache:'no-store'});ok=r.ok;if(ok){const h=await r.json().catch(()=>({}));S.local=!!h.local;S.dades=h.dades||'';S.version=h.version||''}}catch(_){}}
   if(!ok){
     OFFLINE=true;S.uid='local';mem.set('users/local',{name:t('Tu')});
     mem.set('game/state',newGame({level:'intro',players:[{name:t('Tu'),chars:['frodosam','legolas']},{name:t('Company'),chars:['gandalf','aragorn']}],objectives:OBJECTIVES.slice(0,3)}));

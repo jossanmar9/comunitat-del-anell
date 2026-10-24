@@ -5,6 +5,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/llic%C3%A8ncia-GPL--3.0--or--later-2A1C10" alt="Llicència GPL-3.0-or-later"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-A27419" alt="Windows 10 i 11">
   <img src="https://img.shields.io/badge/Linux-.deb%20%7C%20.tar.gz-A27419" alt="Linux">
+  <a href="../../actions/workflows/proves.yml"><img src="https://github.com/jossanmar9/comunitat-del-anell/actions/workflows/proves.yml/badge.svg" alt="Proves"></a>
 </p>
 
 **Valencià** · [Castellano](README.es.md)
@@ -13,7 +14,7 @@
 
 **Ajudant lliure per a portar les partides d'«El Señor de los Anillos: El Destino de la Comunidad».** El tauler i les peces els teniu a la taula; l'app porta els comptes: l'esperança, l'amenaça, el torn pas a pas, quants daus tirar en cada tirada i què es perd amb el resultat. Un ordinador fa de servidor i la resta de la taula hi entra des del navegador, mòbils inclosos. En valencià i castellà, i sense Internet.
 
-Funciona a **Windows i Linux**. S'instal·la com qualsevol altre programa i les partides es queden a l'ordinador de casa.
+Funciona a **Windows i Linux**. S'instal·la com qualsevol altre programa i, a l'ordinador principal, s'obri en **una finestra pròpia**, sense navegador. Les partides es queden a l'ordinador de casa i no es connecta a cap servidor de fora.
 
 🌐 **Web:** [jossanmar9.github.io/comunitat-del-anell](https://jossanmar9.github.io/comunitat-del-anell/) · 🎲 **Prova-la:** [al navegador](https://jossanmar9.github.io/comunitat-del-anell/prova/) · ⬇️ **Descàrrega:** [última versió](../../releases/latest) · 📖 **Manual:** [en línia](docs/manual-usuari.md) i en PDF a cada versió
 
@@ -37,14 +38,14 @@ Funciona a **Windows i Linux**. S'instal·la com qualsevol altre programa i les 
 
 | Secció | Què fa |
 |---|---|
-| **Pistes** | Esperança (de 0 a 8), nivell d'amenaça (quantes cartes d'Ombra es roben), cartes «El cel s'enfosqueix» eixides, cartes que queden al mazo, objectius completats i ronda. Es corregeixen a mà i tot es pot **desfer** fins a 30 passos. |
-| **El torn pas a pas** | Les 4 + 1 accions, robar 2 cartes (descompta el mazo i resta esperança si s'acaba) i resoldre les cartes d'Ombra que toquen, en l'ordre del manual del joc. |
+| **Pistes** | Esperança (de 0 a 8), nivell d'amenaça (quantes cartes d'Ombra es roben), cartes «El cel s'enfosqueix» eixides, cartes que queden a la baralla, objectius completats i ronda. Es corregeixen a mà i tot es pot **desfer** fins a 30 passos. |
+| **El torn pas a pas** | Les 4 + 1 accions, robar 2 cartes (descompta la baralla i resta esperança si s'acaba) i resoldre les cartes d'Ombra que toquen, en l'ordre del manual del joc. |
 | **Tirades de cerca** | Quants daus tirar segons els natzguls i les tropes de l'Ombra, i què es perd amb el resultat. Té en compte els refugis, Mordor i posar-se l'Anell. |
 | **Batalles** | Atac d'un personatge o provocada per l'Ombra: quants daus, el valor gastat i quantes tropes s'han de llevar de cada bàndol. Avisa si es perd un refugi. |
 | **Cartes especials** | *El cel s'enfosqueix* amb els seus quatre passos («Et veig!» inclòs), la carta d'Ombra i destruir l'Anell Únic. |
 | **Preparació** | Cinc nivells de dificultat, escenaris suggerits, els 24 objectius, els 13 personatges amb retrat i la llista de preparació del tauler, pas a pas. |
 | **Resum i historial** | En acabar, on s'ha perdut l'esperança, rondes, durada i tirades. L'historial guarda totes les partides acabades, amb victòries i derrotes per dificultat. |
-| **Partides** | Diverses partides guardades, que es poden duplicar i esborrar (sense perdre-les). |
+| **Partides i còpies** | Diverses partides guardades, que es poden duplicar, exportar, importar en un altre ordinador i esborrar (sense perdre-les). **Còpies de seguretat automàtiques** de cada partida, per a tornar a un moment d'abans. |
 
 A més: un **registre** de tot el que passa, entrada amb **QR**, **mode fosc**, adaptada al **mòbil** i un **mapa** de la Terra Mitjana que es pot canviar pel teu. Tot el programa està en **valencià i castellà**, i cada jugador tria el seu idioma.
 
@@ -70,20 +71,20 @@ Baixa l'[última versió](../../releases/latest):
 | Sistema | Fitxer |
 |---|---|
 | **Windows** (recomanat) | `LaComunitat-X.Y-installador.exe`. No demana permisos d'administrador; crea l'accés al menú Inici i, si vols, a l'escriptori. |
-| **Windows** portable | `LaComunitat-X.Y-windows-portable.zip`. Descomprimeix-lo on vulgues (també en un llapis USB) i obri `LaComunitat.exe`. |
+| **Windows** portable | `LaComunitat-X.Y-windows-portable.zip`. Descomprimeix-lo on vulgues (també en una memòria USB) i obri `LaComunitat.exe`. |
 | **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y_all.deb`. Doble clic per a instal·lar-lo, o `sudo apt install ./comunitat-del-anell_X.Y_all.deb`. |
-| **Altres Linux** | `LaComunitat-X.Y-linux.tar.gz`. Descomprimeix-lo i obri `comunitat-del-anell.sh`; `./installa.sh` l'afig al menú. Cal Python 3 i, per a la finestra, Tk. |
+| **Altres Linux** | `LaComunitat-X.Y-linux.tar.gz`. Descomprimeix-lo i obri `comunitat-del-anell.sh`; `./installa.sh` l'afig al menú. Cal Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. |
 
 El programa no està signat digitalment: a Windows, SmartScreen pot avisar. Prem **Més informació → Executa igualment**. La primera vegada, permet-li l'accés a les **xarxes privades** perquè hi puguen entrar els jugadors.
 
 Més detalls, el tallafoc de Linux i com passar les partides de les versions 1.x, a la [guia d'instal·lació](docs/guia-installacio.md).
 
-**Sense instal·lar res** (Linux, Mac o Windows amb Python 3.8 o més nou): baixa [`comunitat.py`](comunitat.py) i executa `python3 comunitat.py`.
+**Sense instal·lar res** (Linux, Mac o Windows amb Python 3.8 o més nou): baixa [`comunitat.py`](comunitat.py) i executa `python3 comunitat.py`. Per a tindre-la en una finestra pròpia, a Windows i Mac cal [pywebview](https://pywebview.flowrl.com/) (`pip install pywebview`) i a Linux, GTK i WebKitGTK; si no, s'obri al navegador.
 
 ## Primers passos
 
-1. Obri **La Comunitat de l'Anell**. S'obri una finestreta amb l'adreça per als altres i un **codi QR**, i el navegador ja amb l'app. Mentre la finestra estiga oberta, La Comunitat funciona; en tancar-la, ho guarda tot i s'atura.
-2. Cada jugador escaneja el QR amb el mòbil i entra amb el seu nom. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
+1. Obri **La Comunitat de l'Anell**. L'app s'obri en una finestra pròpia, sense navegador (a Windows amb WebView2, a Linux amb WebKitGTK). Mentre la finestra estiga oberta, La Comunitat funciona; en tancar-la, ho guarda tot i s'atura.
+2. El botó **Convida** mostra l'adreça per als altres i un **codi QR**. Cada jugador l'escaneja amb el mòbil i entra amb el seu nom. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
 3. Ompliu el formulari de preparació, prepareu el tauler amb la llista de la pestanya **Comunitat** i a jugar.
 
 Opcions per al terminal:
@@ -92,8 +93,9 @@ Opcions per al terminal:
 comunitat-del-anell --port 9001             # un altre port (el normal és el 8766)
 comunitat-del-anell --partida "Divendres"   # obri (o crea) eixa partida
 comunitat-del-anell --dades ~/Partides      # guarda les dades en una altra carpeta
-comunitat-del-anell --sense-finestra        # sense finestra: tot al terminal, amb el QR
-comunitat-del-anell --idioma es             # la finestra en castellà (per defecte, el del sistema)
+comunitat-del-anell --navegador            # l'app al navegador, amb la finestreta de l'adreça i el QR
+comunitat-del-anell --sense-finestra        # sense finestres: tot al terminal, amb el QR
+comunitat-del-anell --idioma es             # els avisos de les finestres en castellà (per defecte, en valencià)
 ```
 
 (A Windows, `LaComunitat.exe`; amb el `.tar.gz`, `./comunitat-del-anell.sh`; sense instal·lar, `python3 comunitat.py`.)
@@ -106,7 +108,7 @@ comunitat-del-anell --idioma es             # la finestra en castellà (per defe
 | Linux, amb el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La carpeta del programa |
 
-Cada partida es guarda a `partides/<nom>.json`, els jugadors a `comunitat.json` i les partides acabades a `historial.json`. Per a fer una còpia de seguretat, copia la carpeta sencera; el botó **Carpeta de dades** de la finestra l'obri directament. En desinstal·lar, les partides no s'esborren.
+Cada partida es guarda a `partides/<nom>.json`, les seues còpies de seguretat a `copies/<nom>/`, els jugadors a `comunitat.json` i les partides acabades a `historial.json`. La Comunitat fa una còpia de cada partida en obrir-la i cada mitja hora mentre es juga, i en guarda les 15 últimes; es restauren des de la pestanya **Partides → Còpies**. Per a guardar-ho tot a part, copia la carpeta sencera; el botó **Obrir la carpeta de dades** de la pestanya Partides l'obri directament. En desinstal·lar, les partides no s'esborren.
 
 **El mapa:** per a posar el teu en compte del d'exemple, copia la imatge a eixa carpeta amb el nom `mapa.jpg` (o `mapa.png`). Si el tens en els dos idiomes, anomena'ls `mapa-val.jpg` i `mapa-es.jpg`.
 
@@ -134,6 +136,8 @@ Només cal **Python 3.8 o més nou**, sense dependències. `comunitat.py` es gen
 | `src/web/personatges/` | Els retrats dels personatges (WebP de 200 px) |
 | `src/web/i18n.js` | Les traduccions al castellà (per a afegir un idioma, copia el bloc `es`) |
 | `src/web/cos.html`, `estil-base.css`, `estil.css` | L'estructura i l'estil de la pàgina |
+| `src/web/fonts/` | Les tipografies (Alegreya i IM Fell English, llicència OFL), que van dins del programa |
+| `tests/prova_servidor.py` | Les proves automàtiques del servidor |
 | `docs/` | Els manuals en Markdown i les captures |
 | `paquets/` | L'instal·lador de Windows (Inno Setup) i els fitxers del menú de Linux |
 | `eines/` | Comprovar traduccions, fer els manuals en PDF, els paquets de Linux i la web |
@@ -143,6 +147,7 @@ Després de canviar alguna cosa:
 ```bash
 python3 build.py                          # torna a generar comunitat.py
 python3 eines/comprova-traduccions.py     # comprova que no falta cap traducció
+python3 tests/prova_servidor.py           # passa les proves del servidor
 python3 comunitat.py                      # prova-ho
 ```
 
@@ -152,11 +157,12 @@ Altres eines:
 python3 eines/paquet-linux.py             # fa el .deb i el .tar.gz a dist/
 sh eines/manuals-pdf.sh dist/manuals      # fa els manuals en PDF (cal Chrome o Chromium)
 python3 eines/web.py _site                # genera la web, amb la prova al navegador
+python3 eines/captures.py                 # torna a fer les captures dels manuals (cal Playwright)
 ```
 
 ## Publicar una versió
 
-GitHub ho fa tot sol amb [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prova el programa, fa l'instal·lador i el portable de Windows, el `.deb` i el `.tar.gz` de Linux i els manuals en PDF, i ho publica a [Releases](../../releases).
+Cada vegada que es pugen canvis a `main`, [`.github/workflows/proves.yml`](.github/workflows/proves.yml) genera el programa i passa les proves a Windows i Linux. Per a publicar, GitHub ho fa tot sol amb [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prova el programa (també la finestra pròpia), fa l'instal·lador i el portable de Windows, el `.deb` i el `.tar.gz` de Linux i els manuals en PDF, i ho publica a [Releases](../../releases).
 
 1. Canvia `VERSION` a `src/servidor.py` (per exemple, `"2.1"`) i torna a generar `comunitat.py` amb `python3 build.py`.
 2. Puja els canvis i una etiqueta en minúscula amb el mateix número:
@@ -183,5 +189,7 @@ Aquest projecte s'ha fet amb ajuda d'IA:
 ## Llicència
 
 [GPL-3.0](LICENSE) o posterior. El podeu usar, copiar, modificar i compartir lliurement. Si en publiqueu una versió modificada, també ha de ser lliure i amb el codi obert.
+
+Les tipografies [Alegreya](https://github.com/huertatipografica/Alegreya) i [IM Fell English](https://iginomarini.com/fell/) són lliures, amb la llicència SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). A Windows, la finestra fa servir [pywebview](https://pywebview.flowrl.com/) (llicència BSD).
 
 **Avís:** projecte de fans **no oficial**, sense relació amb Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» i els noms relacionats són marques dels seus propietaris. Aquest programa no inclou cap component del joc: per a jugar cal tindre'l.

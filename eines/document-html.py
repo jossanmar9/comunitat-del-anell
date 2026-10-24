@@ -187,7 +187,7 @@ code { font: 9pt "DejaVu Sans Mono", Consolas, monospace; background: #F0E4C8; p
 pre { background: #F4EAD2; border: 1px solid #C4AB80; border-radius: 3pt; padding: 7pt 10pt; margin: 0 0 9pt; break-inside: avoid; }
 pre code { background: none; padding: 0; }
 table { width: 100%%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.8pt; break-inside: auto; }
-th { text-align: left; font: 600 8.5pt "Alegreya SC", Georgia, serif; letter-spacing: .06em; text-transform: uppercase; color: #8a6514;
+th { text-align: left; font: 500 8.5pt "Alegreya SC", Georgia, serif; letter-spacing: .06em; text-transform: uppercase; color: #8a6514;
   border-bottom: 1.5px solid #A88C5E; padding: 4pt 6pt; }
 td { border-bottom: 1px solid #DCCBA6; padding: 4pt 6pt; vertical-align: top; }
 tr { break-inside: avoid; }
@@ -201,7 +201,7 @@ figcaption { font-style: italic; color: #6F5A40; font-size: 9.5pt; margin-top: 4
 .portada img.logo { width: 46mm; margin: 0 auto 8mm; }
 .portada h1 { font-size: 32pt; margin: 0 0 6pt; }
 .portada .sub { font-size: 12pt; color: #6F5A40; max-width: 140mm; margin: 0 auto 4pt; }
-.portada .versio { font: 600 9pt "Alegreya SC", Georgia, serif; letter-spacing: .18em; color: #A27419; text-transform: uppercase; margin: 8pt 0 12mm; }
+.portada .versio { font: 500 9pt "Alegreya SC", Georgia, serif; letter-spacing: .18em; color: #A27419; text-transform: uppercase; margin: 8pt 0 12mm; }
 .index { text-align: left; columns: 2; column-gap: 12mm; max-width: 160mm; margin: 0 auto; border-top: 3px double #A88C5E; padding-top: 6mm; }
 .index h3 { column-span: all; text-align: center; font-size: 12pt; margin: 0 0 4mm; }
 .index a { display: flex; gap: 6pt; color: #2A1C10; padding: 2.5pt 0; break-inside: avoid; }
@@ -233,14 +233,17 @@ def document(md_path):
                     for i, s in enumerate(seccions, 1))
     logo = "data:image/png;base64," + base64.b64encode((ROOT / "logo.png").read_bytes()).decode()
     cos = "".join('<section class="seccio">' + "".join(h for _, h in s) + "</section>" for s in seccions)
+    sys.path.insert(0, str(ROOT))
+    import build  # noqa: E402  (les mateixes tipografies que l'app, de src/web/fonts)
+    fonts = build.fonts_css(lambda f: (ROOT / "src" / "web" / "fonts" / f).as_uri())
     estil = ESTIL % {"titol": titol.replace('"', ""), "pagina": T["pagina"], "nom": T["nom"].replace('"', "")}
     return f"""<!doctype html>
 <html lang="{'es' if l == 'es' else 'ca-valencia'}">
 <head>
 <meta charset="utf-8">
 <title>{html.escape(titol)} · {html.escape(T['nom'])}</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+SC:wght@600&family=IM+Fell+English&display=swap">
-<style>{estil}</style>
+<style>{fonts}
+{estil}</style>
 </head>
 <body class="{'salts' if len(seccions) >= 10 else ''}">
 <div class="portada">

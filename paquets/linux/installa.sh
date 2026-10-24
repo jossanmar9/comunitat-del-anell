@@ -14,9 +14,17 @@ if [ "$1" = "--desinstalla" ]; then
   exit 0
 fi
 
-# Sense Tk no hi ha finestra: llavors l'accés obri un terminal, perquè es veja i es puga aturar
+# La finestra pròpia necessita GTK i WebKitGTK; si no hi són, es fa servir la finestreta de Tk amb el navegador.
+# Sense cap de les dues, l'accés obri un terminal, perquè es veja i es puga aturar.
+WEBKIT=false
+python3 -c "import gi; gi.require_version('Gtk', '3.0')
+try:
+    gi.require_version('WebKit2', '4.1')
+except ValueError:
+    gi.require_version('WebKit2', '4.0')
+from gi.repository import Gtk, WebKit2" >/dev/null 2>&1 && WEBKIT=true
 TERMINAL=false
-python3 -c "import tkinter" >/dev/null 2>&1 || TERMINAL=true
+[ "$WEBKIT" = true ] || python3 -c "import tkinter" >/dev/null 2>&1 || TERMINAL=true
 
 chmod +x "$DIR/comunitat-del-anell.sh"
 mkdir -p "$APPS"
@@ -28,12 +36,17 @@ chmod +x "$FITXER"
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS" >/dev/null 2>&1 || true
 echo "Fet: La Comunitat ja és al menú d'aplicacions."
 
-if [ "$TERMINAL" = true ]; then
+if [ "$WEBKIT" = false ]; then
   echo
-  echo "Avís: falta Tk, i sense ell no es veu la finestra de La Comunitat (funciona en un terminal)."
-  echo "Instal·la'l i torna a executar ./installa.sh:"
-  echo "  Debian, Ubuntu:  sudo apt install python3-tk"
-  echo "  Fedora:          sudo dnf install python3-tkinter"
-  echo "  Arch, Manjaro:   sudo pacman -S tk"
-  echo "  openSUSE:        sudo zypper install python3-tk"
+  echo "Avís: falten GTK i WebKitGTK, i sense ells La Comunitat no es pot obrir en una finestra pròpia."
+  if [ "$TERMINAL" = true ]; then
+    echo "Tampoc hi ha Tk: funcionarà en un terminal, amb l'app al navegador."
+  else
+    echo "S'obrirà la finestreta de l'adreça i l'app al navegador."
+  fi
+  echo "Per a tindre la finestra pròpia, instal·la'ls i torna a executar ./installa.sh:"
+  echo "  Debian, Ubuntu:  sudo apt install python3-gi gir1.2-webkit2-4.1"
+  echo "  Fedora:          sudo dnf install python3-gobject webkit2gtk4.1"
+  echo "  Arch, Manjaro:   sudo pacman -S python-gobject webkit2gtk-4.1"
+  echo "  openSUSE:        sudo zypper install python3-gobject typelib-1_0-WebKit2-4_1"
 fi

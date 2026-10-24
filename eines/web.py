@@ -43,14 +43,14 @@ T = {
         "que_titol": "Què porta La Comunitat",
         "que_intro": "Les cartes, les tropes i els natzguls continuen al tauler. L'app s'encarrega dels comptes que s'obliden.",
         "moduls": [
-            ("Pistes", "Esperança, amenaça, cartes del mazo, cels enfosquits, objectius i ronda, sempre a la vista i amb desfer."),
+            ("Pistes", "Esperança, amenaça, cartes de la baralla, cels enfosquits, objectius i ronda, sempre a la vista i amb desfer."),
             ("El torn pas a pas", "Les 4 + 1 accions, robar 2 cartes i resoldre les cartes d'Ombra que toquen, en l'ordre del manual."),
             ("Tirades de cerca", "Quants daus tirar segons els natzguls i les tropes, i què es perd amb el resultat. Amb refugis i Mordor."),
             ("Batalles", "Atac o provocada per l'Ombra: daus, valor gastat i quantes tropes s'han de llevar de cada bàndol."),
             ("El cel s'enfosqueix", "Els quatre passos de la carta, «Et veig!» inclòs, i també posar-se l'Anell i destruir-lo."),
             ("Preparació", "Cinc nivells de dificultat, escenaris suggerits, els 24 objectius i la llista del tauler pas a pas."),
-            ("Resum i historial", "En acabar, on s'ha perdut l'esperança i quantes tirades hi ha hagut. I totes les partides acabades."),
-            ("Tota la taula", "Cadascú amb el seu mòbil, entrada amb QR, retrats dels 13 personatges, mode fosc i dos idiomes."),
+            ("Resum, historial i còpies", "En acabar, on s'ha perdut l'esperança i quantes tirades hi ha hagut. L'historial de totes les partides, còpies automàtiques i exportar."),
+            ("Tota la taula", "Una finestra pròpia a l'ordinador principal i, per a la resta, el mòbil amb un QR. Retrats dels 13 personatges, mode fosc i dos idiomes."),
         ],
         "veure_titol": "Així es veu",
         "veure_intro": "Captures reals d'una partida introductòria.",
@@ -71,8 +71,8 @@ T = {
             ("Baixa-la", "Des de la pàgina de descàrregues. A Windows, <code>LaComunitat-…-installador.exe</code> "
                          "(o el <code>.zip</code> portable). A Linux, el <code>.deb</code> per a Ubuntu i Debian, "
                          "o el <code>.tar.gz</code> per a la resta."),
-            ("Obri-la", "S'obri una finestreta amb l'adreça i un codi QR, i el navegador ja amb l'app. Mentre la "
-                        "finestra estiga oberta, La Comunitat funciona."),
+            ("Obri-la", "S'obri en una finestra pròpia, sense navegador. El botó <b>Convida</b> mostra el codi QR "
+                        "per als mòbils. Mentre la finestra estiga oberta, La Comunitat funciona."),
             ("Convida la taula", "Els jugadors escanegen el QR amb el mòbil i entren amb el seu nom. Prepareu la partida "
                                  "i comenceu: el tauler mana, l'app porta els comptes."),
         ],
@@ -80,7 +80,8 @@ T = {
         "dades": [
             "La Comunitat funciona a la wifi de casa i no envia res a Internet.",
             "Els jugadors no han d'instal·lar res: només cal un navegador.",
-            "Cada partida és un fitxer. Per a fer una còpia de seguretat, copia la carpeta de dades.",
+            "Cada partida és un fitxer, amb còpies de seguretat automàtiques. Les pots exportar i obrir en un altre ordinador.",
+            "No es connecta a cap servidor de fora, ni tan sols per a les lletres: tot va dins del programa.",
         ],
         "req_titol": "Què cal",
         "req": ["El joc de taula «El Señor de los Anillos: El Destino de la Comunidad»",
@@ -125,8 +126,8 @@ T = {
             ("Batallas", "Ataque o provocada por la Sombra: dados, Heroicidad gastada y cuántas Tropas hay que quitar de cada bando."),
             ("El cielo se oscurece", "Los cuatro pasos de la carta, «¡Te veo!» incluido, y también ponerse el Anillo y destruirlo."),
             ("Preparación", "Cinco niveles de dificultad, escenarios sugeridos, los 24 objetivos y la lista del tablero paso a paso."),
-            ("Resumen e historial", "Al terminar, dónde se ha perdido la Esperanza y cuántas tiradas ha habido. Y todas las partidas terminadas."),
-            ("Toda la mesa", "Cada uno con su móvil, entrada con QR, retratos de los 13 personajes, modo oscuro y dos idiomas."),
+            ("Resumen, historial y copias", "Al terminar, dónde se ha perdido la Esperanza y cuántas tiradas ha habido. El historial de todas las partidas, copias automáticas y exportar."),
+            ("Toda la mesa", "Una ventana propia en el ordenador principal y, para el resto, el móvil con un QR. Retratos de los 13 personajes, modo oscuro y dos idiomas."),
         ],
         "veure_titol": "Así se ve",
         "veure_intro": "Capturas reales de una partida introductoria.",
@@ -147,8 +148,8 @@ T = {
             ("Descárgala", "Desde la página de descargas. En Windows, <code>LaComunitat-…-installador.exe</code> "
                            "(o el <code>.zip</code> portable). En Linux, el <code>.deb</code> para Ubuntu y Debian, "
                            "o el <code>.tar.gz</code> para el resto."),
-            ("Ábrela", "Se abre una ventanita con la dirección y un código QR, y el navegador ya con la app. Mientras "
-                       "la ventana esté abierta, La Comunidad funciona."),
+            ("Ábrela", "Se abre en una ventana propia, sin navegador. El botón <b>Invitar</b> muestra el código QR "
+                       "para los móviles. Mientras la ventana esté abierta, La Comunidad funciona."),
             ("Invita a la mesa", "Los jugadores escanean el QR con el móvil y entran con su nombre. Preparad la partida "
                                  "y empezad: el tablero manda, la app lleva las cuentas."),
         ],
@@ -156,7 +157,8 @@ T = {
         "dades": [
             "La Comunidad funciona en la wifi de casa y no envía nada a Internet.",
             "Los jugadores no tienen que instalar nada: solo hace falta un navegador.",
-            "Cada partida es un archivo. Para hacer una copia de seguridad, copia la carpeta de datos.",
+            "Cada partida es un archivo, con copias de seguridad automáticas. Las puedes exportar y abrir en otro ordenador.",
+            "No se conecta a ningún servidor de fuera, ni siquiera para las letras: todo va dentro del programa.",
         ],
         "req_titol": "Qué hace falta",
         "req": ["El juego de mesa «El Señor de los Anillos: El Destino de la Comunidad»",
@@ -225,9 +227,7 @@ def pagina(t, l, base, v):
 <meta property="og:image" content="{WEB}img/{l}/{primera}.jpg">
 <link rel="icon" href="{base}img/icona.png">
 <link rel="alternate" hreflang="{t['altre']}" href="{t['altre_url']}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+SC:wght@500&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{base}fonts/fonts.css">
 <link rel="stylesheet" href="{base}estil.css">
 <script>try{{var t=localStorage.getItem('cm-web-tema');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
 </head>
@@ -355,6 +355,13 @@ def main():
         (eixida / d).mkdir(parents=True, exist_ok=True)
     shutil.copy(ROOT / "src" / "web" / "logo.png", eixida / "img" / "icona.png")
     shutil.copy(Path(__file__).with_name("web.css"), eixida / "estil.css")
+    # Les tipografies de l'app (lliures, OFL), servides des de la mateixa web: sense Google Fonts
+    sys.path.insert(0, str(ROOT))
+    import build  # noqa: E402
+    (eixida / "fonts").mkdir(exist_ok=True)
+    for f in (ROOT / "src" / "web" / "fonts").iterdir():
+        shutil.copy(f, eixida / "fonts" / f.name)
+    (eixida / "fonts" / "fonts.css").write_text(build.fonts_css(lambda f: f), encoding="utf-8")
     for l in ("ca", "es"):
         for c in CAPTURES:
             shutil.copy(ROOT / "docs" / "imatges" / l / f"{c}.jpg", eixida / "img" / l / f"{c}.jpg")

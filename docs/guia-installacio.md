@@ -21,9 +21,11 @@ Hi ha dues versions; tria'n una.
 2. Windows SmartScreen pot avisar que és un programa d'un editor desconegut, perquè no està signat digitalment. Prem **Més informació → Executa igualment**.
 3. Segueix els passos. Es crea l'accés al menú Inici i, si vols, a l'escriptori.
 
+La Comunitat s'obri en una finestra pròpia gràcies a **WebView2**, el component de Microsoft que porten Windows 11 i Windows 10 actualitzat. Si en un ordinador no hi és, s'obri l'app al navegador; per a tindre la finestra, instal·la «Microsoft Edge WebView2 Runtime» des de la web de Microsoft.
+
 **Portable:** `LaComunitat-X.Y-windows-portable.zip`
 
-1. Descomprimeix-lo on vulgues, també en un llapis USB.
+1. Descomprimeix-lo on vulgues, també en una memòria USB.
 2. Obri `LaComunitat.exe` de dins de la carpeta.
 
 En la versió portable, les partides es guarden dins de la mateixa carpeta, així que pots portar-te-la amb totes les dades.
@@ -47,20 +49,20 @@ sudo apt install ./comunitat-del-anell_X.Y_all.deb
 
 3. Obri **La Comunitat de l'Anell** des del menú d'aplicacions (a la secció de jocs).
 
-El paquet instal·la també el que necessita (Python 3 i Tk) i l'ordre `comunitat-del-anell` per a arrancar-la des del terminal.
+El paquet instal·la també el que necessita (Python 3, GTK i WebKitGTK, per a la finestra pròpia) i l'ordre `comunitat-del-anell` per a arrancar-la des del terminal.
 
 **Actualitzar:** instal·la el `.deb` de la versió nova. **Desinstal·lar:** `sudo apt remove comunitat-del-anell`. Les partides no s'esborren.
 
 ### Altres distribucions: el .tar.gz
 
-1. Comprova que tens Python 3 i Tk. Quasi totes les distribucions porten Python; si no tens Tk, La Comunitat funciona igual però sense la finestra, només al terminal.
+1. Comprova que tens Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. Quasi totes les distribucions porten Python. Sense WebKitGTK, La Comunitat s'obri al navegador amb una finestreta per al QR (que necessita Tk); i sense cap de les dues, funciona al terminal.
 
-| Distribució | Ordre per a instal·lar Tk |
-|---|---|
-| Fedora | `sudo dnf install python3-tkinter` |
-| Arch, Manjaro | `sudo pacman -S tk` |
-| openSUSE | `sudo zypper install python3-tk` |
-| Debian, Ubuntu | `sudo apt install python3-tk` |
+| Distribució | Ordre per a la finestra pròpia | Ordre per a Tk |
+|---|---|---|
+| Debian, Ubuntu | `sudo apt install python3-gi gir1.2-webkit2-4.1` | `sudo apt install python3-tk` |
+| Fedora | `sudo dnf install python3-gobject webkit2gtk4.1` | `sudo dnf install python3-tkinter` |
+| Arch, Manjaro | `sudo pacman -S python-gobject webkit2gtk-4.1` | `sudo pacman -S tk` |
+| openSUSE | `sudo zypper install python3-gobject typelib-1_0-WebKit2-4_1` | `sudo zypper install python3-tk` |
 
 2. Baixa `LaComunitat-X.Y-linux.tar.gz` i descomprimeix-lo on vulgues:
 
@@ -92,7 +94,7 @@ python3 comunitat.py
 | Linux, amb el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La mateixa carpeta del programa |
 
-Dins hi ha la carpeta `partides` (una partida en cada fitxer), el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Ací també va el teu mapa, si en poses un (`mapa.jpg`). El botó **Carpeta de dades** de la finestra l'obri directament.
+Dins hi ha la carpeta `partides` (una partida en cada fitxer), la carpeta `copies` (les còpies de seguretat automàtiques), el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Ací també va el teu mapa, si en poses un (`mapa.jpg`). El botó **Obrir la carpeta de dades** de la pestanya Partides l'obri directament.
 
 Per a fer una còpia de seguretat, copia eixa carpeta sencera. Si vols guardar les dades en un altre lloc (per exemple, una carpeta sincronitzada amb el núvol), arranca amb `--dades CARPETA`.
 
@@ -115,10 +117,11 @@ La Comunitat accepta aquestes opcions en arrancar-la des del terminal (`comunita
 | `--port 9001` | Fa servir un altre port (el normal és el 8766). |
 | `--partida "Divendres"` | Obri eixa partida en arrancar (la crea si no existeix). |
 | `--dades CARPETA` | Guarda les dades en eixa carpeta. |
-| `--sense-finestra` | No obri la finestra: tot va al terminal, amb el QR. Útil en un ordinador sense pantalla. |
-| `--sense-navegador` | No obri el navegador en arrancar. |
+| `--navegador` | Obri l'app al navegador, amb la finestreta de l'adreça i el QR, en compte de la finestra pròpia. |
+| `--sense-finestra` | No obri cap finestra: tot va al terminal, amb el QR. Útil en un ordinador sense pantalla. |
+| `--sense-navegador` | Amb `--navegador`, no obri el navegador en arrancar. |
 | `--sense-qr` | No mostra el QR al terminal. |
-| `--idioma es` | Mostra la finestra en castellà (`ca` per a valencià). Per defecte, el del sistema. |
+| `--idioma es` | Els avisos de les finestres en castellà. Per defecte, en valencià (`ca`). |
 
 ## Si alguna cosa no va
 
@@ -126,7 +129,8 @@ La Comunitat accepta aquestes opcions en arrancar-la des del terminal (`comunita
 |---|---|
 | Windows no deixa obrir el programa | És l'avís de SmartScreen: **Més informació → Executa igualment**. |
 | Els altres no hi poden entrar | Mateixa wifi, xarxa privada i el programa permés al tallafoc (vegeu més amunt). |
-| A Linux no s'obri la finestra | Falta Tk: instal·la'l amb l'ordre de la teua distribució. Mentrestant, la informació ix al terminal. |
+| S'obri el navegador en compte de la finestra pròpia | A Windows, falta WebView2 (vegeu més amunt). A Linux, falten GTK i WebKitGTK: instal·la'ls amb l'ordre de la teua distribució. |
+| A Linux no s'obri cap finestra | Falten WebKitGTK i Tk: instal·la'n almenys un. Mentrestant, la informació ix al terminal. |
 | «El port ja està en ús» | Ja hi ha una altra Comunitat oberta. Tanca-la o arranca amb `--port 9001`. |
 
 Per a tot el que es pot fer amb l'app, consulta el [manual d'usuari](manual-usuari.md).

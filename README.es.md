@@ -5,6 +5,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-GPL--3.0--or--later-2A1C10" alt="Licencia GPL-3.0-or-later"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-A27419" alt="Windows 10 y 11">
   <img src="https://img.shields.io/badge/Linux-.deb%20%7C%20.tar.gz-A27419" alt="Linux">
+  <a href="../../actions/workflows/proves.yml"><img src="https://github.com/jossanmar9/comunitat-del-anell/actions/workflows/proves.yml/badge.svg" alt="Pruebas"></a>
 </p>
 
 [Valencià](README.md) · **Castellano**
@@ -13,7 +14,7 @@
 
 **Ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad».** El tablero y las piezas los tenéis en la mesa; la app lleva las cuentas: la Esperanza, la Amenaza, el turno paso a paso, cuántos dados tirar en cada tirada y qué se pierde con el resultado. Un ordenador hace de servidor y el resto de la mesa entra desde el navegador, móviles incluidos. En castellano y valenciano, y sin Internet.
 
-Funciona en **Windows y Linux**. Se instala como cualquier otro programa y las partidas se quedan en el ordenador de casa.
+Funciona en **Windows y Linux**. Se instala como cualquier otro programa y, en el ordenador principal, se abre en **una ventana propia**, sin navegador. Las partidas se quedan en el ordenador de casa y no se conecta a ningún servidor de fuera.
 
 🌐 **Web:** [jossanmar9.github.io/comunitat-del-anell](https://jossanmar9.github.io/comunitat-del-anell/es/) · 🎲 **Pruébala:** [en el navegador](https://jossanmar9.github.io/comunitat-del-anell/prova/) · ⬇️ **Descarga:** [última versión](../../releases/latest) · 📖 **Manual:** [en línea](docs/manual-usuario.md) y en PDF en cada versión
 
@@ -44,7 +45,7 @@ Funciona en **Windows y Linux**. Se instala como cualquier otro programa y las p
 | **Cartas especiales** | *El cielo se oscurece* con sus cuatro pasos («¡Te veo!» incluido), la carta de Sombra y destruir el Anillo Único. |
 | **Preparación** | Cinco niveles de dificultad, escenarios sugeridos, los 24 objetivos, los 13 personajes con retrato y la lista de preparación del tablero, paso a paso. |
 | **Resumen e historial** | Al terminar, dónde se ha perdido la Esperanza, rondas, duración y tiradas. El historial guarda todas las partidas terminadas, con victorias y derrotas por dificultad. |
-| **Partidas** | Varias partidas guardadas, que se pueden duplicar y borrar (sin perderlas). |
+| **Partidas y copias** | Varias partidas guardadas, que se pueden duplicar, exportar, importar en otro ordenador y borrar (sin perderlas). **Copias de seguridad automáticas** de cada partida, para volver a un momento anterior. |
 
 Además: un **registro** de todo lo que pasa, entrada con **QR**, **modo oscuro**, adaptada al **móvil** y un **mapa** de la Tierra Media que se puede cambiar por el tuyo. Todo el programa está en **castellano y valenciano**, y cada jugador elige su idioma.
 
@@ -72,18 +73,18 @@ Descarga la [última versión](../../releases/latest):
 | **Windows** (recomendado) | `LaComunitat-X.Y-installador.exe`. No pide permisos de administrador; crea el acceso en el menú Inicio y, si quieres, en el escritorio. |
 | **Windows** portable | `LaComunitat-X.Y-windows-portable.zip`. Descomprímelo donde quieras (también en un pendrive) y abre `LaComunitat.exe`. |
 | **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y_all.deb`. Doble clic para instalarlo, o `sudo apt install ./comunitat-del-anell_X.Y_all.deb`. |
-| **Otros Linux** | `LaComunitat-X.Y-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana, Tk. |
+| **Otros Linux** | `LaComunitat-X.Y-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana propia, GTK y WebKitGTK. |
 
 El programa no está firmado digitalmente: en Windows, SmartScreen puede avisar. Pulsa **Más información → Ejecutar de todas formas**. La primera vez, permítele el acceso a las **redes privadas** para que puedan entrar los jugadores.
 
 Más detalles, el cortafuegos de Linux y cómo pasar las partidas de las versiones 1.x, en la [guía de instalación](docs/guia-instalacion.md).
 
-**Sin instalar nada** (Linux, Mac o Windows con Python 3.8 o más nuevo): descarga [`comunitat.py`](comunitat.py) y ejecuta `python3 comunitat.py`.
+**Sin instalar nada** (Linux, Mac o Windows con Python 3.8 o más nuevo): descarga [`comunitat.py`](comunitat.py) y ejecuta `python3 comunitat.py`. Para tenerla en una ventana propia, en Windows y Mac hace falta [pywebview](https://pywebview.flowrl.com/) (`pip install pywebview`) y en Linux, GTK y WebKitGTK; si no, se abre en el navegador.
 
 ## Primeros pasos
 
-1. Abre **La Comunidad del Anillo**. Se abre una ventanita con la dirección para los demás y un **código QR**, y el navegador ya con la app. Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
-2. Cada jugador escanea el QR con el móvil y entra con su nombre. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
+1. Abre **La Comunidad del Anillo**. La app se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK). Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
+2. El botón **Invitar** muestra la dirección para los demás y un **código QR**. Cada jugador lo escanea con el móvil y entra con su nombre. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
 3. Rellenad el formulario de preparación, preparad el tablero con la lista de la pestaña **Comunidad** y a jugar.
 
 Opciones para el terminal (los nombres de las opciones están en valenciano):
@@ -92,8 +93,9 @@ Opciones para el terminal (los nombres de las opciones están en valenciano):
 comunitat-del-anell --port 9001             # otro puerto (el normal es el 8766)
 comunitat-del-anell --partida "Viernes"     # abre (o crea) esa partida
 comunitat-del-anell --dades ~/Partidas      # guarda los datos en otra carpeta
-comunitat-del-anell --sense-finestra        # sin ventana: todo en el terminal, con el QR
-comunitat-del-anell --idioma es             # la ventana en castellano (por defecto, el del sistema)
+comunitat-del-anell --navegador            # la app en el navegador, con la ventanita de la dirección y el QR
+comunitat-del-anell --sense-finestra        # sin ventanas: todo en el terminal, con el QR
+comunitat-del-anell --idioma es             # los avisos de las ventanas en castellano (por defecto, en valenciano)
 ```
 
 (En Windows, `LaComunitat.exe`; con el `.tar.gz`, `./comunitat-del-anell.sh`; sin instalar, `python3 comunitat.py`.)
@@ -106,7 +108,7 @@ comunitat-del-anell --idioma es             # la ventana en castellano (por defe
 | Linux, con el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La carpeta del programa |
 
-Cada partida se guarda en `partides/<nombre>.json`, los jugadores en `comunitat.json` y las partidas terminadas en `historial.json`. Para hacer una copia de seguridad, copia la carpeta entera; el botón **Carpeta de datos** de la ventana la abre directamente. Al desinstalar, las partidas no se borran.
+Cada partida se guarda en `partides/<nombre>.json`, sus copias de seguridad en `copies/<nombre>/`, los jugadores en `comunitat.json` y las partidas terminadas en `historial.json`. La Comunidad hace una copia de cada partida al abrirla y cada media hora mientras se juega, y guarda las 15 últimas; se restauran desde la pestaña **Partidas → Copias**. Para guardarlo todo aparte, copia la carpeta entera; el botón **Abrir la carpeta de datos** de la pestaña Partidas la abre directamente. Al desinstalar, las partidas no se borran.
 
 **El mapa:** para poner el tuyo en lugar del de ejemplo, copia la imagen en esa carpeta con el nombre `mapa.jpg` (o `mapa.png`). Si lo tienes en los dos idiomas, llámalos `mapa-es.jpg` y `mapa-val.jpg`.
 
@@ -134,6 +136,8 @@ Solo hace falta **Python 3.8 o más nuevo**, sin dependencias. `comunitat.py` se
 | `src/web/personatges/` | Los retratos de los personajes (WebP de 200 px) |
 | `src/web/i18n.js` | Las traducciones al castellano (para añadir un idioma, copia el bloque `es`) |
 | `src/web/cos.html`, `estil-base.css`, `estil.css` | La estructura y el estilo de la página |
+| `src/web/fonts/` | Las tipografías (Alegreya e IM Fell English, licencia OFL), que van dentro del programa |
+| `tests/prova_servidor.py` | Las pruebas automáticas del servidor |
 | `docs/` | Los manuales en Markdown y las capturas |
 | `paquets/` | El instalador de Windows (Inno Setup) y los archivos del menú de Linux |
 | `eines/` | Comprobar traducciones, hacer los manuales en PDF, los paquetes de Linux y la web |
@@ -143,6 +147,7 @@ Después de cambiar algo:
 ```bash
 python3 build.py                          # vuelve a generar comunitat.py
 python3 eines/comprova-traduccions.py     # comprueba que no falta ninguna traducción
+python3 tests/prova_servidor.py           # pasa las pruebas del servidor
 python3 comunitat.py                      # pruébalo
 ```
 
@@ -152,11 +157,12 @@ Otras herramientas:
 python3 eines/paquet-linux.py             # hace el .deb y el .tar.gz en dist/
 sh eines/manuals-pdf.sh dist/manuals      # hace los manuales en PDF (hace falta Chrome o Chromium)
 python3 eines/web.py _site                # genera la web, con la prueba en el navegador
+python3 eines/captures.py                 # vuelve a hacer las capturas de los manuales (hace falta Playwright)
 ```
 
 ## Publicar una versión
 
-GitHub lo hace todo solo con [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prueba el programa, hace el instalador y el portable de Windows, el `.deb` y el `.tar.gz` de Linux y los manuales en PDF, y lo publica en [Releases](../../releases).
+Cada vez que se suben cambios a `main`, [`.github/workflows/proves.yml`](.github/workflows/proves.yml) genera el programa y pasa las pruebas en Windows y Linux. Para publicar, GitHub lo hace todo solo con [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prueba el programa (también la ventana propia), hace el instalador y el portable de Windows, el `.deb` y el `.tar.gz` de Linux y los manuales en PDF, y lo publica en [Releases](../../releases).
 
 1. Cambia `VERSION` en `src/servidor.py` (por ejemplo, `"2.1"`) y vuelve a generar `comunitat.py` con `python3 build.py`.
 2. Sube los cambios y una etiqueta en minúscula con el mismo número:
@@ -183,5 +189,7 @@ Este proyecto se ha hecho con ayuda de IA:
 ## Licencia
 
 [GPL-3.0](LICENSE) o posterior. Lo podéis usar, copiar, modificar y compartir libremente. Si publicáis una versión modificada, también tiene que ser libre y con el código abierto.
+
+Las tipografías [Alegreya](https://github.com/huertatipografica/Alegreya) e [IM Fell English](https://iginomarini.com/fell/) son libres, con la licencia SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). En Windows, la ventana usa [pywebview](https://pywebview.flowrl.com/) (licencia BSD).
 
 **Aviso:** proyecto de fans **no oficial**, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» y los nombres relacionados son marcas de sus propietarios. Este programa no incluye ningún componente del juego: para jugar hay que tenerlo.

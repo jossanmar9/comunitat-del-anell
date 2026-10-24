@@ -102,8 +102,8 @@ Version: {versio}
 Architecture: all
 Maintainer: {MANTENIDOR}
 Installed-Size: {mida}
-Depends: python3 (>= 3.8), python3-tk
-Recommends: xdg-utils
+Depends: python3 (>= 3.8), python3-gi, gir1.2-gtk-3.0, gir1.2-webkit2-4.1 | gir1.2-webkit2-4.0
+Recommends: xdg-utils, python3-tk
 Section: games
 Priority: optional
 Homepage: {WEB}

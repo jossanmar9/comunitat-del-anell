@@ -49,8 +49,8 @@ const HAND_BY_PLAYERS={1:4,2:4,3:3,4:2,5:2};
 const HOPE_START=6,HOPE_MAX=8,THREAT=[2,2,3,3,4,4,5];
 const SETUP_STEPS=[
   ['Tauler','Posa el tauler al centre de la taula.'],
-  ['Marcadors','Amenaça i esperança a la casella amb punt del seu medidor (l\'esperança, a la 6).'],
-  ['Mazo d\'Ombra','Les 2 cartes especials (Sauron i Saruman) a la pila de descarts d\'Ombra; barreja la resta i fes el mazo.'],
+  ['Marcadors','Amenaça i esperança a la casella amb punt del seu indicador (l\'esperança, a la 6).'],
+  ['Baralla d\'Ombra','Les 2 cartes especials (Sauron i Saruman) a la pila de descarts d\'Ombra; barreja la resta i fes la baralla.'],
   ['Tropes aliades','Nans: Ered Luin, Erebor, Turons de Ferro. Elfs: Ports Grisos, Rivendell, Lòrien, Regne del Bosc. Rohirrim: Abisme de Helm, Edoras, Eastemnet. Gondor: 2 a Minas Tirith, 2 a Dol Amroth, 1 a Pelargir.'],
   ['Tropes de l\'Ombra','1 Terres Brunes, 1 Isengard, 2 Mòria, 1 Dol Guldur, 3 Rhûn, 2 Minas Morgul, 2 Barad-dûr, 3 Núrn, 1 Umbar, 2 Harad Pròxim. Després roba 9 cartes d\'Ombra i posa 1 tropa al lloc roig de cada una; descarta-les.'],
   ['Natzguls i Ull','Natzguls: 2 Eriador, 1 Rhudaur, 1 Muntanyes Boiroses, 1 Gondor, 4 Mordor. L\'Ull de Sauron a Eriador.'],

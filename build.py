@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Construeix comunitat.py: ajunta la pàgina web de src/web/, els mapes d'exemple de src/mapes/,
+"""Construeix comunitat.py: ajunta la pàgina web de src/web/ (amb les tipografies de src/web/fonts/),
+els mapes d'exemple de src/mapes/,
 el codi QR de src/qr.py i la finestra de src/finestra.py, i ho incrusta dins del servidor
 src/servidor.py, perquè tot el programa siga un sol fitxer.
 
@@ -31,6 +32,28 @@ def portraits():
     return "const PORTRAITS=" + json.dumps(out) + ";"
 
 
+# Les tipografies van dins de la pàgina: així l'app es veu igual sense Internet i els mòbils no
+# demanen res a cap servidor de fora. Són lliures (SIL Open Font License, src/web/fonts/OFL-*.txt).
+FONTS = [  # (família, fitxer, pes, estil)
+    ("Alegreya", "alegreya.woff", "400 900", "normal"),
+    ("Alegreya", "alegreya-italic.woff", "400 900", "italic"),
+    ("Alegreya SC", "alegreya-sc-medium.woff", "500", "normal"),
+    ("IM Fell English", "im-fell-english.woff", "400", "normal"),
+    ("IM Fell English", "im-fell-english-italic.woff", "400", "italic"),
+    ("IM Fell English SC", "im-fell-english-sc.woff", "400", "normal"),
+]
+
+
+def fonts_css(url=None):
+    """Les regles @font-face. Per defecte, amb les tipografies incrustades (data:); amb `url`, enllaçades."""
+    out = []
+    for fam, fitxer, pes, estil in FONTS:
+        src = url(fitxer) if url else "data:font/woff;base64," + base64.b64encode((WEB / "fonts" / fitxer).read_bytes()).decode()
+        out.append(f'@font-face{{font-family:"{fam}";src:url("{src}") format("woff");font-weight:{pes};'
+                   f'font-style:{estil};font-display:swap}}')
+    return "\n".join(out)
+
+
 def b64_lines(data):
     blob = base64.b64encode(data).decode()
     return "\n".join(blob[i:i + 100] for i in range(0, len(blob), 100))
@@ -40,8 +63,7 @@ def pagina():
     """La pàgina web completa, en un sol HTML (també la fa servir eines/web.py per a la prova en línia)."""
     page = (
         "<title>La Comunitat de l'Anell</title>\n"
-        + read("fonts.html")
-        + "<style>\n" + read("estil-base.css") + "\n" + read("estil.css") + "</style>\n"
+        + "<style>\n" + fonts_css() + "\n" + read("estil-base.css") + "\n" + read("estil.css") + "</style>\n"
         + read("cos.html").replace("__LOGO__", data_uri("logo.png"))
         + "<script>\n" + portraits() + "\n" + read("i18n.js") + "\n" + read("dades.js") + "\n" + read("app.js") + "\n</script>\n"
     )

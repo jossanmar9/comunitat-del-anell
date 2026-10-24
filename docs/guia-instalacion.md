@@ -21,6 +21,8 @@ Hay dos versiones; elige una.
 2. Windows SmartScreen puede avisar de que es un programa de un editor desconocido, porque no está firmado digitalmente. Pulsa **Más información → Ejecutar de todas formas**.
 3. Sigue los pasos. Se crea el acceso en el menú Inicio y, si quieres, en el escritorio.
 
+La Comunidad se abre en una ventana propia gracias a **WebView2**, el componente de Microsoft que traen Windows 11 y Windows 10 actualizado. Si en un ordenador no está, se abre la app en el navegador; para tener la ventana, instala «Microsoft Edge WebView2 Runtime» desde la web de Microsoft.
+
 **Portable:** `LaComunitat-X.Y-windows-portable.zip`
 
 1. Descomprímelo donde quieras, también en un pendrive.
@@ -47,20 +49,20 @@ sudo apt install ./comunitat-del-anell_X.Y_all.deb
 
 3. Abre **La Comunidad del Anillo** desde el menú de aplicaciones (en la sección de juegos).
 
-El paquete instala también lo que necesita (Python 3 y Tk) y la orden `comunitat-del-anell` para arrancarla desde el terminal.
+El paquete instala también lo que necesita (Python 3, GTK y WebKitGTK, para la ventana propia) y la orden `comunitat-del-anell` para arrancarla desde el terminal.
 
 **Actualizar:** instala el `.deb` de la versión nueva. **Desinstalar:** `sudo apt remove comunitat-del-anell`. Las partidas no se borran.
 
 ### Otras distribuciones: el .tar.gz
 
-1. Comprueba que tienes Python 3 y Tk. Casi todas las distribuciones traen Python; si no tienes Tk, La Comunidad funciona igual pero sin la ventana, solo en el terminal.
+1. Comprueba que tienes Python 3 y, para la ventana propia, GTK y WebKitGTK. Casi todas las distribuciones traen Python. Sin WebKitGTK, La Comunidad se abre en el navegador con una ventanita para el QR (que necesita Tk); y sin ninguna de las dos, funciona en el terminal.
 
-| Distribución | Orden para instalar Tk |
-|---|---|
-| Fedora | `sudo dnf install python3-tkinter` |
-| Arch, Manjaro | `sudo pacman -S tk` |
-| openSUSE | `sudo zypper install python3-tk` |
-| Debian, Ubuntu | `sudo apt install python3-tk` |
+| Distribución | Orden para la ventana propia | Orden para Tk |
+|---|---|---|
+| Debian, Ubuntu | `sudo apt install python3-gi gir1.2-webkit2-4.1` | `sudo apt install python3-tk` |
+| Fedora | `sudo dnf install python3-gobject webkit2gtk4.1` | `sudo dnf install python3-tkinter` |
+| Arch, Manjaro | `sudo pacman -S python-gobject webkit2gtk-4.1` | `sudo pacman -S tk` |
+| openSUSE | `sudo zypper install python3-gobject typelib-1_0-WebKit2-4_1` | `sudo zypper install python3-tk` |
 
 2. Descarga `LaComunitat-X.Y-linux.tar.gz` y descomprímelo donde quieras:
 
@@ -92,7 +94,7 @@ python3 comunitat.py
 | Linux, con el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La misma carpeta del programa |
 
-Dentro están la carpeta `partides` (una partida en cada archivo), el archivo `comunitat.json` (los jugadores) e `historial.json` (las partidas terminadas). Aquí va también tu mapa, si pones uno (`mapa.jpg`). El botón **Carpeta de datos** de la ventana la abre directamente.
+Dentro están la carpeta `partides` (una partida en cada archivo), la carpeta `copies` (las copias de seguridad automáticas), el archivo `comunitat.json` (los jugadores) e `historial.json` (las partidas terminadas). Aquí va también tu mapa, si pones uno (`mapa.jpg`). El botón **Abrir la carpeta de datos** de la pestaña Partidas la abre directamente.
 
 Para hacer una copia de seguridad, copia esa carpeta entera. Si quieres guardar los datos en otro sitio (por ejemplo, una carpeta sincronizada con la nube), arranca con `--dades CARPETA`.
 
@@ -115,10 +117,11 @@ La Comunidad acepta estas opciones al arrancarla desde el terminal (`comunitat-d
 | `--port 9001` | Usa otro puerto (el normal es el 8766). |
 | `--partida "Viernes"` | Abre esa partida al arrancar (la crea si no existe). |
 | `--dades CARPETA` | Guarda los datos en esa carpeta. |
-| `--sense-finestra` | No abre la ventana: todo va al terminal, con el QR. Útil en un ordenador sin pantalla. |
-| `--sense-navegador` | No abre el navegador al arrancar. |
+| `--navegador` | Abre la app en el navegador, con la ventanita de la dirección y el QR, en lugar de la ventana propia. |
+| `--sense-finestra` | No abre ninguna ventana: todo va al terminal, con el QR. Útil en un ordenador sin pantalla. |
+| `--sense-navegador` | Con `--navegador`, no abre el navegador al arrancar. |
 | `--sense-qr` | No muestra el QR en el terminal. |
-| `--idioma es` | Muestra la ventana en castellano (`ca` para valenciano). Por defecto, el del sistema. |
+| `--idioma es` | Los avisos de las ventanas en castellano. Por defecto, en valenciano (`ca`). |
 
 ## Si algo no funciona
 
@@ -126,7 +129,8 @@ La Comunidad acepta estas opciones al arrancarla desde el terminal (`comunitat-d
 |---|---|
 | Windows no deja abrir el programa | Es el aviso de SmartScreen: **Más información → Ejecutar de todas formas**. |
 | Los demás no pueden entrar | Misma wifi, red privada y el programa permitido en el cortafuegos (ver más arriba). |
-| En Linux no se abre la ventana | Falta Tk: instálalo con la orden de tu distribución. Mientras tanto, la información sale en el terminal. |
+| Se abre el navegador en lugar de la ventana propia | En Windows, falta WebView2 (ver más arriba). En Linux, faltan GTK y WebKitGTK: instálalos con la orden de tu distribución. |
+| En Linux no se abre ninguna ventana | Faltan WebKitGTK y Tk: instala al menos uno. Mientras tanto, la información sale en el terminal. |
 | «El puerto ya está en uso» | Ya hay otra Comunidad abierta. Ciérrala o arranca con `--port 9001`. |
 
 Para todo lo que se puede hacer con la app, consulta el [manual de usuario](manual-usuario.md).

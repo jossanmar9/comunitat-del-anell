@@ -1,0 +1,68 @@
+name: "Errada / Error"
+description: "Alguna cosa no funciona com hauria. / Algo no funciona como debería."
+title: "[Errada] "
+labels: ["errada"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gràcies per avisar! Com més detalls, més fàcil serà arreglar-ho. Pots escriure en valencià o en castellà.
+        ¡Gracias por avisar! Cuantos más detalles, más fácil será arreglarlo. Puedes escribir en valenciano o en castellano.
+  - type: textarea
+    id: que
+    attributes:
+      label: "Què ha passat? / ¿Qué ha pasado?"
+      description: "Què esperaves que passara i què ha passat en realitat. / Qué esperabas que pasara y qué ha pasado en realidad."
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: "Com es pot repetir? / ¿Cómo se puede repetir?"
+      description: "Els passos, un per línia. / Los pasos, uno por línea."
+      placeholder: |
+        1. Faig una tirada de batalla amb 3 tropes aliades
+        2. Anote 2 «Taules»
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: on
+    attributes:
+      label: "On ho veus? / ¿Dónde lo ves?"
+      options:
+        - "A l'ordinador principal (la finestra de La Comunitat) / En el ordenador principal"
+        - "En un mòbil o un altre aparell / En un móvil u otro dispositivo"
+        - "A tot arreu / En todas partes"
+    validations:
+      required: true
+  - type: dropdown
+    id: servidor
+    attributes:
+      label: "Com arranques La Comunitat? / ¿Cómo arrancas La Comunidad?"
+      options:
+        - "Windows, amb l'instal·lador / con el instalador"
+        - "Windows portable"
+        - "Linux, amb el .deb / con el .deb"
+        - "Linux, amb el .tar.gz / con el .tar.gz"
+        - "python3 comunitat.py"
+    validations:
+      required: true
+  - type: input
+    id: versio
+    attributes:
+      label: "Versió / Versión"
+      description: "Ix a la pestanya Partides i a Configuració → Aplicacions. / Sale en la pestaña Partidas y en Configuración → Aplicaciones."
+      placeholder: "2.1"
+    validations:
+      required: true
+  - type: input
+    id: aparell
+    attributes:
+      label: "Aparell i navegador / Dispositivo y navegador"
+      placeholder: "Mòbil Android amb Chrome, portàtil amb Firefox…"
+  - type: textarea
+    id: captures
+    attributes:
+      label: "Captures / Capturas"
+      description: "Si pots, arrossega ací una captura de pantalla. / Si puedes, arrastra aquí una captura de pantalla."
