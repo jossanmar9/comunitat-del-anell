@@ -5,6 +5,8 @@
 """
 import re,json,glob,sys
 import os
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # la consola de Windows potser no parla UTF-8
 root=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','src')+'/'
 keys=[]
 def add(k):
@@ -43,7 +45,7 @@ def top_literals(a):
     return out
 for f in sorted(glob.glob(root+'web/*.js')):
     if f.endswith('i18n.js'): continue
-    s=open(f).read()
+    s=open(f,encoding='utf-8').read()
     for m in re.finditer(r'(?<![\w.$])(t|M|L|pl)\(',s):
         args=parse_args(s,m.end()-1)
         if not args: continue
@@ -52,8 +54,8 @@ for f in sorted(glob.glob(root+'web/*.js')):
             if k<len(args):
                 for lit in top_literals(args[k]):
                     add(json.loads(lit) if lit[0]=='"' else eval(lit))
-for g in re.findall(r'data-i18n(?:-ph|-aria)?="([^"]*)"',open(root+'web/cos.html').read()): add(g)
-for g in re.findall(r'"error": "([^"]+)"',open(root+'servidor.py').read()): add(g)
+for g in re.findall(r'data-i18n(?:-ph|-aria)?="([^"]*)"',open(root+'web/cos.html',encoding='utf-8').read()): add(g)
+for g in re.findall(r'"error": "([^"]+)"',open(root+'servidor.py',encoding='utf-8').read()): add(g)
 keys=[k for k in keys if k and re.search(r'[A-Za-zÀ-ú]',k)]
 # Compara amb el diccionari de i18n.js
 src=open(root+'web/i18n.js',encoding='utf-8').read()
