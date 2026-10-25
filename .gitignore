@@ -23,3 +23,5 @@ dist/
 # Web i manuals generats (els fa GitHub)
 _site/
 manuals/
+# Dependències locals per a les proves de navegador
+.test-tools/

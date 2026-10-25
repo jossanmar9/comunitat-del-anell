@@ -12,6 +12,7 @@ Arranca comunitat.py en una carpeta temporal i comprova, com ho faria un navegad
 Ús:  python3 build.py && python3 tests/prova_servidor.py
 """
 import json
+from concurrent.futures import ThreadPoolExecutor
 import shutil
 import socket
 import subprocess
@@ -24,6 +25,19 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def partida(**values):
+    g = {"v": 2, "hope": 6, "hopeMax": 8, "created": 1, "round": 1, "deck": 50,
+         "threat": [2, 2, 3], "threatIdx": 0, "level": "intro", "solo": True,
+         "players": [{"name": "Prova"}], "chars": [{"id": "frodosam", "player": 0}],
+         "objectives": [{"id": "ring", "name": "Anell", "done": False, "ring": True}],
+         "setup": [False], "turn": {"p": 0, "step": 0, "a": [0, 0], "shadow": 0},
+         "skies": {"total": 4, "drawn": 0}, "calc": {"naz": 0, "troops": 0, "ring": False,
+         "haven": False, "mordor": False, "bKind": "attack", "bFr": 1, "bSh": 1,
+         "bNaz": False, "bHaven": False}, "result": None}
+    g.update(values)
+    return g
 
 
 def free_port():
@@ -46,7 +60,12 @@ class Servidor:
                 return
             except OSError:
                 time.sleep(.1)
-        raise RuntimeError("El servidor no arranca: " + self.proc.stderr.read().decode(errors="replace"))
+        self.proc.terminate()
+        self.proc.wait(10)
+        error = self.proc.stderr.read().decode(errors="replace")
+        self.proc.stderr.close()
+        shutil.rmtree(self.dir, ignore_errors=True)
+        raise RuntimeError("El servidor no arranca: " + error)
 
     def stop(self):
         self.proc.terminate()
@@ -54,6 +73,8 @@ class Servidor:
             self.proc.wait(10)
         except subprocess.TimeoutExpired:
             self.proc.kill()
+            self.proc.wait(10)
+        self.proc.stderr.close()
         shutil.rmtree(self.dir, ignore_errors=True)
 
     def req(self, method, path, body=None, tok=None, raw=False, ctype="application/json"):
@@ -67,7 +88,8 @@ class Servidor:
                 blob = resp.read()
                 return resp.status, (blob if raw else json.loads(blob or b"{}")), resp.headers
         except urllib.error.HTTPError as e:
-            blob = e.read()
+            with e:
+                blob = e.read()
             try:
                 return e.code, json.loads(blob or b"{}"), e.headers
             except ValueError:
@@ -85,7 +107,11 @@ class Servidor:
         return d["token"]
 
     def write(self, tok, path, data, mode="set"):
-        return self.post("/api/write", {"path": path, "mode": mode, "data": data}, tok)[0]
+        if path == "game/state" and mode == "set":
+            data = partida(**data)
+        _, snap, _ = self.get("/api/snapshot", tok)
+        return self.post("/api/write", {"path": path, "mode": mode, "data": data,
+                                      "camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"]}, tok)[0]
 
 
 class Proves(unittest.TestCase):
@@ -139,7 +165,7 @@ class Proves(unittest.TestCase):
 
     def test_06_historial(self):
         self.s.write(self.tok, "game/state", {"v": 2, "created": 7, "result": "win", "level": "intro",
-                                            "players": [{"name": "Jugador1"}], "objectives": []})
+                                            "players": [{"name": "Jugador1"}]})
         code, d, _ = self.s.get("/api/history", self.tok)
         self.assertTrue(any(h["result"] == "win" and h["created"] == 7 for h in d["list"]))
         self.s.write(self.tok, "game/state", {"result": None}, "update")             # desfer la jugada final
@@ -156,6 +182,12 @@ class Proves(unittest.TestCase):
         code, d, _ = self.s.post("/api/campaigns", {"action": "delete", "id": "divendres-copia"}, self.tok)
         self.assertNotIn("divendres-copia", [c["id"] for c in d["list"]])
         self.assertTrue(any((self.s.dir / "partides" / "esborrades").glob("divendres-copia-*.json")))
+        _, trash, _ = self.s.get("/api/campaigns", self.tok)
+        deleted = next(c for c in trash["trash"] if c["name"] == "Divendres (còpia)")
+        code, restored, _ = self.s.post("/api/campaigns", {"action": "undelete", "id": deleted["id"]}, self.tok)
+        self.assertEqual(code, 200)
+        self.assertIn("Divendres (còpia)", [c["name"] for c in restored["list"]])
+        self.assertEqual(self.s.post("/api/campaigns", {"action": "undelete", "id": "../prova"}, self.tok)[0], 400)
         code, d, _ = self.s.post("/api/campaigns", {"action": "switch", "id": "prova"}, self.tok)
         self.assertEqual(d["active"], "prova")
 
@@ -193,6 +225,58 @@ class Proves(unittest.TestCase):
         self.assertTrue(any(b["reason"] == "abans" for b in d["list"]))           # el que hi havia abans de restaurar
         code, d, _ = self.s.post("/api/campaigns", {"action": "restore", "id": "prova", "backup": "../../x"}, self.tok)
         self.assertEqual(code, 404)
+
+    def test_10_conflicte_i_transaccio(self):
+        _, snap, _ = self.s.get("/api/snapshot", self.tok)
+        def transaction(hope, request_id):
+            return {"camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"], "requestId": request_id,
+                    "changes": [{"path": "game/state", "data": partida(hope=hope)},
+                                {"path": "game/log", "data": {"list": [{"k": request_id}]}},
+                                {"path": "game/undo", "data": {"stack": []}}]}
+        a, b = transaction(5, "jugador-a"), transaction(2, "jugador-b")
+        tok2 = self.s.join("Simultani")
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(self.s.post, "/api/transaction", a, self.tok)
+            second = pool.submit(self.s.post, "/api/transaction", b, tok2)
+            results = [first.result(), second.result()]
+        self.assertEqual(sorted(r[0] for r in results), [200, 409])
+        winner = 0 if results[0][0] == 200 else 1
+        request, token = (a, self.tok) if winner == 0 else (b, tok2)
+        _, saved, _ = self.s.get("/api/snapshot", self.tok)
+        self.assertEqual(saved["docs"]["game/state"]["hope"], 5 if winner == 0 else 2)
+        self.assertEqual(saved["docs"]["game/log"]["list"][0]["k"], request["requestId"])
+        self.assertEqual(saved["docs"]["game/undo"], {"stack": []})
+        disk = json.loads((self.s.dir / "partides" / (snap["campaign"] + ".json")).read_text(encoding="utf-8"))
+        self.assertEqual(disk["docs"]["game/state"], saved["docs"]["game/state"])
+        code, retried, _ = self.s.post("/api/transaction", request, token)
+        self.assertEqual(code, 200)
+        self.assertEqual(retried["revision"], saved["revision"])
+
+    def test_11_importacions_incorrectes(self):
+        for key, value in (("hope", -1), ("hope", True), ("players", "x"),
+                           ("threat", []), ("turn", {}), ("v", 99), ("calc", None)):
+            with self.subTest(key=key, value=value):
+                info = {"docs": {"game/state": partida(**{key: value})}}
+                self.assertEqual(self.s.post("/api/import", info, self.tok)[0], 400)
+        self.assertEqual(self.s.post("/api/import", {"format": "altre", "versio": 1, "docs": {}}, self.tok)[0], 400)
+        self.assertEqual(self.s.post("/api/join", [], self.tok)[0], 400)
+
+    def test_12_transaccio_invalida_no_canvia_res(self):
+        _, before, _ = self.s.get("/api/snapshot", self.tok)
+        body = {"camp": before["campaign"], "epoch": before["epoch"], "revision": before["revision"], "requestId": "invalid",
+                "changes": [{"path": "game/log", "data": {"list": [{"k": "no guardar"}]}},
+                            {"path": "game/state", "data": partida(hope=999)}]}
+        self.assertEqual(self.s.post("/api/transaction", body, self.tok)[0], 400)
+        _, after, _ = self.s.get("/api/snapshot", self.tok)
+        self.assertEqual(before, after)
+
+    def test_13_revisio_abans_de_reiniciar(self):
+        _, before, _ = self.s.get("/api/snapshot", self.tok)
+        body = {"camp": before["campaign"], "epoch": "servidor-anterior", "revision": before["revision"],
+                "requestId": "antic", "changes": [{"path": "game/state", "data": partida(hope=1)}]}
+        self.assertEqual(self.s.post("/api/transaction", body, self.tok)[0], 409)
+        _, after, _ = self.s.get("/api/snapshot", self.tok)
+        self.assertEqual(before, after)
 
 
 if __name__ == "__main__":

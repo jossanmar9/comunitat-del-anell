@@ -95,34 +95,46 @@ const BATTLE_FACES=[['rout','Rebutjar',"Retira 1 tropa de l'Ombra."],['tie','Tau
 const SEARCH_FACES=[['slip',"Frodo s'escapoleix",'Sense efecte.'],['tired','Fatiga',"Perd 1 d'esperança."],['seen','Al descobert',"Perd 1 d'esperança (s'ignora en un refugi)."],['call','Convocatòria','Si hi ha natzguls, 1 torna a Mordor.']];
 
 /* ================= store ================= */
-const S={uid:null,token:null,camp:null,es:null,local:false,dades:''};
+const S={uid:null,token:null,camp:null,epoch:null,revision:-1,es:null,local:false,dades:''};
 const st={tab:lsGet('cm-tab2')||'partida',loaded:false,forceSetup:false};
 let G=null,LOG=[],UNDO=[],CAMP=null;
 const mem=new Map(),memL=new Set();
 const parentOf=p=>p.split('/').slice(0,-1).join('/');
 function memNotify(path){for(const l of [...memL]){if(l.doc?l.path===path:l.path===parentOf(path))l.fire()}}
 function watchDoc(path,cb){const l={doc:true,path,fire:()=>{const d=mem.get(path);cb(d?clone(d):null)}};memL.add(l);setTimeout(l.fire,0)}
-async function doWrite(path,mode,data){
-  if(mode==='delete')mem.delete(path);else if(mode==='set')mem.set(path,clone(data));else mem.set(path,deepMerge(mem.get(path)||{},data));
-  memNotify(path);
-  if(!S.token)return;
-  let r;
-  try{r=await fetch('api/write',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:JSON.stringify({path,mode,data,camp:S.camp})})}catch(e){throw{code:'net'}}
-  if(r.status===401){lsSet('cm-token','');location.reload();return}
-  if(r.status===409){location.reload();return}
-  if(!r.ok)throw{code:'http'};
+let pendingSave=null,saving=false,deferredSnapshot=null,savePromise=null,saveAccepted=false;
+function saveStatus(message,retry=false){
+  const el=$('#save-status');el.hidden=!message;
+  $('#save-message').textContent=message?t(message):'';$('#save-retry').hidden=!retry;
 }
-const wq=new Map();
-function write(path,data,mode='set'){
-  let q=wq.get(path);if(!q){q={busy:false,next:null};wq.set(path,q)}
-  q.next={mode,data:clone(data)};if(!q.busy)flush(path,q);
+function lockEditing(value){$$('#main,#tracks,#side2,.tabs,#camp-name').forEach(el=>{el.inert=value});}
+function writeBatch(changes){
+  if(!S.token){for(const c of changes){mem.set(c.path,clone(c.data));memNotify(c.path)}return}
+  if(pendingSave)return;
+  pendingSave={changes:clone(changes),camp:S.camp,epoch:S.epoch,revision:S.revision,requestId:newId()};
+  lockEditing(true);savePromise=flushSave();
 }
-async function flush(path,q){
-  q.busy=true;
-  while(q.next){const{mode,data}=q.next;q.next=null;
-    try{await doWrite(path,mode,data)}catch(e){await new Promise(r=>setTimeout(r,500));try{await doWrite(path,mode,data)}catch(e2){toast(t("No s'ha pogut guardar. Comprova la connexió amb el servidor."))}}}
-  q.busy=false;
+function write(path,data){writeBatch([{path,data}])}
+function saveGame(){writeBatch([{path:'game/state',data:G},{path:'game/undo',data:{stack:UNDO}},{path:'game/log',data:{list:LOG}}])}
+async function flushSave(){
+  if(!pendingSave||saving)return;saving=true;saveAccepted=false;saveStatus('Guardant…');
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
+  try{
+    const r=await fetch('api/transaction',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:JSON.stringify(pendingSave),signal:controller.signal});
+    const d=await r.json();
+    if(r.status===401){saveStatus('La sessió ha caducat. Torna a entrar.');return}
+    if(r.status!==409&&!r.ok)throw new Error();
+    saveAccepted=r.ok;
+    pendingSave=null;lockEditing(false);applySnapshot(d);
+    if(deferredSnapshot){const latest=deferredSnapshot;deferredSnapshot=null;applySnapshot(latest)}
+    for(const p of ['game/state','game/undo','game/log','campaign/main'])memNotify(p);
+    renderAll();
+    saveStatus(r.status===409?'Un altre jugador ha canviat la partida. Revisa-la i repeteix l’acció.':'Guardat');
+  }catch(_){saveStatus('Canvis pendents. Comprova la connexió i torna a provar.',true)}
+  finally{clearTimeout(timeout);saving=false}
 }
+$('#save-retry').addEventListener('click',flushSave);
+window.addEventListener('beforeunload',e=>{if(pendingSave){e.preventDefault();e.returnValue=''}});
 
 /* ================= game ================= */
 const threatNow=s=>s.threat[clamp(s.threatIdx,0,s.threat.length-1)];
@@ -134,20 +146,21 @@ function hopeDelta(s,d,log,why){
   if(s.hope<=0&&!s.result){s.result='lose';s.ended=Date.now();log.push({k:"Frodo ha perdut tota l'esperança. La partida s'ha perdut.",c:'bad'})}
 }
 function commit(label,fn){
-  if(!G)return null;
+  if(!G||pendingSave)return null;
   const before=clone(G),log=[];const extra=fn(G,log);
   UNDO.push({label,state:before});if(UNDO.length>30)UNDO.shift();
   const ts=Date.now(),who=mem.get('users/'+S.uid)?.name||'';
   if(!log.length)log.push({k:'{x}.',v:{x:label}});
   LOG=[...log.map(e=>({...e,ts,who})).reverse(),...LOG].slice(0,600);
-  write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});
+  saveGame();
   renderAll();return extra;
 }
 function undo(){
+  if(pendingSave)return;
   if(!UNDO.length){toast(t('No hi ha res per desfer.'));return}
   const u=UNDO.pop();G=u.state;
   LOG=[{k:'Desfet: {x}.',v:{x:u.label},ts:Date.now()},...LOG].slice(0,600);
-  write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});renderAll();
+  saveGame();renderAll();
 }
 function newGame(cfg){
   const lv=LEVELS[cfg.level];
@@ -173,10 +186,21 @@ const playerName=(p,i)=>p&&p.name?p.name:t('Participant {n}',{n:i+1});
 
 /* ================= modal ================= */
 function openModal(html,onMount){
+  const previousFocus=document.activeElement;
   const root=$('#modal-root');
-  root.innerHTML=`<div class="modal-back" id="mback"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
-  const back=$('#mback');const close=()=>{root.innerHTML='';document.removeEventListener('keydown',onKey)};
-  const onKey=e=>{if(e.key==='Escape')close()};document.addEventListener('keydown',onKey);
+  root.innerHTML=`<div class="modal-back" id="mback"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">${html}</div></div>`;
+  const heading=$('h2',root);if(heading)heading.id='modal-title';
+  const back=$('#mback');const close=()=>{root.innerHTML='';document.removeEventListener('keydown',onKey);if(previousFocus?.isConnected)previousFocus.focus()};
+  const onKey=e=>{
+    if(e.key==='Escape')close();
+    if(e.key==='Tab'){
+      const items=$$('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]',back).filter(el=>el.getClientRects().length);
+      const first=items[0],last=items.at(-1);
+      if(!first){e.preventDefault();return}
+      if(e.shiftKey&&(document.activeElement===first||!back.contains(document.activeElement))){e.preventDefault();last.focus()}
+      else if(!e.shiftKey&&(document.activeElement===last||!back.contains(document.activeElement))){e.preventDefault();first.focus()}
+    }
+  };document.addEventListener('keydown',onKey);
   back.addEventListener('click',e=>{if(e.target===back)close()});
   onMount&&onMount($('.modal',root),close);
   $('.modal button',root)?.focus();
@@ -518,6 +542,7 @@ async function renderCamps(){
     <div class="camp-tools"><form class="panel camp-new" id="camp-new"><label class="field"><span>${esc(t('Partida nova'))}</span><input class="in" id="cn-name" required maxlength="80" placeholder="${esc(t('Divendres amb la colla'))}"></label><button class="btn pri" type="submit">${esc(t('Crear i obrir'))}</button></form>
     <div class="panel camp-imp"><span class="field-l">${esc(t('Importar'))}</span><p class="small muted" style="margin:0">${esc(t("Una partida exportada des d'aquest o d'un altre ordinador."))}</p><label class="btn sm" style="align-self:flex-start">${esc(t('Triar el fitxer…'))}<input type="file" id="camp-imp" accept=".json,application/json" hidden></label></div></div>
     <div id="camp-list" class="camp-list"><p class="muted">${esc(t('Carregant…'))}</p></div>
+    <section class="panel"><h2>${esc(t('Paperera'))}</h2><div id="trash-list"></div></section>
     ${S.local?`<div class="panel here"><div><span class="field-l">${esc(t('En aquest ordinador'))}</span><p class="small" style="margin:4px 0 0">${esc(t("Les partides, l'historial, les còpies de seguretat i el teu mapa es guarden a:"))}</p><p class="small path">${esc(S.dades)}</p></div><button class="btn sm" id="open-data">${esc(t('Obrir la carpeta de dades'))}</button></div>`:''}
     <div><h2 style="font-size:32px">${esc(t('Historial'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Les partides acabades, guanyades o perdudes, de totes les partides guardades."))}</p></div>
     <div id="hist"><p class="muted">${esc(t('Carregant…'))}</p></div>
@@ -527,6 +552,7 @@ async function renderCamps(){
   loadHistory();
 }
 function drawCampList(d){
+  const trash=$('#trash-list');if(trash)trash.innerHTML=(d.trash||[]).length?(d.trash||[]).map(c=>`<p><span>${esc(c.name)}</span> <button class="btn sm" data-undelete="${esc(c.id)}">${esc(t('Recuperar'))}</button></p>`).join(''):`<p class="muted">${esc(t('No hi ha partides a la paperera.'))}</p>`;
   const box=$('#camp-list');if(!box)return;
   box.innerHTML=d.list.map(c=>`<article class="camp-card${c.active?' on':''}"><div class="cc-head"><h3 class="cc-name">${esc(c.name)}</h3>${c.active?`<span class="chip dm">${esc(t('Oberta'))}</span>`:''}</div>
     <p class="muted small" style="margin:0;font-style:italic">${esc(t('Últim canvi {x}',{x:ago(c.updated)}))}</p>
@@ -562,7 +588,7 @@ function renderTab(){if(!st.loaded)return;if(st.tab==='partida')renderPlay();els
 function renderAll(){renderHeader();renderTracks();renderSide();if(st.tab!=='partides')renderTab()}
 
 /* ================= events ================= */
-document.addEventListener('click',e=>{
+document.addEventListener('click',async e=>{
   const x=e.target;
   // tracks
   if(x.closest('#tracks')&&G){
@@ -590,7 +616,7 @@ document.addEventListener('click',e=>{
     if(inc||dec){const k=(inc||dec).dataset.cinc||(dec&&dec.dataset.cdec);G.calc[k]=Math.max(0,(G.calc[k]||0)+(inc?1:-1));write('game/state',G);renderPlay();return}
     const bk=x.closest('[data-bk]');if(bk){G.calc.bKind=bk.dataset.bk;write('game/state',G);renderPlay();return}
     if(x.id==='t-search'){doSearch();return}
-    if(x.id==='t-ring'){commit(M("Frodo es posa l'Anell"),(s,log)=>{hopeDelta(s,-1,log,M("Frodo es posa l'Anell"));log.push({k:"Al tauler: desplaça l'Ull a la regió de Frodo."})});doSearch({ring:true,label:M("Cerca amb l'Anell")});return}
+    if(x.id==='t-ring'){commit(M("Frodo es posa l'Anell"),(s,log)=>{hopeDelta(s,-1,log,M("Frodo es posa l'Anell"));log.push({k:"Al tauler: desplaça l'Ull a la regió de Frodo."})});if(S.token){await savePromise;if(!saveAccepted)return}doSearch({ring:true,label:M("Cerca amb l'Anell")});return}
     if(x.id==='t-battle'){doBattle();return}
     const hv=x.closest('[data-hev]');if(hv){const d=+hv.dataset.hev,why=hv.dataset.why;commit(M('Esperança: {x}',{x:M(why)}),(s,log)=>hopeDelta(s,d,log,M(why)));return}
     if(x.id==='t-doom'){openModal(`<h2>${esc(t("Destruir l'Anell Únic"))}</h2><p style="margin:0">${t("Frodo és a la Muntanya del Destí i gasta <b>5 de Destí</b>. Si després de la tirada l'esperança és 1 o més, guanyeu.")}</p><div class="foot"><button class="btn" id="d-no">${esc(t('Encara no'))}</button><button class="btn pri" id="d-yes">${esc(t('Tirar'))}</button></div>`,(m,close)=>{$('#d-no',m).onclick=close;$('#d-yes',m).onclick=()=>{close();doSearch({doom:true,label:M("Intent de destruir l'Anell")})}});return}
@@ -625,7 +651,7 @@ document.addEventListener('submit',async e=>{
     const before=G;G=newGame({level,players,objectives:objs});
     UNDO=before?[{label:M('Preparar una partida nova'),state:before}]:[];
     LOG=[{k:'Partida preparada: {a}, {b}. Baralla de joc: {c} cartes. Mira la pestanya Comunitat per a preparar el tauler.',v:{a:LEVELS[level].name,b:M(n===1?'1 participant':'{n} participants',{n}),c:G.deck},ts:Date.now(),who:mem.get('users/'+S.uid)?.name||''}];
-    write('game/state',G);write('game/undo',{stack:UNDO});write('game/log',{list:LOG});
+    saveGame();
     st.forceSetup=false;st.tab='comunitat';lsSet('cm-tab2','comunitat');renderAll();return;
   }
   if(e.target.id==='camp-new'){e.preventDefault();const n=$('#cn-name').value.trim();if(!n)return;try{await campApi({action:'create',name:n});lsSet('cm-tab2','partida')}catch(err){toast(err.message)}}
@@ -636,6 +662,7 @@ document.addEventListener('click',async e=>{
   if(bk){backupsModal(bk.dataset.cbak,bk.dataset.cname);return}
   if(e.target.id==='open-data'){try{const r=await fetch('api/carpeta',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:'{}'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(t(d.error||"No s'ha pogut fer."))}catch(err){toast(err.message)}return}
   try{
+    const recover=e.target.closest('[data-undelete]');if(recover){drawCampList(await campApi({action:'undelete',id:recover.dataset.undelete}));toast(t('Partida recuperada.'));return}
     if(o){o.disabled=true;lsSet('cm-tab2','partida');await campApi({action:'switch',id:o.dataset.copen})}
     if(du){drawCampList(await campApi({action:'duplicate',id:du.dataset.cdup}));toast(t('Partida duplicada.'))}
     if(de)armed(de,async()=>{try{drawCampList(await campApi({action:'delete',id:de.dataset.cdel}));toast(t('Partida esborrada. Està a la carpeta partides/esborrades si la necessites.'))}catch(err){toast(err.message)}},t('Prem de nou per a esborrar'));
@@ -669,15 +696,18 @@ async function backupsModal(id,name){
 }
 function nextTurn(){commit(M('Torn següent'),(s,log)=>{const np=(s.turn.p+1)%s.players.length;if(np===0)s.round++;s.turn={p:np,step:0,a:[0,0],shadow:0};log.push({k:'Torn de {x}.',v:{x:s.players[np].name||M('Participant {n}',{n:np+1})}})})}
 $('.tabs').addEventListener('click',e=>{const x=e.target.closest('[data-tab]');if(!x)return;st.tab=x.dataset.tab;st.forceSetup=false;lsSet('cm-tab2',st.tab);renderHeader();renderTab()});
-$('#camp-name').addEventListener('input',e=>{CAMP={...(CAMP||{}),name:e.target.value};clearTimeout(window.__cn);window.__cn=setTimeout(()=>write('campaign/main',CAMP),500)});
+$('#camp-name').addEventListener('change',e=>{CAMP={...(CAMP||{}),name:e.target.value};write('campaign/main',CAMP)});
 $('#who').addEventListener('click',e=>{if(e.target.id==='logout')armed(e.target,()=>{lsSet('cm-token','');location.reload()},t('Segur? Prem de nou'))});
 
 /* ================= connection ================= */
 let lanFirst=null,lanPoll=null,lanErrs=[],lanBannerT=null,lanLast=Date.now();
 function showBanner(x){const b=$('#banner');if(b.classList.contains('endstate'))return;b.textContent=x;b.hidden=!x}
 function lanOk(){clearTimeout(lanBannerT);lanBannerT=null;showBanner('')}
-function lanTrouble(){if(!lanBannerT)lanBannerT=setTimeout(()=>showBanner(t("S'ha perdut la connexió amb el servidor. Tornant a connectar…")),5000)}
+function lanTrouble(){if(!lanBannerT)lanBannerT=setTimeout(()=>showBanner(t("S'ha perdut la connexió. Comprova que l’ordinador principal està encés, que compartiu la wifi i que el tallafoc permet xarxes privades.")),5000)}
 function applySnapshot(d){
+  if(pendingSave){if(!deferredSnapshot||d.epoch!==deferredSnapshot.epoch||d.revision>=deferredSnapshot.revision)deferredSnapshot=d;return true}
+  if(d.epoch===S.epoch&&d.campaign===S.camp&&d.revision<S.revision)return true;
+  S.epoch=d.epoch;S.revision=d.revision;
   S.uid=d.me.uid;
   if(S.camp&&d.campaign&&d.campaign!==S.camp){location.reload();return false}
   S.camp=d.campaign;
@@ -685,6 +715,7 @@ function applySnapshot(d){
   const changed=[];
   for(const p of [...mem.keys()])if(!(p in d.docs)){mem.delete(p);changed.push(p)}
   for(const p in d.docs)if(JSON.stringify(mem.get(p))!==JSON.stringify(d.docs[p])){mem.set(p,d.docs[p]);changed.push(p)}
+  changed.sort((a,b)=>(a==='game/state')-(b==='game/state'));
   for(const p of changed)memNotify(p);return true;
 }
 function startPolling(){
@@ -698,7 +729,7 @@ function lanConnect(){
   es.addEventListener('snapshot',e=>{lanLast=Date.now();if(applySnapshot(JSON.parse(e.data)))lanOk()});
   es.addEventListener('ping',()=>{lanLast=Date.now()});
   es.addEventListener('campaign',()=>{showBanner(t("S'ha obert una altra partida. Carregant…"));setTimeout(()=>location.reload(),500)});
-  es.addEventListener('doc',e=>{lanLast=Date.now();const d=JSON.parse(e.data);if(d.data==null)mem.delete(d.path);else mem.set(d.path,d.data);memNotify(d.path)});
+  es.addEventListener('doc',e=>{lanLast=Date.now();const d=JSON.parse(e.data);if(d.epoch!==S.epoch||d.revision<S.revision)return;if(d.data==null)mem.delete(d.path);else mem.set(d.path,d.data);memNotify(d.path)});
   es.onerror=()=>{lanTrouble();const now=Date.now();lanErrs=lanErrs.filter(x=>now-x<60000);lanErrs.push(now);if(lanErrs.length>=3)startPolling();else if(es.readyState===2)setTimeout(lanConnect,3000)};
 }
 let joinResolve=null;

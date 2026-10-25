@@ -6,6 +6,18 @@
  * Llicència GPL-3.0 o posterior.
  */
 const I18N={es:{
+"Guardant…":"Guardando…",
+"Guardat":"Guardado",
+"No s'ha pogut guardar.":"No se ha podido guardar.",
+"Tornar a provar":"Volver a intentar",
+"La sessió ha caducat. Torna a entrar.":"La sesión ha caducado. Vuelve a entrar.",
+"Un altre jugador ha canviat la partida. Revisa-la i repeteix l’acció.":"Otro jugador ha cambiado la partida. Revísala y repite la acción.",
+"Canvis pendents. Comprova la connexió i torna a provar.":"Cambios pendientes. Comprueba la conexión y vuelve a intentar.",
+"Paperera":"Papelera",
+"Recuperar":"Recuperar",
+"No hi ha partides a la paperera.":"No hay partidas en la papelera.",
+"Partida recuperada.":"Partida recuperada.",
+"S'ha perdut la connexió. Comprova que l’ordinador principal està encés, que compartiu la wifi i que el tallafoc permet xarxes privades.":"Se ha perdido la conexión. Comprueba que el ordenador principal está encendido, que compartís la wifi y que el cortafuegos permite redes privadas.",
 // --- capçalera i pestanyes ---
 "Comunitat de l'Anell":"Comunidad del Anillo",
 "La Comunitat de l'Anell":"La Comunidad del Anillo",

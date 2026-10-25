@@ -15,6 +15,7 @@
 .mini{border:1px solid var(--line-2);background:var(--surface);border-radius:var(--r);width:24px;height:24px;cursor:pointer;font:600 15px/1 var(--f-mono);display:inline-grid;place-items:center;padding:0}
 .mini:hover{border-color:var(--accent);color:var(--accent)}
 .banner{grid-row:3}
+.notices{grid-column:1/-1;grid-row:3}
 main{grid-row:4}
 .side2{grid-row:4;border-left:3px double var(--line-2);background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .app{grid-template-rows:auto auto auto 1fr}

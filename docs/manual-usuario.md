@@ -240,6 +240,16 @@ El nombre de la partida se cambia escribiendo directamente en el título de arri
 
 ![Las partidas guardadas.](imatges/es/19-partides.jpg)
 
+### Guardado y cambios simultáneos
+
+El aviso **Guardando…** pasa a **Guardado** cuando el servidor ha escrito la jugada en disco. Cada jugada guarda a la vez los contadores, el registro y los pasos para deshacer. Durante el guardado, espera a que termine antes de realizar otra acción.
+
+Si dos jugadores actúan sobre la misma versión de la partida, se acepta el primer cambio y el otro dispositivo carga la partida actualizada. Revísala y repite la acción si aún hace falta. Si aparece **Cambios pendientes**, mantén la página abierta, comprueba la conexión y pulsa **Volver a intentar**; el reintento no duplica una jugada que ya se haya guardado.
+
+### Papelera
+
+Las partidas borradas aparecen en **Partidas → Papelera**. Pulsa **Recuperar** para devolverlas a las partidas guardadas. Recuperar no cambia la partida abierta y, si el nombre del archivo ya existe, se crea uno diferente.
+
 ### Historial
 
 Debajo de las partidas guardadas está el historial: todas las partidas terminadas, de cualquier partida guardada, con el resultado, la dificultad, el escenario, quién jugaba y con qué personajes. Arriba tienes el total de victorias y derrotas, y una tabla por dificultad.

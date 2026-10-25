@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 2.1) — servidor local per a portar partides de
+La Comunitat (versió 2.2) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
@@ -59,7 +59,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.1"
+VERSION = "2.2"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
@@ -93,6 +93,8 @@ MAX_IMPORT = 5 * 1024 * 1024
 
 lock = threading.RLock()
 state = {
+    "epoch": secrets.token_hex(12),
+    "revision": 0,  # epoch distingeix les revisions després de reiniciar
     "docs": {},        # partida oberta: ruta -> dict
     "sessions": {},    # token -> {uid, dm}
     "users": {},       # uid -> nom (comú a totes les partides)
@@ -102,6 +104,7 @@ state = {
     "last_backup": 0,  # quan s'ha fet l'última còpia automàtica de la partida oberta
 }
 clients = []
+completed_requests = {}
 dirty = threading.Event()
 
 
@@ -110,6 +113,8 @@ def write_json(path, obj):
     tmp = path.with_suffix(path.suffix + ".tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=1)
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, path)
 
 
@@ -158,14 +163,24 @@ def list_campaigns():
     return out
 
 
+def list_trash():
+    out = []
+    for f in sorted(TRASH_DIR.glob("*.json"), reverse=True):
+        try:
+            out.append({"id": f.stem, "name": camp_name(read_json(f).get("docs", {}), f.stem)})
+        except (OSError, ValueError, AttributeError):
+            continue
+    return out
+
+
 def save_now():
     with lock:
-        meta = {"sessions": state["sessions"], "users": state["users"], "active": state["active"]}
-        docs = {"docs": state["docs"]}
+        meta = copy.deepcopy({"sessions": state["sessions"], "users": state["users"], "active": state["active"]})
+        docs = {"docs": copy.deepcopy(state["docs"])}
         cid = state["active"]
-    write_json(META, meta)
-    if cid:
-        write_json(camp_file(cid), docs)
+        write_json(META, meta)
+        if cid:
+            write_json(camp_file(cid), docs)
 
 
 def saver():
@@ -175,6 +190,8 @@ def saver():
         dirty.clear()
         try:
             save_now()
+            with lock:
+                save_history()
             if time.time() - state["last_backup"] > BACKUP_EVERY:
                 with lock:
                     cid, docs = state["active"], copy.deepcopy(state["docs"])
@@ -196,6 +213,7 @@ def activate(cid):
         print(f"[!] No s'ha pogut llegir {cid}.json ({e}). L'he mogut a {bad.name}.")
         docs = {}
     state["docs"] = docs
+    state["revision"] += 1
     state["active"] = cid
     state["last_backup"] = time.time()
     try:
@@ -293,7 +311,75 @@ def check_docs(docs):
     for k, v in docs.items():
         if not valid_path(k) or not isinstance(v, dict) or seg(k)[0] not in ("game", "map", "campaign"):
             raise ImportError_(NO_ES_PARTIDA)
+    name = docs.get("campaign/main", {}).get("name", "")
+    if not isinstance(name, str) or len(name) > 80:
+        raise ImportError_(NO_ES_PARTIDA)
+    if "game/state" in docs:
+        check_game(docs["game/state"])
+    log = docs.get("game/log", {}).get("list", [])
+    undo = docs.get("game/undo", {}).get("stack", [])
+    if not isinstance(log, list) or len(log) > 600 or any(not isinstance(e, dict) for e in log):
+        raise ImportError_(NO_ES_PARTIDA)
+    if not isinstance(undo, list) or len(undo) > 30:
+        raise ImportError_(NO_ES_PARTIDA)
+    for item in undo:
+        if not isinstance(item, dict) or not isinstance(item.get("state"), dict):
+            raise ImportError_(NO_ES_PARTIDA)
+        check_game(item["state"])
     return docs
+
+
+def check_game(g):
+    """Valida també els camps necessaris per a representar una partida."""
+    if g.get("v") != 2:
+        raise ImportError_(NO_ES_PARTIDA)
+    for key, low, high in (("hope", 0, 8), ("hopeMax", 1, 8), ("round", 1, 100000),
+                           ("deck", 0, 1000), ("threatIdx", 0, 100), ("created", 1, 10**16)):
+        value = g.get(key)
+        if type(value) is not int or not low <= value <= high:
+            raise ImportError_(NO_ES_PARTIDA)
+    for key in ("players", "chars", "objectives"):
+        value = g.get(key)
+        if not isinstance(value, list) or not 1 <= len(value) <= 30 or any(not isinstance(e, dict) for e in value):
+            raise ImportError_(NO_ES_PARTIDA)
+    if any(not isinstance(p.get("name"), str) for p in g["players"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    if any(not isinstance(c.get("id"), str) for c in g["chars"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    if any(not isinstance(o.get("name"), str) or type(o.get("done")) is not bool for o in g["objectives"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    threat = g.get("threat")
+    if (not isinstance(threat, list) or not threat or len(threat) > 100
+            or any(type(n) is not int or not 0 <= n <= 100 for n in threat)
+            or g["threatIdx"] >= len(threat) or g["hope"] > g["hopeMax"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    if not isinstance(g.get("setup"), list) or any(type(v) is not bool for v in g["setup"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    for key in ("turn", "skies", "calc"):
+        if not isinstance(g.get(key), dict):
+            raise ImportError_(NO_ES_PARTIDA)
+    turn = g["turn"]
+    for key, limit in (("p", len(g["players"])-1), ("step", 20), ("shadow", 100)):
+        if type(turn.get(key)) is not int or not 0 <= turn[key] <= limit:
+            raise ImportError_(NO_ES_PARTIDA)
+    if not isinstance(turn.get("a"), list) or len(turn["a"]) != 2 or any(type(n) is not int or n < 0 for n in turn["a"]):
+        raise ImportError_(NO_ES_PARTIDA)
+    for key in ("total", "drawn"):
+        if type(g["skies"].get(key)) is not int or not 0 <= g["skies"][key] <= 100:
+            raise ImportError_(NO_ES_PARTIDA)
+    if g.get("result") not in (None, "win", "lose"):
+        raise ImportError_(NO_ES_PARTIDA)
+    if g.get("level") not in ("intro", "estandard", "heroica", "epica", "llegendaria") or type(g.get("solo")) is not bool:
+        raise ImportError_(NO_ES_PARTIDA)
+    calc = g["calc"]
+    for key in ("naz", "troops", "bFr", "bSh"):
+        if type(calc.get(key)) is not int or not 0 <= calc[key] <= 100000:
+            raise ImportError_(NO_ES_PARTIDA)
+    for key in ("ring", "haven", "mordor", "bNaz", "bHaven"):
+        if type(calc.get(key)) is not bool:
+            raise ImportError_(NO_ES_PARTIDA)
+    if calc.get("bKind") not in ("attack", "shadow"):
+        raise ImportError_(NO_ES_PARTIDA)
 
 
 def export_json(cid):
@@ -311,6 +397,8 @@ def import_campaign(data):
     except Exception as e:  # noqa: BLE001
         raise ImportError_(NO_ES_PARTIDA) from e
     if not isinstance(info, dict):
+        raise ImportError_(NO_ES_PARTIDA)
+    if "format" in info and (info["format"] != "comunitat-del-anell" or info.get("versio") != 1):
         raise ImportError_(NO_ES_PARTIDA)
     docs = check_docs(info.get("docs"))
     name = camp_name(docs, "") or str(info.get("nom") or "")[:80] or "Partida importada"
@@ -433,17 +521,22 @@ def snapshot():
         return out
 
 
+def session_snapshot(sess):
+    return {"me": {"uid": sess["uid"], "dm": True}, "campaign": state["active"],
+            "epoch": state["epoch"], "revision": state["revision"], "docs": snapshot()}
+
+
 def broadcast(paths):
     with lock:
         for c in list(clients):
             for p in paths:
-                c.send("doc", {"path": p, "data": get_doc(p)})
+                c.send("doc", {"path": p, "data": get_doc(p), "epoch": state["epoch"], "revision": state["revision"]})
 
 
 def broadcast_event(kind, payload):
     with lock:
         for c in list(clients):
-            c.send(kind, payload)
+            c.send(kind, copy.deepcopy(session_snapshot(c.sess) if kind == "snapshot" else payload))
 
 
 # ---------------------------------------------------------------- mapa
@@ -550,11 +643,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, {"list": list(reversed(state["history"]))})
         if route == "/api/campaigns":
             with lock:
-                return self._json(200, {"active": state["active"], "list": list_campaigns()})
+                return self._json(200, {"active": state["active"], "list": list_campaigns(), "trash": list_trash()})
         if route == "/api/snapshot":
             with lock:
-                return self._json(200, {"me": {"uid": sess["uid"], "dm": True},
-                                        "campaign": state["active"], "docs": snapshot()})
+                return self._json(200, session_snapshot(sess))
         if route == "/api/events":
             return self._events(sess)
         if route == "/api/export":
@@ -594,7 +686,7 @@ class Handler(BaseHTTPRequestHandler):
         c = Client(sess)
         with lock:
             clients.append(c)
-            first = {"me": {"uid": sess["uid"], "dm": True}, "campaign": state["active"], "docs": snapshot()}
+            first = session_snapshot(sess)
         try:
             self._sse("snapshot", first)
             while True:
@@ -624,6 +716,8 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body()
         except Exception:  # noqa: BLE001
             return self._json(400, {"error": "Petició mal formada"})
+        if not isinstance(body, dict):
+            return self._json(400, {"error": "Petició mal formada"})
         if route == "/api/join":
             return self._join(body)
         sess = self._session()
@@ -631,6 +725,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
         if route == "/api/write":
             return self._write(body, sess)
+        if route == "/api/transaction":
+            return self._transaction(body, sess)
         if route == "/api/campaigns":
             return self._campaigns(body)
         if route == "/api/history":
@@ -646,14 +742,17 @@ class Handler(BaseHTTPRequestHandler):
     def _import(self):
         if not self._session():
             return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
-        n = int(self.headers.get("Content-Length") or 0)
-        if n > MAX_IMPORT:
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return self._json(400, {"error": NO_ES_PARTIDA})
+        if n < 0 or n > MAX_IMPORT:
             return self._json(413, {"error": "El fitxer és massa gran."})
         data = self.rfile.read(n) if n else b""
         with lock:
             try:
                 cid = import_campaign(data)
-            except ImportError_ as e:
+            except (ImportError_, ValueError, TypeError, RecursionError) as e:
                 return self._json(400, {"error": str(e)})
             result = {"active": state["active"], "list": list_campaigns(), "imported": cid}
         return self._json(200, result)
@@ -687,6 +786,8 @@ class Handler(BaseHTTPRequestHandler):
         if mode != "delete" and len(json.dumps(data)) > 256_000:
             return self._json(413, {"error": "Document massa gran"})
         with lock:
+            if body.get("epoch") != state["epoch"] or body.get("revision") != state["revision"] or body.get("camp") != state["active"]:
+                return self._json(409, session_snapshot(sess))
             if body.get("camp") and body.get("camp") != state["active"]:
                 return self._json(409, {"error": "S'ha obert una altra partida."})
             if not can_write(path, mode, sess):
@@ -695,18 +796,76 @@ class Handler(BaseHTTPRequestHandler):
                 merged = deep_merge(get_doc(path) or {}, data) if mode == "update" else data
                 state["users"][sess["uid"]] = str(merged.get("name") or "")[:40]
             else:
-                docs = state["docs"]
+                docs = copy.deepcopy(state["docs"])
                 if mode == "delete":
                     docs.pop(path, None)
                 elif mode == "set":
                     docs[path] = data
                 else:
                     docs[path] = deep_merge(docs.get(path) or {}, data)
+                try:
+                    check_docs(docs)
+                except (ImportError_, TypeError, ValueError, RecursionError):
+                    return self._json(400, {"error": NO_ES_PARTIDA})
+                state["docs"] = docs
                 if path == "game/state" and track_result(docs.get(path)):
                     save_history()
             dirty.set()
+            state["revision"] += 1
+            broadcast_event("snapshot", session_snapshot(sess))
         broadcast([path])
         return self._json(200, {"ok": True})
+
+    def _transaction(self, body, sess):
+        changes = body.get("changes")
+        if not isinstance(changes, list) or not 1 <= len(changes) <= 10:
+            return self._json(400, {"error": "Petició mal formada"})
+        with lock:
+            # Reintentar una petició ja confirmada no ha de repetir la jugada.
+            request_id = body.get("requestId")
+            if not isinstance(request_id, str) or not 1 <= len(request_id) <= 100:
+                return self._json(400, {"error": "Petició mal formada"})
+            key = (sess["uid"], request_id)
+            if body.get("epoch") != state["epoch"] or body.get("camp") != state["active"]:
+                return self._json(409, session_snapshot(sess))
+            if key in completed_requests:
+                return self._json(200, session_snapshot(sess))
+            if body.get("revision") != state["revision"] or body.get("camp") != state["active"]:
+                return self._json(409, session_snapshot(sess))
+            docs = copy.deepcopy(state["docs"])
+            for change in changes:
+                if not isinstance(change, dict):
+                    return self._json(400, {"error": "Petició mal formada"})
+                path, data = change.get("path"), change.get("data")
+                if not valid_path(path) or not isinstance(data, dict) or not can_write(path, "set", sess) or seg(path)[0] == "users":
+                    return self._json(400, {"error": "Petició mal formada"})
+                docs[path] = data
+            try:
+                check_docs(docs)
+            except (ImportError_, TypeError, ValueError, RecursionError):
+                return self._json(400, {"error": NO_ES_PARTIDA})
+            previous, history = state["docs"], copy.deepcopy(state["history"])
+            state["docs"] = docs
+            try:
+                history_changed = track_result(docs.get("game/state"))
+                save_now()
+            except OSError:
+                state["docs"], state["history"] = previous, history
+                return self._json(503, {"error": "No s'ha pogut guardar."})
+            if history_changed:
+                try:
+                    save_history()
+                except OSError as e:
+                    # La jugada ja és durable; reintenta l'historial sense repetir-la.
+                    dirty.set()
+                    print(f"[!] No s'ha pogut guardar l'historial: {e}")
+            state["revision"] += 1
+            dirty.set()  # també activa les còpies periòdiques mentre es juga
+            completed_requests[key] = True
+            if len(completed_requests) > 1000:
+                del completed_requests[next(iter(completed_requests))]
+            broadcast_event("snapshot", session_snapshot(sess))
+            return self._json(200, session_snapshot(sess))
 
     def _history(self, body):
         hid = str(body.get("id") or "")
@@ -720,11 +879,21 @@ class Handler(BaseHTTPRequestHandler):
         action = body.get("action")
         name = str(body.get("name") or "").strip()[:80]
         cid = str(body.get("id") or "")
-        if cid and not re.fullmatch(r"[a-z0-9-]{1,60}", cid):
+        if cid and not re.fullmatch(r"[a-z0-9-]{1,100}" if action == "undelete" else r"[a-z0-9-]{1,60}", cid):
             return self._json(400, {"error": "Partida desconeguda."})
         switched = False
         with lock:
-            if action == "create":
+            if action == "undelete":
+                f = TRASH_DIR / f"{cid}.json"
+                if not cid or not f.is_file():
+                    return self._json(404, {"error": "Aquesta partida ja no existeix."})
+                try:
+                    docs = check_docs(read_json(f).get("docs"))
+                except (ImportError_, OSError, ValueError, TypeError):
+                    return self._json(400, {"error": NO_ES_PARTIDA})
+                restored = slugify(camp_name(docs, "Partida recuperada"))
+                f.replace(camp_file(restored))
+            elif action == "create":
                 if not name:
                     return self._json(400, {"error": "Posa-li un nom a la partida."})
                 save_now()
@@ -752,7 +921,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not camp_file(cid).exists():
                     return self._json(404, {"error": "Aquesta partida ja no existeix."})
                 TRASH_DIR.mkdir(exist_ok=True)
-                camp_file(cid).replace(TRASH_DIR / f"{cid}-{time.strftime('%Y%m%d-%H%M%S')}.json")
+                camp_file(cid).replace(TRASH_DIR / f"{cid}-{time.strftime('%Y%m%d-%H%M%S')}-{secrets.token_hex(3)}.json")
             elif action == "backups":
                 if not camp_file(cid).exists():
                     return self._json(404, {"error": "Aquesta partida ja no existeix."})
@@ -776,6 +945,7 @@ class Handler(BaseHTTPRequestHandler):
                 make_backup(cid, campaign_docs(cid), "abans")     # per si de cas, una còpia del que hi havia
                 if cid == state["active"]:
                     state["docs"] = docs
+                    state["revision"] += 1
                     save_now()
                     switched = True
                 else:
@@ -783,7 +953,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 return self._json(400, {"error": "Acció desconeguda."})
             dirty.set()
-            result = {"active": state["active"], "list": list_campaigns()}
+            result = {"active": state["active"], "list": list_campaigns(), "trash": list_trash()}
         if switched:
             save_now()
             broadcast_event("campaign", {"id": state["active"]})
@@ -840,6 +1010,8 @@ def main():
         sys.exit(1)
     load(a.partida.strip() or None)
     load_history()
+    if track_result(state["docs"].get("game/state")):
+        save_history()
     threading.Thread(target=saver, daemon=True).start()
     try:  # en apagar l'ordinador o tancar la sessió (Linux), es guarda igual que amb Ctrl+C
         import signal

@@ -15,9 +15,12 @@
     <div class="who" id="who"></div>
   </header>
   <div class="tracks" id="tracks"></div>
-  <div class="banner" id="banner" hidden></div>
+  <div class="notices">
+    <div class="banner" id="banner" hidden></div>
+    <div id="save-status" role="status" aria-live="polite" class="banner" hidden><span id="save-message"></span> <button class="btn sm" id="save-retry" data-i18n="Tornar a provar" hidden>Tornar a provar</button></div>
+  </div>
   <main id="main"><div class="empty"><b data-i18n="Obrint la partida…">Obrint la partida…</b><span data-i18n="Connectant amb el servidor.">Connectant amb el servidor.</span></div></main>
   <aside class="side2" id="side2"></aside>
 </div>
 <div id="modal-root"></div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

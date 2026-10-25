@@ -238,6 +238,16 @@ Amb **Importar → Triar el fitxer…** s'afig una partida exportada, d'aquest o
 
 El nom de la partida es canvia escrivint directament al títol de dalt.
 
+### Guardat i canvis simultanis
+
+L'avís **Guardant…** passa a **Guardat** quan el servidor ha escrit la jugada en disc. Cada jugada guarda alhora els comptadors, el registre i els passos per a desfer. Durant el guardat, espera que acabe abans de fer una altra acció.
+
+Si dos jugadors actuen sobre la mateixa versió de la partida, s'accepta el primer canvi i l'altre aparell carrega la partida actualitzada. Revisa-la i repeteix l'acció si encara cal. Si apareix **Canvis pendents**, mantín la pàgina oberta, comprova la connexió i prem **Tornar a provar**; el reintent no duplica una jugada que ja s'haja guardat.
+
+### Paperera
+
+Les partides esborrades apareixen a **Partides → Paperera**. Prem **Recuperar** per a tornar-les a les partides guardades. Recuperar no canvia la partida oberta i, si el nom del fitxer ja existeix, es crea un fitxer diferent.
+
 ![Les partides guardades.](imatges/ca/19-partides.jpg)
 
 ### Historial
