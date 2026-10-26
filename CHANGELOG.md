@@ -4,6 +4,12 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR` i etiqueta les versions publicades com `vX.Y`.
 
+## 2.4.2 — Correcció responsive
+
+- Corregida la disposició de l’aplicació en mòbil i tauleta.
+- El panell del torn i el contingut principal tornen a ocupar tota l’amplària disponible.
+- Millorada la disposició dels marcadors i de la capçalera en pantalles estretes.
+
 ## [2.4] - 2026-10-26
 
 ### Canviat

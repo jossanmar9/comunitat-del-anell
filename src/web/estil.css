@@ -310,3 +310,27 @@ body{background:radial-gradient(circle at 18% -10%,rgba(180,138,60,.18),transpar
 .panel{border-color:color-mix(in srgb,var(--gold) 42%,var(--line))!important;box-shadow:0 18px 44px -32px rgba(23,37,29,.62)!important}.panel>h2::after{border-color:var(--gold)!important}
 .btn.pri{background:linear-gradient(180deg,#d0aa59,#b48a3c)!important;border-color:#92702f!important;color:var(--forest)!important;box-shadow:inset 0 1px rgba(255,255,255,.35),0 8px 20px -14px #76591f!important}.btn.pri:hover{background:linear-gradient(180deg,#dfc47d,#c39a49)!important}.steps li.cur{border-color:var(--wine,var(--accent))!important;box-shadow:inset 4px 0 var(--accent),0 10px 25px -24px var(--accent)!important}.steps li.cur::before{background:var(--accent)!important}.pip.on{background:var(--forest-3)!important;border-color:var(--forest-3)!important}.mapbtn:hover,.char-ref:hover,.char-ref:focus-visible{border-color:var(--gold)!important}
 @media(max-width:700px){.top{background:linear-gradient(135deg,var(--forest),var(--forest-2))!important}.who{max-width:52vw}}
+
+/* --- v2.4.2: correcció responsive --- */
+@media (max-width:1000px){
+  .app{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:none!important;grid-auto-rows:auto!important}
+  .top,.tracks,.notices{grid-column:1/-1!important}
+  .side2{grid-column:1/-1!important;grid-row:auto!important;position:relative!important;top:auto!important;width:auto!important;max-width:none!important;max-height:none!important;overflow:visible!important;border-left:0!important;border-top:1px solid var(--line-2)!important}
+  main{grid-column:1/-1!important;grid-row:auto!important;width:auto!important;min-width:0!important}
+}
+@media (max-width:700px){
+  .top{grid-template-columns:minmax(0,1fr) auto!important}
+  .brand{min-width:0}.brand-txt{min-width:0}
+  .who{max-width:54vw!important}
+  .tracks{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch!important}
+  .trk{width:100%;min-width:0!important;justify-content:flex-start}
+  .trk .pips{min-width:0;overflow:hidden}
+  .side2{padding:14px 12px!important}
+  main{padding:14px 10px 28px!important}
+}
+@media (max-width:430px){
+  .top{grid-template-columns:minmax(0,1fr)!important}
+  .who{grid-row:2;justify-self:stretch!important;max-width:none!important;justify-content:flex-start!important}
+  .tabs{grid-row:3!important;grid-column:1/-1!important;width:100%}
+  .tracks{grid-template-columns:minmax(0,1fr)!important}
+}
