@@ -1,4 +1,4 @@
-<p align="center"><img src="logo.png" alt="La Comunitat de l'Anell" width="220"></p>
+<p align="center"><img src="logo.png" alt="La Comunitat" width="220"></p>
 
 <p align="center">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/jossanmar9/comunitat-del-anell?label=versi%C3%B3&color=8C2A1C" alt="Última versió"></a>
@@ -10,7 +10,7 @@
 
 **Valencià** · [Castellano](README.es.md)
 
-# La Comunitat de l'Anell
+# La Comunitat
 
 **Ajudant lliure per a portar les partides d'«El Señor de los Anillos: El Destino de la Comunidad».** El tauler i les peces els teniu a la taula; l'app porta els comptes: l'esperança, l'amenaça, el torn pas a pas, quants daus tirar en cada tirada i què es perd amb el resultat. Un ordinador fa de servidor i la resta de la taula hi entra des del navegador, mòbils inclosos. En valencià i castellà, i sense Internet.
 
@@ -83,7 +83,7 @@ Més detalls, el tallafoc de Linux i com passar les partides de les versions 1.x
 
 ## Primers passos
 
-1. Obri **La Comunitat de l'Anell**. L'app s'obri en una finestra pròpia, sense navegador (a Windows amb WebView2, a Linux amb WebKitGTK). Mentre la finestra estiga oberta, La Comunitat funciona; en tancar-la, ho guarda tot i s'atura.
+1. Obri **La Comunitat**. L'app s'obri en una finestra pròpia, sense navegador (a Windows amb WebView2, a Linux amb WebKitGTK). Mentre la finestra estiga oberta, La Comunitat funciona; en tancar-la, ho guarda tot i s'atura.
 2. El botó **Convida** mostra l'adreça per als altres i un **codi QR**. Cada jugador l'escaneja amb el mòbil i entra amb el seu nom. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
 3. Ompliu el formulari de preparació, prepareu el tauler amb la llista de la pestanya **Comunitat** i a jugar.
 
@@ -114,6 +114,7 @@ Cada partida es guarda a `partides/<nom>.json`, les seues còpies de seguretat a
 
 ## Documentació
 
+- [Registre de canvis](CHANGELOG.md)
 | Document | Valencià | Castellano |
 |---|---|---|
 | Manual d'usuari | [manual-usuari.md](docs/manual-usuari.md) | [manual-usuario.md](docs/manual-usuario.md) |

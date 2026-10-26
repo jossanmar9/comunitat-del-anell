@@ -1,6 +1,6 @@
 # Manual d'usuari
 
-Guia d'ús de La Comunitat de l'Anell, l'ajudant lliure per a portar les partides d'«El Señor de los Anillos: El Destino de la Comunidad». El tauler i les peces els teniu a la taula; l'app porta els comptes.
+Guia d'ús de La Comunitat, l'ajudant lliure per a portar les partides d'«El Señor de los Anillos: El Destino de la Comunidad». El tauler i les peces els teniu a la taula; l'app porta els comptes.
 
 Per a instal·lar-la, consulta la [guia d'instal·lació](guia-installacio.md).
 
@@ -24,11 +24,11 @@ L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sau
 **Què cal:**
 
 - **L'ordinador servidor:** Windows 10 o 11, o Linux. Vegeu la [guia d'instal·lació](guia-installacio.md).
-- **Els jugadors:** qualsevol aparell amb navegador, connectat a la mateixa wifi que el servidor. No han d'instal·lar res.
+- **Els jugadors:** qualsevol dispositiu amb navegador, connectat a la mateixa wifi que el servidor. No han d'instal·lar res.
 
 ## Arrancar La Comunitat
 
-Obri **La Comunitat de l'Anell** des del menú Inici (Windows) o des del menú d'aplicacions (Linux). L'app s'obri en **una finestra pròpia**, sense navegador: aquest ordinador és el «principal», el que fa de servidor, i des d'ací es pot jugar igual que des d'un mòbil.
+Obri **La Comunitat** des del menú Inici (Windows) o des del menú d'aplicacions (Linux). L'app s'obri en **una finestra pròpia**, sense navegador: aquest ordinador és el «principal», el que fa de servidor, i des d'ací es pot jugar igual que des d'un mòbil.
 
 - Mentre la finestra estiga oberta, La Comunitat funciona. Quan la tanques, et pregunta si vols tancar-la, ho guarda tot i els jugadors es desconnecten.
 - El botó **Convida**, dalt a la dreta, mostra l'adreça per als altres, per exemple `http://192.168.1.40:8766`, i el **codi QR** que la porta dins.
@@ -36,7 +36,7 @@ Obri **La Comunitat de l'Anell** des del menú Inici (Windows) o des del menú d
 
 > Si en aquest ordinador no es pot obrir la finestra pròpia (vegeu [Si alguna cosa no va](#si-alguna-cosa-no-va)), s'obri una finestreta amb l'adreça, el QR i la partida oberta, i l'app al navegador. També la pots triar a propòsit amb l'opció `--navegador`. I en un ordinador sense pantalla, la mateixa informació, amb el QR, ix al terminal. Vegeu les opcions a la [guia d'instal·lació](guia-installacio.md).
 
-## Entrar des dels aparells
+## Entrar des dels dispositius
 
 1. Amb la càmera del mòbil, escaneja el QR del botó **Convida** de l'ordinador principal. També pots escriure al navegador l'adreça per als altres, per exemple `http://192.168.1.40:8766`.
 2. Escriu el teu nom i prem **Entrar**. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
@@ -242,7 +242,7 @@ El nom de la partida es canvia escrivint directament al títol de dalt.
 
 L'avís **Guardant…** passa a **Guardat** quan el servidor ha escrit la jugada en disc. Cada jugada guarda alhora els comptadors, el registre i els passos per a desfer. Durant el guardat, espera que acabe abans de fer una altra acció.
 
-Si dos jugadors actuen sobre la mateixa versió de la partida, s'accepta el primer canvi i l'altre aparell carrega la partida actualitzada. Revisa-la i repeteix l'acció si encara cal. Si apareix **Canvis pendents**, mantín la pàgina oberta, comprova la connexió i prem **Tornar a provar**; el reintent no duplica una jugada que ja s'haja guardat.
+Si dos jugadors actuen sobre la mateixa versió de la partida, s'accepta el primer canvi i l'altre dispositiu carrega la partida actualitzada. Revisa-la i repeteix l'acció si encara cal. Si apareix **Canvis pendents**, mantín la pàgina oberta, comprova la connexió i prem **Tornar a provar**; el reintent no duplica una jugada que ja s'haja guardat.
 
 ### Paperera
 
@@ -286,20 +286,20 @@ Fes servir imatges que pugues usar: si comparteixes el programa, no hi poses map
 
 ### Idioma
 
-L'app està en valencià i en castellà. Els botons **VAL** i **CAS**, dalt a la dreta, canvien l'idioma només en el teu aparell; cada jugador pot tindre el seu. El registre, els objectius i el mapa també canvien.
+L'app està en valencià i en castellà. Els botons **VAL** i **CAS**, dalt a la dreta, canvien l'idioma només en el teu dispositiu; cada jugador pot tindre el seu. El registre, els objectius i el mapa també canvien.
 
 Els avisos de la finestra (per exemple, en tancar-la) ixen en valencià. Per a tindre'ls en castellà, arranca amb l'opció `--idioma es`.
 
 ### Mode fosc
 
-El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del sistema), clar i fosc. Com l'idioma, es recorda en cada aparell.
+El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del sistema), clar i fosc. Com l'idioma, es recorda en cada dispositiu.
 
 ## Si alguna cosa no va
 
 | Què passa | Què fer |
 |---|---|
 | No s'obri la finestra pròpia, sinó la finestreta del QR i el navegador | A Windows, falta el component **WebView2** de Microsoft, que porten Windows 11 i Windows 10 actualitzat: instal·la «Microsoft Edge WebView2 Runtime» des de la web de Microsoft. A Linux, falten GTK i WebKitGTK: la [guia d'instal·lació](guia-installacio.md) diu com instal·lar-los. Mentrestant, La Comunitat funciona igual al navegador. |
-| Els altres no hi poden entrar | Han d'estar a la mateixa wifi que el servidor. Revisa el tallafoc: a Windows, permet La Comunitat a «Xarxes privades» i comprova que la wifi està configurada com a privada. A Linux, `sudo ufw allow 8766/tcp`. Algunes xarxes de convidats no deixen que els aparells es vegen entre ells. |
+| Els altres no hi poden entrar | Han d'estar a la mateixa wifi que el servidor. Revisa el tallafoc: a Windows, permet La Comunitat a «Xarxes privades» i comprova que la wifi està configurada com a privada. A Linux, `sudo ufw allow 8766/tcp`. Algunes xarxes de convidats no deixen que els dispositius es vegen entre ells. |
 | «El port ja està en ús» | Ja hi ha una altra Comunitat oberta. Tanca-la, o arranca en un altre port: `--port 9001`. |
 | Apareix «S'ha perdut la connexió amb el servidor» | La Comunitat s'ha tancat o l'ordinador s'ha adormit. Quan tornes a obrir-la, la pàgina es reconnecta sola i no es perd res. |
 | Apareix «Mode de prova» | S'ha obert la pàgina sense el programa (per exemple, la prova de la web). Res no es guarda: entra amb l'adreça de la finestra. |

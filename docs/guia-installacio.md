@@ -1,6 +1,6 @@
 # Guia d'instal·lació
 
-Com instal·lar La Comunitat de l'Anell a l'ordinador que farà de servidor, a Windows o a Linux. Els jugadors no han d'instal·lar res: només necessiten un navegador i la mateixa wifi.
+Com instal·lar La Comunitat a l'ordinador que farà de servidor, a Windows o a Linux. Els jugadors no han d'instal·lar res: només necessiten un navegador i la mateixa wifi.
 
 Tot es baixa de la pàgina de [descàrregues](https://github.com/jossanmar9/comunitat-del-anell/releases/latest).
 
@@ -8,7 +8,7 @@ Tot es baixa de la pàgina de [descàrregues](https://github.com/jossanmar9/comu
 
 - **Windows 10 o 11** de 64 bits, o **Linux** amb escriptori (Ubuntu, Debian, Linux Mint, Fedora, Arch…).
 - Uns 50 MB de disc.
-- L'ordinador i els aparells dels jugadors, a la **mateixa wifi**. No cal Internet.
+- L'ordinador i els dispositius dels jugadors, a la **mateixa wifi**. No cal Internet.
 - El joc de taula «El Señor de los Anillos: El Destino de la Comunidad». L'app només porta els comptes.
 
 ## Windows
@@ -47,7 +47,7 @@ En la versió portable, les partides es guarden dins de la mateixa carpeta, aix�
 sudo apt install ./comunitat-del-anell_X.Y_all.deb
 ```
 
-3. Obri **La Comunitat de l'Anell** des del menú d'aplicacions (a la secció de jocs).
+3. Obri **La Comunitat** des del menú d'aplicacions (a la secció de jocs).
 
 El paquet instal·la també el que necessita (Python 3, GTK i WebKitGTK, per a la finestra pròpia) i l'ordre `comunitat-del-anell` per a arrancar-la des del terminal.
 

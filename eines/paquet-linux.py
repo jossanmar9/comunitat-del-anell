@@ -127,7 +127,7 @@ Description: Ajudant lliure per al joc de taula «El Destino de la Comunidad»
 
 def copyright_deb():
     return f"""Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: La Comunitat de l'Anell
+Upstream-Name: La Comunitat
 Source: https://github.com/jossanmar9/comunitat-del-anell
 
 Files: *

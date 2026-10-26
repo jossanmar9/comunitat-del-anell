@@ -1,6 +1,6 @@
 # Manual de usuario
 
-Guía de uso de La Comunidad del Anillo, el ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad». El tablero y las piezas las tenéis en la mesa; la app lleva las cuentas.
+Guía de uso de La Comunidad, el ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad». El tablero y las piezas las tenéis en la mesa; la app lleva las cuentas.
 
 Para instalarla, consulta la [guía de instalación](guia-instalacion.md).
 
@@ -28,7 +28,7 @@ La app no sustituye al juego. Las cartas, las Tropas, los Nazgûl y el Ojo de Sa
 
 ## Arrancar La Comunidad
 
-Abre **La Comunidad del Anillo** desde el menú Inicio (Windows) o desde el menú de aplicaciones (Linux). La app se abre en **una ventana propia**, sin navegador: este ordenador es el «principal», el que hace de servidor, y desde aquí se puede jugar igual que desde un móvil.
+Abre **La Comunidad** desde el menú Inicio (Windows) o desde el menú de aplicaciones (Linux). La app se abre en **una ventana propia**, sin navegador: este ordenador es el «principal», el que hace de servidor, y desde aquí se puede jugar igual que desde un móvil.
 
 - Mientras la ventana esté abierta, La Comunidad funciona. Cuando la cierras, te pregunta si quieres cerrarla, lo guarda todo y los jugadores se desconectan.
 - El botón **Invitar**, arriba a la derecha, muestra la dirección para los demás, por ejemplo `http://192.168.1.40:8766`, y el **código QR** que la lleva dentro.

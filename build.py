@@ -62,7 +62,7 @@ def b64_lines(data):
 def pagina():
     """La pàgina web completa, en un sol HTML (també la fa servir eines/web.py per a la prova en línia)."""
     page = (
-        "<title>La Comunitat de l'Anell</title>\n"
+        "<title>La Comunitat</title>\n"
         + "<style>\n" + fonts_css() + "\n" + read("estil-base.css") + "\n" + read("estil.css") + "</style>\n"
         + read("cos.html").replace("__LOGO__", data_uri("logo.png"))
         + "<script>\n" + portraits() + "\n" + read("i18n.js") + "\n" + read("dades.js") + "\n" + read("app.js") + "\n</script>\n"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera la web de presentació de La Comunitat de l'Anell (GitHub Pages) en valencià i castellà.
+"""Genera la web de presentació de La Comunitat (GitHub Pages) en valencià i castellà.
 
 Ús:  python3 eines/web.py [carpeta-eixida]        (per defecte, _site)
 
@@ -25,9 +25,9 @@ CAPTURES = ["05-partida", "03-preparacio", "04-comunitat", "07-torn", "11-cerca-
 
 T = {
     "ca": {
-        "nom": "La Comunitat de l'Anell",
+        "nom": "La Comunitat",
         "lang": "ca-valencia", "altre": "es", "altre_nom": "Castellano", "altre_url": "es/",
-        "titol": "La Comunitat de l'Anell: ajudant lliure per a «El Destino de la Comunidad»",
+        "titol": "La Comunitat: ajudant lliure per a «El Destino de la Comunidad»",
         "descripcio": "Programa lliure i gratuït per a portar les partides del joc de taula «El Señor de los Anillos: "
                       "El Destino de la Comunidad», en valencià i castellà: esperança, amenaça, torns, tirades i objectius. "
                       "Per a Windows i Linux.",
@@ -86,12 +86,12 @@ T = {
         "req_titol": "Què cal",
         "req": ["El joc de taula «El Señor de los Anillos: El Destino de la Comunidad»",
                 "Un ordinador amb Windows 10 o 11 de 64 bits, o amb Linux",
-                "Una wifi on estiguen l'ordinador i els aparells dels jugadors (no cal Internet)"],
+                "Una wifi on estiguen l'ordinador i els dispositius dels jugadors (no cal Internet)"],
         "docs_titol": "Manuals",
         "docs": [("manual-usuari.pdf", "Manual d'usuari, pas a pas amb captures"),
                  ("guia-installacio.pdf", "Guia d'instal·lació per a Windows i Linux")],
         "lliure_titol": "Programari lliure",
-        "lliure": "La Comunitat de l'Anell es distribueix sota la llicència GPL-3.0 o posterior: la pots utilitzar, "
+        "lliure": "La Comunitat es distribueix sota la llicència GPL-3.0 o posterior: la pots utilitzar, "
                   "estudiar, modificar i compartir. El codi és públic a GitHub.",
         "ia": "S'ha desenvolupat amb l'ajuda d'una intel·ligència artificial (Claude, d'Anthropic). El mapa d'exemple, "
               "el logotip i els retrats dels personatges s'han generat amb IA.",
@@ -102,9 +102,9 @@ T = {
         "tema": "Mode fosc o clar",
     },
     "es": {
-        "nom": "La Comunidad del Anillo",
+        "nom": "La Comunidad",
         "lang": "es", "altre": "ca", "altre_nom": "Valencià", "altre_url": "../",
-        "titol": "La Comunidad del Anillo: ayudante libre para «El Destino de la Comunidad»",
+        "titol": "La Comunidad: ayudante libre para «El Destino de la Comunidad»",
         "descripcio": "Programa libre y gratuito para llevar las partidas del juego de mesa «El Señor de los Anillos: "
                       "El Destino de la Comunidad», en castellano y valenciano: Esperanza, Amenaza, turnos, tiradas y "
                       "objetivos. Para Windows y Linux.",
@@ -168,7 +168,7 @@ T = {
         "docs": [("manual-usuario.pdf", "Manual de usuario, paso a paso con capturas"),
                  ("guia-instalacion.pdf", "Guía de instalación para Windows y Linux")],
         "lliure_titol": "Software libre",
-        "lliure": "La Comunidad del Anillo se distribuye bajo la licencia GPL-3.0 o posterior: la puedes usar, "
+        "lliure": "La Comunidad se distribuye bajo la licencia GPL-3.0 o posterior: la puedes usar, "
                   "estudiar, modificar y compartir. El código es público en GitHub.",
         "ia": "Se ha desarrollado con la ayuda de una inteligencia artificial (Claude, de Anthropic). El mapa de ejemplo, "
               "el logotipo y los retratos de los personajes se han generado con IA.",

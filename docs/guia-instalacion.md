@@ -1,6 +1,6 @@
 # Guía de instalación
 
-Cómo instalar La Comunidad del Anillo en el ordenador que hará de servidor, en Windows o en Linux. Los jugadores no tienen que instalar nada: solo necesitan un navegador y la misma wifi.
+Cómo instalar La Comunidad en el ordenador que hará de servidor, en Windows o en Linux. Los jugadores no tienen que instalar nada: solo necesitan un navegador y la misma wifi.
 
 Todo se descarga de la página de [descargas](https://github.com/jossanmar9/comunitat-del-anell/releases/latest).
 
@@ -47,7 +47,7 @@ En la versión portable, las partidas se guardan dentro de la misma carpeta, as�
 sudo apt install ./comunitat-del-anell_X.Y_all.deb
 ```
 
-3. Abre **La Comunidad del Anillo** desde el menú de aplicaciones (en la sección de juegos).
+3. Abre **La Comunidad** desde el menú de aplicaciones (en la sección de juegos).
 
 El paquete instala también lo que necesita (Python 3, GTK y WebKitGTK, para la ventana propia) y la orden `comunitat-del-anell` para arrancarla desde el terminal.
 

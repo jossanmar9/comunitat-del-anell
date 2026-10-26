@@ -14,15 +14,15 @@
 
 [Setup]
 AppId={{43CBC6F1-BADA-4F99-8A4C-DD9C8F4EFD84}
-AppName=La Comunitat de l'Anell
+AppName=La Comunitat
 AppVersion={#Versio}
-AppVerName=La Comunitat de l'Anell {#Versio}
-AppPublisher=La Comunitat de l'Anell
+AppVerName=La Comunitat {#Versio}
+AppPublisher=La Comunitat
 AppPublisherURL=https://jossanmar9.github.io/comunitat-del-anell/
 AppSupportURL=https://github.com/jossanmar9/comunitat-del-anell/issues
 AppUpdatesURL=https://github.com/jossanmar9/comunitat-del-anell/releases
 DefaultDirName={localappdata}\Programs\LaComunitat
-DefaultGroupName=La Comunitat de l'Anell
+DefaultGroupName=La Comunitat
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 PrivilegesRequired=lowest
@@ -32,7 +32,7 @@ OutputDir=..\..\dist
 OutputBaseFilename=LaComunitat-{#Versio}-installador
 SetupIconFile=..\..\logo.ico
 UninstallDisplayIcon={app}\LaComunitat.exe
-UninstallDisplayName=La Comunitat de l'Anell
+UninstallDisplayName=La Comunitat
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -43,8 +43,8 @@ Name: "ca"; MessagesFile: "compiler:Languages\Catalan.isl"
 Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
-ca.Nom=La Comunitat de l'Anell
-es.Nom=La Comunidad del Anillo
+ca.Nom=La Comunitat
+es.Nom=La Comunidad
 ca.Manual=Manual d'usuari
 es.Manual=Manual de usuario
 ca.Dades=Carpeta de dades

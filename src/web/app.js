@@ -52,7 +52,7 @@ function armed(btn,fn,label){
 const initials=n=>{const w=n.split(/\s+(?:i|y)\s+|\s+/).filter(Boolean);return (w[0][0]+(w[1]?w[1][0]:w[0][1]||'')).toUpperCase()};
 function applyStatic(){
   document.documentElement.lang=LANG==='es'?'es':'ca';
-  document.title=t("Comunitat de l'Anell");
+  document.title=t("La Comunitat");
   $$('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});
   $$('[data-i18n-ph]').forEach(el=>{el.placeholder=t(el.dataset.i18nPh);el.setAttribute('aria-label',t(el.dataset.i18nPh))});
   $$('[data-i18n-aria]').forEach(el=>{el.setAttribute('aria-label',t(el.dataset.i18nAria))});
@@ -176,6 +176,19 @@ function newGame(cfg){
 // El nom d'un personatge sempre es pren de les dades actuals (així es tradueix).
 const charName=c=>t((CHARACTERS.find(x=>x.id===c.id)||c).name);
 const charStart=c=>t((CHARACTERS.find(x=>x.id===c.id)||c).start);
+const gameInfoText=x=>t(x||'');
+function characterInfo(id){
+  const c=CHARACTERS.find(x=>x.id===id);if(!c)return;
+  const rows=(c.abilities||[]).map(([name,kind,desc])=>`<article class="lore-card"><div class="lore-kicker">${esc(gameInfoText(kind))}</div><h3>${esc(gameInfoText(name))}</h3><p>${esc(gameInfoText(desc))}</p></article>`).join('');
+  openModal(`<div class="lore-head">${portrait(c.id,78)}<div><span class="eyebrow">${esc(t('Personatge'))}</span><h2>${esc(t(c.name))}</h2><p class="muted">${esc(t('Comença a {x}',{x:charStart(c)}))}</p></div></div><div class="lore-grid">${rows}</div><p class="small muted lore-note">${esc(t('Referència d’ajuda. En cas de dubte, preval el text de la carta del joc.'))}</p><div class="foot"><button class="btn pri" data-close-info>${esc(t('Tancar'))}</button></div>`,(m,close)=>{$('[data-close-info]',m).onclick=close});
+}
+function objectiveInfo(name){
+  const o=OBJECTIVE_DETAILS[name];if(!o)return;
+  const row=(label,value)=>value?`<article class="lore-section"><h3>${esc(t(label))}</h3><p>${esc(gameInfoText(value))}</p></article>`:'';
+  openModal(`<span class="eyebrow">${esc(t('Objectiu'))}</span><h2>${esc(t(name))}</h2><div class="lore-objective">${row('Preparació',o.setup)}${row('Regla especial',o.special)}${row('Completar',o.complete)}${row('En completar-lo',o.reward)}</div><p class="small muted lore-note">${esc(t('Referència d’ajuda. En cas de dubte, preval el text de la carta del joc.'))}</p><div class="foot"><button class="btn pri" data-close-info>${esc(t('Tancar'))}</button></div>`,(m,close)=>{$('[data-close-info]',m).onclick=close});
+}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-charinfo]');if(c){characterInfo(c.dataset.charinfo);return}const o=e.target.closest('[data-objinfo]');if(o){objectiveInfo(o.dataset.objinfo)}});
+
 // Retrat d'un personatge (o les inicials si no n'hi ha).
 function portrait(id,size=48,cls=''){
   const c=CHARACTERS.find(x=>x.id===id)||{id,name:id,color:'#888'},nm=t(c.name),src=(typeof PORTRAITS!=='undefined')&&PORTRAITS[id];
@@ -394,7 +407,7 @@ function renderPlay(){
       ${left?`<p class="small" style="margin:0;color:var(--blood)">${esc(t('Encara queden {n} per completar.',{n:pl(left,'objectiu','objectius')}))}</p>`:''}
     </section>
     <section class="panel tool"><h2>${esc(t('Objectius'))}</h2>
-      ${G.objectives.map(o=>`<div class="obj ${o.done?'done':''}"><input type="checkbox" data-objdone="${o.id}" ${o.done?'checked':''} ${o.ring?'disabled':''} aria-label="${esc(t('Completat'))}"><span class="on">${esc(t(o.name))}</span>${o.ring?`<span class="badge" style="position:static">${esc(t('Últim'))}</span>`:''}</div>`).join('')}
+      ${G.objectives.map(o=>`<div class="obj ${o.done?'done':''}"><input type="checkbox" data-objdone="${o.id}" ${o.done?'checked':''} ${o.ring?'disabled':''} aria-label="${esc(t('Completat'))}"><button class="obj-name" type="button" data-objinfo="${esc(o.name)}">${esc(t(o.name))}</button><button class="info-btn" type="button" data-objinfo="${esc(o.name)}" aria-label="${esc(t('Veure detalls'))}">i</button>${o.ring?`<span class="badge" style="position:static">${esc(t('Últim'))}</span>`:''}</div>`).join('')}
     </section>
     <section class="panel tool"><h2>${esc(t('Referència ràpida'))}</h2>
       <dl class="ref">
@@ -424,7 +437,7 @@ function renderSide(){
   const el=$('#side2');
   if(!G){el.innerHTML=`<h2>${esc(t('El torn'))}</h2><p class="muted small">${esc(t('Prepara una partida per a començar.'))}</p>`+logHtml();return}
   const TR=G.turn,p=G.players[TR.p],mine=G.chars.filter(c=>c.player===TR.p),n=threatNow(G);
-  el.innerHTML=`<div><span class="eyebrow">${esc(t('Ronda {n} · torn de',{n:G.round}))}</span><div class="turn-who">${esc(playerName(p,TR.p))}</div><div class="turn-chars">${mine.map(c=>`<span>${portrait(c.id,44)}<span class="small">${esc(charName(c))}</span></span>`).join('')}</div></div>
+  el.innerHTML=`<div><span class="eyebrow">${esc(t('Ronda {n} · torn de',{n:G.round}))}</span><div class="turn-who">${esc(playerName(p,TR.p))}</div><div class="turn-chars">${mine.map(c=>`<button class="turn-char-ref" type="button" data-charinfo="${c.id}">${portrait(c.id,44)}<span class="small">${esc(charName(c))}</span></button>`).join('')}</div></div>
     <ol class="steps">
       <li class="${TR.step===0?'cur':'done'}"><div><b>${esc(t('Fes 4 + 1 accions'))}</b><div class="muted small">${esc(t(G.solo?'4 amb el personatge del testimoni i 1 amb Frodo i Sam.':"4 amb un personatge i 1 amb l'altre."))}</div>
         <div class="apips">${[0,1,2,3].map(i=>`<button class="apip ${i<TR.a[0]?'used':''}" data-ap="0:${i}" aria-label="${esc(t('Acció {n}',{n:i+1}))}">${i+1}</button>`).join('')}<button class="apip sep ${TR.a[1]?'used':''}" data-ap="1:0" aria-label="${esc(t('Acció extra'))}">+1</button></div>
@@ -493,7 +506,7 @@ function renderCommunity(){
       ${SETUP_STEPS.map(([a,d],i)=>`<div class="obj ${G.setup[i]?'done':''}"><input type="checkbox" data-setup="${i}" ${G.setup[i]?'checked':''} aria-label="${esc(t(a))}"><span><span class="on">${esc(t(a))}</span><br><span class="small muted">${esc(t(d))}</span></span></div>`).join('')}
     </section>
     <section class="panel tool"><h2>${esc(t('La Comunitat'))}</h2>
-      ${G.players.map((p,i)=>`<div><h3>${esc(playerName(p,i))}${G.turn.p===i?' · '+esc(t('torn')):''}</h3>${G.chars.filter(c=>c.player===i).map(c=>`<div class="row" style="justify-content:space-between;margin-top:6px"><span class="pchar">${portrait(c.id,64)}<b>${esc(charName(c))}</b></span><span class="small muted">${esc(t('Comença a {x}',{x:charStart(c)}))}</span></div>`).join('')}</div>`).join('')}
+      ${G.players.map((p,i)=>`<div><h3>${esc(playerName(p,i))}${G.turn.p===i?' · '+esc(t('torn')):''}</h3>${G.chars.filter(c=>c.player===i).map(c=>`<button class="char-ref" type="button" data-charinfo="${c.id}"><span class="pchar">${portrait(c.id,64)}<span><b>${esc(charName(c))}</b><small>${esc(t('Comença a {x}',{x:charStart(c)}))}</small></span></span><span class="info-mark">i</span></button>`).join('')}</div>`).join('')}
     </section>
     ${G.result?`<section class="panel tool"><h2>${esc(t('Resum de la partida'))}</h2>${summaryHtml()}</section>`:''}
     <section class="panel tool"><h2>${esc(t('Partida'))}</h2>
@@ -546,7 +559,7 @@ async function renderCamps(){
     ${S.local?`<div class="panel here"><div><span class="field-l">${esc(t('En aquest ordinador'))}</span><p class="small" style="margin:4px 0 0">${esc(t("Les partides, l'historial, les còpies de seguretat i el teu mapa es guarden a:"))}</p><p class="small path">${esc(S.dades)}</p></div><button class="btn sm" id="open-data">${esc(t('Obrir la carpeta de dades'))}</button></div>`:''}
     <div><h2 style="font-size:32px">${esc(t('Historial'))}</h2><p class="muted" style="margin:6px 0 0;max-width:62ch">${esc(t("Les partides acabades, guanyades o perdudes, de totes les partides guardades."))}</p></div>
     <div id="hist"><p class="muted">${esc(t('Carregant…'))}</p></div>
-    ${S.version?`<p class="small muted" style="margin:0">${esc(t("La Comunitat de l'Anell · versió {v}",{v:S.version}))}</p>`:''}</div>`;
+    ${S.version?`<p class="small muted" style="margin:0">${esc(t("La Comunitat · versió {v}",{v:S.version}))}</p>`:''}</div>`;
   if(!S.token){$('#camp-list').innerHTML=`<p class="muted">${esc(t("Obri l'app des del servidor per a gestionar partides."))}</p>`;return}
   try{drawCampList(await campApi())}catch(e){$('#camp-list').innerHTML=`<p class="small" style="color:var(--blood)">${esc(e.message)}</p>`}
   loadHistory();

@@ -20,9 +20,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 TEXTOS = {
-    "ca": {"nom": "La Comunitat de l'Anell", "versio": "Versió {v}", "pagina": "Pàgina", "contingut": "Contingut",
+    "ca": {"nom": "La Comunitat", "versio": "Versió {v}", "pagina": "Pàgina", "contingut": "Contingut",
            "peu": "Programari lliure (GPL-3.0) · Projecte de fans no oficial · Per a jugar cal tindre el joc"},
-    "es": {"nom": "La Comunidad del Anillo", "versio": "Versión {v}", "pagina": "Página", "contingut": "Contenido",
+    "es": {"nom": "La Comunidad", "versio": "Versión {v}", "pagina": "Página", "contingut": "Contenido",
            "peu": "Software libre (GPL-3.0) · Proyecto de fans no oficial · Para jugar hay que tener el juego"},
 }
 

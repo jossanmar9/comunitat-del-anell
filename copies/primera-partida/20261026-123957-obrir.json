@@ -1,0 +1,207 @@
+{
+ "docs": {
+  "campaign/main": {
+   "name": "Primera partida"
+  },
+  "game/state": {
+   "v": 2,
+   "level": "intro",
+   "hope": 6,
+   "hopeMax": 8,
+   "threat": [
+    2,
+    2,
+    3,
+    3,
+    4,
+    4,
+    5
+   ],
+   "threatIdx": 0,
+   "skies": {
+    "total": 4,
+    "drawn": 0
+   },
+   "deck": 50,
+   "players": [
+    {
+     "name": "jose"
+    },
+    {
+     "name": ""
+    }
+   ],
+   "chars": [
+    {
+     "id": "frodosam",
+     "name": "Frodo i Sam",
+     "start": "La Comarca",
+     "color": "#C99A2E",
+     "frodo": true,
+     "abilities": [
+      [
+       "El suport d’Elrond",
+       "Preparar",
+       "1 vegada per torn: si són en un refugi de la regió de la carta, poden obtindre 1 Amistat."
+      ],
+      [
+       "L’ajuda de Sam",
+       "Cerca",
+       "Gasta fitxes per ignorar el mateix nombre de resultats de la tirada de cerca."
+      ]
+     ],
+     "player": 0
+    },
+    {
+     "id": "legolas",
+     "name": "Legolas",
+     "start": "Regne del Bosc",
+     "color": "#86B33F",
+     "abilities": [
+      [
+       "Caminar en silenci",
+       "Acció",
+       "1 vegada per torn: obtín 1 Sigil."
+      ],
+      [
+       "Tir segur",
+       "Qualsevol torn",
+       "Gasta 1 Sigil per retirar 1 tropa de l’Ombra d’un lloc adjacent o moure 1 tropa de l’Ombra de la regió a Mordor."
+      ],
+      [
+       "Vista aguda",
+       "Preparar",
+       "1 vegada per torn: mira la carta superior de la baralla de l’Ombra."
+      ]
+     ],
+     "player": 0
+    },
+    {
+     "id": "merrypippin",
+     "name": "Merry i Pippin",
+     "start": "La Comarca",
+     "color": "#D07A2C",
+     "abilities": [
+      [
+       "Amic lleial",
+       "Acció",
+       "1 vegada per torn: obtín 1 Amistat."
+      ],
+      [
+       "Distracció",
+       "Qualsevol torn",
+       "Si hi ha menys de 4 tropes de l’Ombra a la regió, gasta 1 Amistat per moure-hi fins a 2 natzguls."
+      ],
+      [
+       "Canteu-nos una cançó!",
+       "Acció",
+       "Si són al lloc de Frodo, gasta 3 Amistat per guanyar 2 d’Esperança."
+      ]
+     ],
+     "player": 1
+    },
+    {
+     "id": "eowyn",
+     "name": "Éowyn",
+     "start": "Edoras",
+     "color": "#B9A27A",
+     "abilities": [
+      [
+       "Donzella escudera de Rohan",
+       "Reclutar a Edoras",
+       "No gasta Amistat."
+      ],
+      [
+       "Cap home vivent sóc",
+       "Batalla",
+       "Pot retirar natzguls amb els resultats indicats a la carta, sense retirar la tropa aliada associada."
+      ]
+     ],
+     "player": 1
+    }
+   ],
+   "objectives": [
+    {
+     "id": "aiml0qlcxj",
+     "name": "Rebre la benedicció dels elfs",
+     "done": false
+    },
+    {
+     "id": "jvg00blcxj",
+     "name": "Enfrontar-se al Balrog",
+     "done": false
+    },
+    {
+     "id": "656q7blcxj",
+     "name": "Destronar Denethor",
+     "done": false
+    },
+    {
+     "id": "ring",
+     "name": "Destruir l'Anell Únic",
+     "done": false,
+     "ring": true
+    }
+   ],
+   "setup": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "round": 1,
+   "turn": {
+    "p": 0,
+    "step": 0,
+    "a": [
+     0,
+     0
+    ],
+    "shadow": 0
+   },
+   "result": null,
+   "created": 1793014591159,
+   "solo": false,
+   "calc": {
+    "naz": 0,
+    "troops": 0,
+    "ring": false,
+    "haven": false,
+    "mordor": false,
+    "bKind": "attack",
+    "bFr": 1,
+    "bSh": 1,
+    "bNaz": false,
+    "bHaven": false
+   }
+  },
+  "game/undo": {
+   "stack": []
+  },
+  "game/log": {
+   "list": [
+    {
+     "k": "Partida preparada: {a}, {b}. Baralla de joc: {c} cartes. Mira la pestanya Comunitat per a preparar el tauler.",
+     "v": {
+      "a": "Introductòria",
+      "b": {
+       "k": "{n} participants",
+       "v": {
+        "n": 2
+       }
+      },
+      "c": 50
+     },
+     "ts": 1793014591159,
+     "who": "jose"
+    }
+   ]
+  }
+ }
+}

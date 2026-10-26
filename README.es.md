@@ -1,4 +1,4 @@
-<p align="center"><img src="logo.png" alt="La Comunidad del Anillo" width="220"></p>
+<p align="center"><img src="logo.png" alt="La Comunidad" width="220"></p>
 
 <p align="center">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/jossanmar9/comunitat-del-anell?label=versi%C3%B3n&color=8C2A1C" alt="Última versión"></a>
@@ -10,7 +10,7 @@
 
 [Valencià](README.md) · **Castellano**
 
-# La Comunidad del Anillo
+# La Comunidad
 
 **Ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad».** El tablero y las piezas los tenéis en la mesa; la app lleva las cuentas: la Esperanza, la Amenaza, el turno paso a paso, cuántos dados tirar en cada tirada y qué se pierde con el resultado. Un ordenador hace de servidor y el resto de la mesa entra desde el navegador, móviles incluidos. En castellano y valenciano, y sin Internet.
 
@@ -83,7 +83,7 @@ Más detalles, el cortafuegos de Linux y cómo pasar las partidas de las version
 
 ## Primeros pasos
 
-1. Abre **La Comunidad del Anillo**. La app se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK). Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
+1. Abre **La Comunidad**. La app se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK). Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
 2. El botón **Invitar** muestra la dirección para los demás y un **código QR**. Cada jugador lo escanea con el móvil y entra con su nombre. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
 3. Rellenad el formulario de preparación, preparad el tablero con la lista de la pestaña **Comunidad** y a jugar.
 
@@ -114,6 +114,7 @@ Cada partida se guarda en `partides/<nombre>.json`, sus copias de seguridad en `
 
 ## Documentación
 
+- [Registro de cambios](CHANGELOG.md)
 | Documento | Valencià | Castellano |
 |---|---|---|
 | Manual de usuario | [manual-usuari.md](docs/manual-usuari.md) | [manual-usuario.md](docs/manual-usuario.md) |

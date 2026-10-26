@@ -10,9 +10,9 @@
 
 FINESTRA_TEXTOS = {
     "ca": {
-        "titol": "La Comunitat de l'Anell",
+        "titol": "La Comunitat",
         "en_marxa": "En marxa · versió {v}",
-        "entrar": "Per a entrar des d'un altre aparell",
+        "entrar": "Per a entrar des d'un altre dispositiu",
         "escaneja": "Escaneja el codi amb la càmera del mòbil, o escriu l'adreça al navegador. "
                     "Cal estar a la mateixa wifi que aquest ordinador.",
         "sense_xarxa": "No s'ha trobat cap xarxa. Connecta aquest ordinador a la wifi i torna a obrir el programa.",
@@ -35,7 +35,7 @@ FINESTRA_TEXTOS = {
                   "Tanca'l, o arranca La Comunitat amb un altre port: --port 9001",
     },
     "es": {
-        "titol": "La Comunidad del Anillo",
+        "titol": "La Comunidad",
         "en_marxa": "En marcha · versión {v}",
         "entrar": "Para entrar desde otro dispositivo",
         "escaneja": "Escanea el código con la cámara del móvil, o escribe la dirección en el navegador. "
