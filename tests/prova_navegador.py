@@ -5,10 +5,16 @@ PLAYWRIGHT_CHANNEL=msedge permet aprofitar Edge instal·lat.
 """
 import json
 import os
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.request
+from pathlib import Path
 import unittest
 
 from playwright.sync_api import sync_playwright, expect
-from prova_servidor import Servidor, partida
+from prova_servidor import Servidor, partida, free_port
 
 
 class Navegador(unittest.TestCase):
@@ -75,11 +81,28 @@ class Navegador(unittest.TestCase):
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"http://127.0.0.1:{server.port}/")
                 expect(page.locator("#main")).to_contain_text("Cap partida oberta")
+                page.screenshot(path="/tmp/comunitat-inici-ca.png", full_page=True)
+                page.locator('[data-lang="es"]').click()
+                page.screenshot(path="/tmp/comunitat-inici-es.png", full_page=True)
+                page.locator('[data-lang="val"]').click()
                 page.locator("#welcome-create").click()
                 page.locator("#sf-name").fill("Partida nova")
                 page.locator("#sf-np").select_option("1")
                 page.locator("#sp-name-0").fill("Núria")
                 expect(page.locator('#sp-gender-0 option[value="auto"]')).to_have_text("Automàtic: Femení")
+                page.locator("#sp-race-0").select_option("elf")
+                page.locator("#sf-scen").select_option(index=1)
+                page.screenshot(path="/tmp/comunitat-preparacio-ca.png", full_page=True)
+                page.locator('[data-lang="es"]').click()
+                page.locator("#sf-name").fill("Partida nueva")
+                page.locator("#sp-name-0").fill("Núria")
+                page.locator("#sp-race-0").select_option("elf")
+                page.locator("#sf-scen").select_option(index=1)
+                expect(page.locator('#sp-gender-0 option[value="auto"]')).to_have_text("Automático: Femenino")
+                page.screenshot(path="/tmp/comunitat-preparacio-es.png", full_page=True)
+                page.locator('[data-lang="val"]').click()
+                page.locator("#sf-name").fill("Partida nova")
+                page.locator("#sp-name-0").fill("Núria")
                 page.locator("#sp-race-0").select_option("elf")
                 page.locator("#sf-scen").select_option(index=1)
                 page.locator("#setup-form button[type=submit]").click()
@@ -96,6 +119,60 @@ class Navegador(unittest.TestCase):
                 browser.close()
         finally:
             server.stop()
+
+    def test_galeria_web_fletxes_teclat_i_mobil(self):
+        root = Path(__file__).resolve().parent.parent
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run([sys.executable, str(root / "eines/web.py"), directory], check=True, stdout=subprocess.DEVNULL)
+            port = free_port()
+            server = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", directory], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                for _ in range(50):
+                    try:
+                        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=1):
+                            break
+                    except OSError:
+                        time.sleep(.1)
+                with sync_playwright() as pw:
+                    browser = pw.chromium.launch(channel=os.environ.get("PLAYWRIGHT_CHANNEL") or None)
+                    page = browser.new_page(viewport={"width": 1280, "height": 900})
+                    errors = []
+                    page.on("pageerror", lambda error: errors.append(str(error)))
+                    for path in ("/", "/es/"):
+                        page.goto(f"http://127.0.0.1:{port}{path}")
+                        buttons = page.locator(".miniatures button")
+                        count = buttons.count()
+                        self.assertGreater(count, 10)
+                        first = page.locator("#captura").get_attribute("src")
+                        page.locator("#gallery-next").click()
+                        expect(page.locator("#gallery-count")).to_have_text(f"2 / {count}")
+                        self.assertNotEqual(page.locator("#captura").get_attribute("src"), first)
+                        page.locator("#gallery-prev").click()
+                        expect(page.locator("#captura")).to_have_attribute("src", first)
+                        page.locator("#captures").press("ArrowLeft")
+                        expect(page.locator("#gallery-count")).to_have_text(f"{count} / {count}")
+                        page.locator("#captures").press("Home")
+                        expect(page.locator("#gallery-count")).to_have_text(f"1 / {count}")
+                        # Cada nova captura ha d'existir i carregar, en els dos idiomes.
+                        for index in range(count):
+                            buttons.nth(index).click()
+                            page.wait_for_function("document.querySelector('#captura').complete && document.querySelector('#captura').naturalWidth > 0")
+                        page.locator("#captures").press("Home")
+                        page.locator("#captures").screenshot(path="/tmp/comunitat-galeria-" + ("es" if path == "/es/" else "ca") + ".png")
+                    page.set_viewport_size({"width": 390, "height": 844})
+                    page.locator("#captura").evaluate("""image => {
+                      const start=new Touch({identifier:1,target:image,clientX:300,clientY:100});
+                      const end=new Touch({identifier:1,target:image,clientX:100,clientY:110});
+                      image.dispatchEvent(new TouchEvent('touchstart',{touches:[start],bubbles:true}));
+                      image.dispatchEvent(new TouchEvent('touchend',{changedTouches:[end],bubbles:true}));
+                    }""")
+                    expect(page.locator("#gallery-count")).to_have_text(f"2 / {count}")
+                    page.locator("#captures").screenshot(path="/tmp/comunitat-galeria-mobil.png")
+                    self.assertFalse(errors, errors)
+                    browser.close()
+            finally:
+                server.terminate()
+                server.wait(10)
 
     def test_jugada_conflicte_reintent_i_teclat(self):
         server = Servidor()

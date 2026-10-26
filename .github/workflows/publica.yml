@@ -44,6 +44,7 @@ jobs:
           python build.py
           python eines/comprova-traduccions.py
           python tests/prova_servidor.py
+          python tests/prova_persistencia.py
 
       - name: Prova que arranca
         run: |

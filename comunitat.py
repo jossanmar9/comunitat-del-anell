@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 2.6.0) — servidor local per a portar partides de
+La Comunitat (versió 2.7.0) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
@@ -61,7 +61,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.6.0"
+VERSION = "2.7.0"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
@@ -77,13 +77,202 @@ def user_data_dir():
     return Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share") / "comunitat-del-anell"
 
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Guardat transaccional de l'estat actiu i projeccions JSON compatibles.
+
+SQLite és la font de l'últim estat confirmat. Els JSON són còpies compatibles:
+si falla una projecció, l'estat confirmat continua en SQLite i es reintenta.
+No es manté cap connexió oberta entre operacions ni es requerix cap servidor.
+"""
+import copy
+import json
+import os
+import re
+import sqlite3
+import tempfile
+from contextlib import closing
+from pathlib import Path
+
+
+def atomic_json(path, obj):
+    """Substituïx un JSON complet, sense compartir temporals entre escriptures."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temp = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump(obj, stream, ensure_ascii=False, indent=1, allow_nan=False)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+        if os.name == "posix":
+            directory = os.open(str(path.parent), os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+
+
+class SnapshotStore:
+    """Una transacció per a partida, identitats, sessions i historial."""
+    def __init__(self, directory):
+        self.directory = Path(directory)
+        self.path = self.directory / "comunitat.sqlite3"
+        self.projection_error = None
+
+    def _connect(self):
+        self.directory.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(str(self.path), timeout=5, isolation_level=None)
+        try:
+            if os.name == "posix":
+                os.chmod(self.path, 0o600)
+            db.execute("PRAGMA synchronous=FULL")
+            version = db.execute("PRAGMA user_version").fetchone()[0]
+            if version not in (0, 1):
+                raise OSError("Unsupported save database version")
+            db.execute("CREATE TABLE IF NOT EXISTS snapshot (id INTEGER PRIMARY KEY CHECK(id=1), body TEXT NOT NULL, pending INTEGER NOT NULL)")
+            if version == 0:
+                db.execute("PRAGMA user_version=1")
+            return db
+        except Exception:
+            db.close()
+            raise
+
+    def read(self):
+        if not self.path.exists():
+            return None
+        try:
+            with closing(self._connect()) as db:
+                row = db.execute("SELECT body FROM snapshot WHERE id=1").fetchone()
+            if not row:
+                return None
+            snapshot = json.loads(row[0])
+            active = snapshot["meta"].get("active")
+            if (snapshot.get("format") != 1 or not isinstance(snapshot["docs"], dict)
+                    or not isinstance(snapshot["history"], list)
+                    or (active is not None and (not isinstance(active, str) or not re.fullmatch(r"[a-z0-9-]{1,60}", active)))):
+                raise ValueError("Invalid save snapshot")
+            return snapshot
+        except (sqlite3.Error, ValueError, KeyError, TypeError, AttributeError) as error:
+            raise OSError("Cannot read save database: " + str(error)) from error
+
+    def _targets(self, snapshot):
+        targets = [(self.directory / "comunitat.json", snapshot["meta"]),
+                   (self.directory / "historial.json", {"list": snapshot["history"]})]
+        if snapshot["meta"].get("active"):
+            targets.append((self.directory / "partides" / (snapshot["meta"]["active"] + ".json"), {"docs": snapshot["docs"]}))
+        return targets
+
+    def flush(self, force=False):
+        """Recupera projeccions pendents. El caller bloqueja canvis concurrents."""
+        snapshot = self.read()
+        if snapshot is None:
+            return
+        try:
+            with closing(self._connect()) as db:
+                pending = db.execute("SELECT pending FROM snapshot WHERE id=1").fetchone()[0]
+                if not force and not pending:
+                    return
+                for path, obj in self._targets(snapshot):
+                    atomic_json(path, obj)
+                db.execute("UPDATE snapshot SET pending=0 WHERE id=1")
+            self.projection_error = None
+        except sqlite3.Error as error:
+            raise OSError("Cannot project save database: " + str(error)) from error
+
+    def backup(self):
+        """Còpia coherent de SQLite abans de la recuperació d'un nou inici."""
+        if self.read() is None:
+            return
+        destination = self.directory / "copies" / "estat" / "comunitat.sqlite3"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary = tempfile.mkstemp(prefix="sqlite-backup-", dir=str(destination.parent))
+        os.close(descriptor)
+        try:
+            with closing(self._connect()) as source, closing(sqlite3.connect(temporary)) as target:
+                source.backup(target)
+            with open(temporary, "r+b") as stream:
+                os.fsync(stream.fileno())
+            os.replace(temporary, destination)
+        except sqlite3.Error as error:
+            raise OSError("Cannot back up save database: " + str(error)) from error
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+    def commit(self, meta, docs, history):
+        # Abans de deixar una partida, cal preservar-ne la còpia JSON completa.
+        previous = self.read()
+        if previous and previous["meta"].get("active") != meta.get("active"):
+            self.flush()
+        snapshot = {"format": 1, "meta": copy.deepcopy(meta), "docs": copy.deepcopy(docs), "history": copy.deepcopy(history)}
+        try:
+            body = json.dumps(snapshot, ensure_ascii=False, allow_nan=False)
+        except (TypeError, ValueError) as error:
+            raise OSError("Invalid save data: " + str(error)) from error
+        try:
+            with closing(self._connect()) as db:
+                db.execute("BEGIN IMMEDIATE")
+                try:
+                    db.execute("INSERT OR REPLACE INTO snapshot(id, body, pending) VALUES(1, ?, 1)", (body,))
+                    db.execute("COMMIT")
+                except BaseException:
+                    if db.in_transaction:
+                        db.execute("ROLLBACK")
+                    raise
+        except sqlite3.Error as error:
+            raise OSError("Cannot commit save database: " + str(error)) from error
+        try:
+            self.flush()
+        except OSError as error:
+            # Ja està confirmat i és recuperable: no falsegem una fallada de la jugada.
+            self.projection_error = str(error)
+        return snapshot
+
+
+class DataDirectoryLock:
+    """Impedix dos servidors escrivint la mateixa carpeta, també amb ports distints."""
+    def __init__(self, directory):
+        Path(directory).mkdir(parents=True, exist_ok=True)
+        self.stream = open(Path(directory) / "comunitat.lock", "a+b")
+        try:
+            if os.name == "nt":
+                import msvcrt
+                self.stream.seek(0)
+                if not self.stream.read(1):
+                    self.stream.write(b"0")
+                    self.stream.flush()
+                self.stream.seek(0)
+                msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self.stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            self.stream.close()
+            raise OSError("La carpeta de dades ja està oberta per un altre servidor.") from error
+
+    def close(self):
+        if self.stream.closed:
+            return
+        if os.name == "nt":
+            import msvcrt
+            self.stream.seek(0)
+            msvcrt.locking(self.stream.fileno(), msvcrt.LK_UNLCK, 1)
+        self.stream.close()
+
+
+
 def set_data_dir(path):
-    global DATA_DIR, CAMP_DIR, TRASH_DIR, META, HIST
+    global DATA_DIR, CAMP_DIR, TRASH_DIR, META, HIST, storage
     DATA_DIR = Path(path).expanduser().resolve()
     CAMP_DIR = DATA_DIR / "partides"
     TRASH_DIR = CAMP_DIR / "esborrades"
     META = DATA_DIR / "comunitat.json"     # sessions, noms dels jugadors i partida oberta
     HIST = DATA_DIR / "historial.json"     # partides acabades
+    storage = SnapshotStore(DATA_DIR)
 
 
 set_data_dir(user_data_dir() if INSTALLAT else DIR)
@@ -93,6 +282,29 @@ BACKUP_EVERY = 30 * 60      # mentre es juga, una còpia cada mitja hora (si hi 
 BACKUP_RE = re.compile(r"\d{8}-\d{6}(?:-\d+)?-[a-z]+")
 MAX_IMPORT = 5 * 1024 * 1024
 
+lock = threading.RLock()
+state = {
+    "epoch": secrets.token_hex(12),
+    "revision": 0,  # epoch distingeix les revisions després de reiniciar
+    "docs": {},        # partida oberta: ruta -> dict
+    "sessions": {},    # token -> {uid, dm, auth_version}
+    "connections_open": True,
+    "pin_attempts": {},
+    "users": {},       # uid -> identitat i hash PIN (comú a totes les partides)
+    "active": None,    # id de la partida oberta
+    "history": [],     # partides acabades
+    "port": 8766,
+    "last_backup": 0,  # quan s'ha fet l'última còpia automàtica de la partida oberta
+}
+clients = []
+completed_requests = {}
+dirty = threading.Event()
+
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Identitats, àlies i credencials; incrustat per build.py en el servidor.
+Les funcions de sala utilitzen el registre autoritatiu del servidor.
+"""
 RACE_ALIASES = {
     "home": (["Vespran", "Talvex", "Odravel", "Cervun", "Peldrav", "Zervat"],
              ["Valclar", "Riuargent", "Montverd", "Ferroclar", "Ventdelnord", "Pedrablanca"]),
@@ -182,25 +394,6 @@ def generate_alias(race, except_uid=None, alias_gender="neutral"):
             return alias
 
 
-lock = threading.RLock()
-state = {
-    "epoch": secrets.token_hex(12),
-    "revision": 0,  # epoch distingeix les revisions després de reiniciar
-    "docs": {},        # partida oberta: ruta -> dict
-    "sessions": {},    # token -> {uid, dm, auth_version}
-    "connections_open": True,
-    "pin_attempts": {},
-    "users": {},       # uid -> identitat i hash PIN (comú a totes les partides)
-    "active": None,    # id de la partida oberta
-    "history": [],     # partides acabades
-    "port": 8766,
-    "last_backup": 0,  # quan s'ha fet l'última còpia automàtica de la partida oberta
-}
-clients = []
-completed_requests = {}
-dirty = threading.Event()
-
-
 PIN_ITERATIONS = 200_000
 
 
@@ -286,9 +479,6 @@ def revoke_player(uid):
     for tok, sess in list(state["sessions"].items()):
         if sess["uid"] == uid:
             del state["sessions"][tok]
-    for client in list(clients):
-        if client.sess["uid"] == uid:
-            client.send("revoked", {})
 
 
 def room_players(admin=False):
@@ -304,13 +494,7 @@ def room_players(admin=False):
 
 # ---------------------------------------------------------------- emmagatzematge
 def write_json(path, obj):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=1)
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, path)
-
+    atomic_json(path, obj)
 
 def read_json(path):
     with open(path, encoding="utf-8") as f:
@@ -341,7 +525,10 @@ def camp_name(docs, cid):
 
 def list_campaigns():
     out = []
-    for f in sorted(CAMP_DIR.glob("*.json")):
+    files = set(CAMP_DIR.glob("*.json"))
+    if state["active"]:
+        files.add(camp_file(state["active"]))
+    for f in sorted(files):
         cid = f.stem
         try:
             docs = state["docs"] if cid == state["active"] else read_json(f).get("docs", {})
@@ -350,7 +537,7 @@ def list_campaigns():
         out.append({
             "id": cid,
             "name": camp_name(docs, cid),
-            "updated": int(f.stat().st_mtime * 1000),
+            "updated": int((f.stat().st_mtime if f.exists() else time.time()) * 1000),
             "active": cid == state["active"],
         })
     out.sort(key=lambda c: (not c["active"], -c["updated"]))
@@ -372,11 +559,7 @@ def save_now():
         meta = copy.deepcopy({"auth_version": 2, "connections_open": state["connections_open"],
                               "sessions": {t: s for t, s in state["sessions"].items() if not s.get("dm")},
                               "users": state["users"], "active": state["active"]})
-        docs = {"docs": copy.deepcopy(state["docs"])}
-        cid = state["active"]
-        write_json(META, meta)
-        if cid:
-            write_json(camp_file(cid), docs)
+        storage.commit(meta, state["docs"], state["history"])
 
 
 def saver():
@@ -386,8 +569,6 @@ def saver():
         dirty.clear()
         try:
             save_now()
-            with lock:
-                save_history()
             if time.time() - state["last_backup"] > BACKUP_EVERY:
                 with lock:
                     cid, docs = state["active"], copy.deepcopy(state["docs"])
@@ -395,19 +576,15 @@ def saver():
                 make_backup(cid, docs, "partida")
         except Exception as e:  # noqa: BLE001
             print(f"[!] No s'ha pogut guardar: {e}")
+            dirty.set()
 
 
 def activate(cid):
     """Carrega la partida `cid` com a oberta (qui crida té el lock i ja ha guardat l'anterior)."""
     try:
-        docs = read_json(camp_file(cid)).get("docs", {})
-    except FileNotFoundError:
-        docs = {}
-    except Exception as e:  # noqa: BLE001
-        bad = camp_file(cid).with_suffix(".json.danyat")
-        camp_file(cid).replace(bad)
-        print(f"[!] No s'ha pogut llegir {cid}.json ({e}). L'he mogut a {bad.name}.")
-        docs = {}
+        docs = check_docs(read_json(camp_file(cid)).get("docs", {}))
+    except (OSError, ValueError, TypeError, AttributeError, ImportError_) as error:
+        raise OSError(f"No s'ha pogut obrir {cid}.json; el fitxer es conserva: {error}") from error
     restore_roster(docs)
     state["docs"] = docs
     state["revision"] += 1
@@ -427,6 +604,9 @@ def new_campaign(name):
 
 def load(wanted=None):
     CAMP_DIR.mkdir(parents=True, exist_ok=True)
+    with lock:
+        storage.backup()
+        storage.flush(force=True)
     if META.exists():
         try:
             meta = read_json(META)
@@ -435,7 +615,7 @@ def load(wanted=None):
             state["active"] = meta.get("active")
             state["connections_open"] = bool(meta.get("connections_open", True))
         except Exception as e:  # noqa: BLE001
-            print(f"[!] No s'ha pogut llegir comunitat.json ({e}). Els jugadors hauran de tornar a entrar.")
+            raise OSError(f"No s'ha pogut llegir comunitat.json; no se sobreescriu: {e}") from e
     migrate_users()
     if wanted:
         state["active"] = None  # perquè list_campaigns llija tots els fitxers del disc
@@ -451,6 +631,7 @@ def load(wanted=None):
         state["active"] = None
         state["docs"] = {}
         state["revision"] += 1
+    load_history()
     save_now()
 
 
@@ -615,13 +796,16 @@ def import_campaign(data):
 def load_history():
     if HIST.exists():
         try:
-            state["history"] = read_json(HIST).get("list", [])
+            history = read_json(HIST).get("list", [])
+            if not isinstance(history, list) or any(not isinstance(entry, dict) for entry in history):
+                raise ValueError("Invalid history")
+            state["history"] = history
         except Exception as e:  # noqa: BLE001
-            print(f"[!] No s'ha pogut llegir historial.json ({e}).")
+            raise OSError(f"No s'ha pogut llegir historial.json; no se sobreescriu: {e}") from e
 
 
 def save_history():
-    write_json(HIST, {"list": state["history"]})
+    save_now()
 
 
 def track_result(g):
@@ -1505,6 +1689,22 @@ def lan_urls():
 
 
 # ---------------------------------------------------------------- HTTP
+def durable_request(method):
+    """Restaura memòria si falla la persistència, mai per un socket tancat."""
+    def guarded(self, *args):
+        with lock:
+            keys = ("users", "sessions", "docs", "active", "history", "revision", "connections_open")
+            previous = copy.deepcopy({key: state[key] for key in keys})
+            try:
+                return method(self, *args)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                raise
+            except OSError:
+                state.update(previous)
+                return self._json(503, {"error": "No s'ha pogut guardar."})
+    return guarded
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "Comunitat/" + VERSION
     protocol_version = "HTTP/1.1"
@@ -1689,10 +1889,7 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/players":
             return self._players(body)
         if route == "/api/logout":
-            with lock:
-                revoke_player(sess["uid"])
-                save_now()
-            return self._json(200, {"ok": True})
+            return self._logout(sess)
         if route == "/api/write":
             return self._write(body, sess)
         if route == "/api/transaction":
@@ -1730,6 +1927,13 @@ class Handler(BaseHTTPRequestHandler):
             result = {"active": state["active"], "list": list_campaigns(), "imported": cid}
         return self._json(200, result)
 
+    @durable_request
+    def _logout(self, sess):
+        revoke_player(sess["uid"])
+        save_now()
+        return self._json(200, {"ok": True})
+
+    @durable_request
     def _join(self, body):
         with lock:
             old_tok = str(body.get("token") or "")
@@ -1850,6 +2054,7 @@ class Handler(BaseHTTPRequestHandler):
             broadcast_event("snapshot", {})
             return self._json(200, {"snapshot": session_snapshot(self._session()), "pins": pins})
 
+    @durable_request
     def _players(self, body):
         action = body.get("action")
         uid = str(body.get("uid") or "")
@@ -1937,9 +2142,15 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(400, {"error": NO_ES_PARTIDA})
             if not roster_unchanged(docs, sess):
                 return self._json(403, {"error": "No tens permís per a canviar això."})
+            previous, history = state["docs"], copy.deepcopy(state["history"])
             state["docs"] = docs
-            if path == "game/state" and track_result(docs.get(path)):
-                save_history()
+            try:
+                if path == "game/state":
+                    track_result(docs.get(path))
+                save_now()
+            except OSError:
+                state["docs"], state["history"] = previous, history
+                return self._json(503, {"error": "No s'ha pogut guardar."})
             dirty.set()
             state["revision"] += 1
             broadcast_event("snapshot", session_snapshot(sess))
@@ -1983,18 +2194,11 @@ class Handler(BaseHTTPRequestHandler):
             previous, history = state["docs"], copy.deepcopy(state["history"])
             state["docs"] = docs
             try:
-                history_changed = track_result(docs.get("game/state"))
+                track_result(docs.get("game/state"))
                 save_now()
             except OSError:
                 state["docs"], state["history"] = previous, history
                 return self._json(503, {"error": "No s'ha pogut guardar."})
-            if history_changed:
-                try:
-                    save_history()
-                except OSError as e:
-                    # La jugada ja és durable; reintenta l'historial sense repetir-la.
-                    dirty.set()
-                    print(f"[!] No s'ha pogut guardar l'historial: {e}")
             state["revision"] += 1
             dirty.set()  # també activa les còpies periòdiques mentre es juga
             completed_requests[key] = True
@@ -2003,6 +2207,7 @@ class Handler(BaseHTTPRequestHandler):
             broadcast_event("snapshot", session_snapshot(sess))
             return self._json(200, session_snapshot(sess))
 
+    @durable_request
     def _history(self, body):
         hid = str(body.get("id") or "")
         with lock:
@@ -2011,6 +2216,7 @@ class Handler(BaseHTTPRequestHandler):
                 save_history()
             return self._json(200, {"list": list(reversed(state["history"]))})
 
+    @durable_request
     def _campaigns(self, body):
         action = body.get("action")
         name = str(body.get("name") or "").strip()[:80]
@@ -2019,6 +2225,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"error": "Partida desconeguda."})
         switched = False
         with lock:
+            storage.flush()
             if action == "undelete":
                 f = TRASH_DIR / f"{cid}.json"
                 if not cid or not f.is_file():
@@ -2133,6 +2340,13 @@ def main():
     a = ap.parse_args()
     if a.dades.strip():
         set_data_dir(a.dades.strip())
+    try:
+        data_lock = DataDirectoryLock(DATA_DIR)
+    except OSError as error:
+        print(f"[!] {error}")
+        return 1
+    import atexit
+    atexit.register(data_lock.close)
     pantalla = not a.sense_finestra and hi_ha_pantalla()
     idioma = a.idioma
     state["port"] = a.port
@@ -2199,7 +2413,7 @@ def main():
 
 # ---------------------------------------------------------------- pàgina web i mapes d'exemple (base64)
 PAGE_BYTES = gzip.decompress(base64.b64decode("""
-H4sIAJXf32oC/5ybx5K0aped57qKozOl/8A7qY8iEhLvvZlhE+/91Yuv1a0ITVURFQkUmfXCu/dazyLh3/97PmbbPRV/VVvf/a//
+H4sIAB3o32oC/5ybx5K0aped57qKozOl/8A7qY8iEhLvvZlhE+/91Yuv1a0ITVURFQkUmfXCu/dazyLh3/97PmbbPRV/VVvf/a//
 9u9/Xv7qkuH3z99Z8vefDUWSvy99sSV/ZVWyrMX2z9/7Vv6L+vu/Ng9JX/zz91EX5zQu299/ZeOwFcO721nnW/VPXhx1VvzrP1b+
 rR7qrU66f61Z0hX/wP/2X+/6V1lv/2TjUSx/Prarh/avpej++bt+P+zvv/6M8F3uk18BTsPv77+qpSj/+TtPtuR//N+t/zNN1oLA
 /q32GcM+IUX4jZ/3R3e8ivN+7xL3Z5X5sJ/ofWXnJBSLd2GO246zfBtDVoTMSbuM0WEA0A4FAJQmABRaBtNT/cG3/Tro6fPsJabj
@@ -26429,4 +26643,4 @@ rkJggg==
 """.split())
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

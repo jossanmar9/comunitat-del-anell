@@ -4,6 +4,17 @@ Guía de uso de La Comunidad, el ayudante libre para llevar las partidas de «El
 
 Para instalarla, consulta la [guía de instalación](guia-instalacion.md).
 
+## Guardados y recuperación — v2.7.0
+
+La partida activa, identidades, hashes de PIN, sesiones e historial se confirman juntos en **`comunitat.sqlite3`**, mediante transacciones SQLite. Los JSON existentes siguen como copias compatibles de partidas, configuración e historial. Las partidas inactivas y sus copias siguen en JSON; esta versión refuerza el guardado conjunto del estado activo.
+
+La primera lectura importa configuración e historial existentes sin eliminarlos. Cuando existe SQLite, es la fuente del último estado confirmado: no edites manualmente sus JSON de configuración, historial o partida activa; utiliza importar y restaurar. Si falla la proyección JSON, la jugada confirmada sigue en SQLite y se recupera al iniciar. Si falla la transacción, la app no confirma la jugada. Los datos corruptos no se sustituyen silenciosamente por datos vacíos.
+
+Antes de recuperar un inicio, se guarda una copia coherente de SQLite en **`copies/estat/comunitat.sqlite3`**. Para una copia completa, cierra la app y copia **toda la carpeta de datos**, incluyendo base, JSON, partidas y copias. La copia de estado contiene credenciales y sesiones: consérvala en privado. Para volver a una versión anterior, cierra la app y trabaja sobre una copia de la carpeta; los JSON deben estar actualizados. No se permiten dos servidores en la misma carpeta de datos, aunque utilicen puertos distintos.
+
+Si una base queda dañada, cierra la app, conserva toda la carpeta y restaura una copia coherente de `comunitat.sqlite3`; después la app recuperará sus JSON. La copia de estado corresponde al anterior inicio correcto, no necesariamente a la última jugada. Las copias de partida y la exportación JSON siguen disponibles.
+
+
 ## Sala de partida — v2.6.0
 
 **Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
@@ -79,7 +90,7 @@ Si llega alguien con la partida empezada, pulsa el botón del QR de arriba a la 
 
 La primera vez, la app muestra el formulario de preparación. Rellénalo y pulsa **Empezar la partida**.
 
-![Dificultad, participantes, personajes y objetivos.](imatges/es/03-preparacio.jpg)
+![Dificultad, participantes, personajes y objetivos.](imatges/es/03-preparacio-v270.png)
 
 ### Dificultad
 

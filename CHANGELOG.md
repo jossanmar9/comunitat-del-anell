@@ -4,6 +4,15 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions publicades com `vX.Y.Z`.
 
+## [2.7.0] - 2026-10-27
+
+- Guardat transaccional conjunt de l’estat actiu (partida, jugadors, sessions i historial) en SQLite, mantenint JSON compatibles.
+- Recuperació de projeccions JSON parcials, còpia coherent de SQLite abans de cada inici i bloqueig de doble instància sobre les mateixes dades.
+- Errors d’escriptura amb rollback de memòria; dades corruptes preservades en lloc de sobreescriure-les amb un estat buit.
+- Persistència i identitats separades en mòduls, incrustats en el programa distribuït.
+- Proves de disc ple, transacció interrompuda, corrupció, migració, còpies, sessions i recuperació.
+- Web amb novetats i captures actuals, galeria amb fletxes, teclat, miniatures i gestos mòbils en VAL/CAS.
+
 ## [2.6.0] - 2026-10-27
 
 - Etiqueta de raça «Humà» / «Humano», mantenint el codi intern compatible amb els guardats.

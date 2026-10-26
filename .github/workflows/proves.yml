@@ -32,7 +32,9 @@ jobs:
       - name: Comprova les traduccions
         run: python eines/comprova-traduccions.py
       - name: Proves del servidor
-        run: python tests/prova_servidor.py
+        run: |
+          python tests/prova_servidor.py
+          python tests/prova_persistencia.py
 
   navegador:
     runs-on: ubuntu-latest

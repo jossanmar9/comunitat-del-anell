@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Construeix comunitat.py: ajunta la pàgina web de src/web/ (amb les tipografies de src/web/fonts/),
 els mapes d'exemple de src/mapes/,
+les identitats de src/identitats.py, la persistència de src/persistencia.py,
 el codi QR de src/qr.py i la finestra de src/finestra.py, i ho incrusta dins del servidor
 src/servidor.py, perquè tot el programa siga un sol fitxer.
 
@@ -78,13 +79,15 @@ def pagina():
 
 def main():
     server = (ROOT / "src" / "servidor.py").read_text(encoding="utf-8")
-    for mark in ("__PAGE__", "__QR__", "__FINESTRA__", "__ICONA__", "__MAPA_VAL__", "__MAPA_ES__"):
+    for mark in ("__PAGE__", "__QR__", "__FINESTRA__", "__IDENTITATS__", "__PERSISTENCIA__", "__ICONA__", "__MAPA_VAL__", "__MAPA_ES__"):
         if mark not in server:
             raise SystemExit(f"src/servidor.py no té el marcador {mark}")
     qr = (ROOT / "src" / "qr.py").read_text(encoding="utf-8").strip()
     finestra = (ROOT / "src" / "finestra.py").read_text(encoding="utf-8").strip()
     out = ROOT / "comunitat.py"
     out.write_text(server.replace("__QR__", qr).replace("__FINESTRA__", finestra)
+                   .replace("__IDENTITATS__", (ROOT / "src" / "identitats.py").read_text(encoding="utf-8"))
+                   .replace("__PERSISTENCIA__", (ROOT / "src" / "persistencia.py").read_text(encoding="utf-8"))
                    .replace("__ICONA__", b64_lines((WEB / "logo.png").read_bytes()))
                    .replace("__MAPA_VAL__", b64_lines((MAPES / "mapa-exemple-val.jpg").read_bytes()))
                    .replace("__MAPA_ES__", b64_lines((MAPES / "mapa-exemple-es.jpg").read_bytes()))

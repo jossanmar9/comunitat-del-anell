@@ -4,6 +4,17 @@ Guia d'ús de La Comunitat, l'ajudant lliure per a portar les partides d'«El Se
 
 Per a instal·lar-la, consulta la [guia d'instal·lació](guia-installacio.md).
 
+## Guardats i recuperació — v2.7.0
+
+La partida activa, les identitats, els hash de PIN, les sessions i l’historial es confirmen conjuntament en **`comunitat.sqlite3`**, amb transaccions SQLite. Els JSON existents continuen com a còpies compatibles per a les partides guardades, la configuració i l’historial. Les partides inactives i les còpies de partida continuen en JSON; esta versió reforça el guardat conjunt de l’estat actiu.
+
+En actualitzar, la primera lectura importa la configuració i l’historial existents sense eliminar-los. Quan hi ha una base SQLite, és la font de l’últim estat confirmat: no edites a mà els seus JSON de configuració, historial o partida activa; usa les opcions d’importar i restaurar. Si falla la projecció JSON, la jugada confirmada continua en SQLite i es recupera en el pròxim inici. Si falla la transacció, l’app no confirma la jugada. Les dades corruptes no se substitueixen silenciosament per dades buides.
+
+Abans de recuperar un inici, es guarda una còpia coherent de SQLite en **`copies/estat/comunitat.sqlite3`**. Per a una còpia completa, tanca l’app i copia **tota la carpeta de dades**, incloent la base, els JSON, les partides i les còpies. La còpia de l’estat conté credencials i sessions: conserva-la en privat. Per a tornar a una versió anterior, tanca l’app i treballa sobre una còpia de la carpeta; els JSON han d’estar actualitzats. No es permeten dos servidors en la mateixa carpeta de dades, encara que usen ports distints.
+
+Si una base queda danyada, tanca l’app, conserva tota la carpeta i restaura una còpia coherent de `comunitat.sqlite3`; després l’app recuperarà els seus JSON. La còpia d’estat correspon a l’anterior inici correcte, no necessàriament a l’última jugada. Les còpies de partida i l’exportació JSON continuen disponibles.
+
+
 ## Sala de partida — v2.6.0
 
 **Àlies masculins i femenins:** en escriure un nom, l’app proposa un tipus d’àlies amb una llista local de noms habituals; no fa consultes a Internet. Pots corregir-lo amb **Tipus d’àlies → Masculí / Femení / Neutre**. Els noms desconeguts o ambigus es proposen com a neutres. És una ajuda lingüística per a l’àlies, no una determinació del gènere de la persona. Cada raça té noms inventats diferenciats. La preferència manual es conserva; canviar-la des de **Sala de partida → Editar** genera un altre àlies sense canviar el PIN ni tancar la sessió. Els jugadors antics conserven l’àlies existent fins que el màster el canvie.
@@ -79,7 +90,7 @@ Si arriba algú amb la partida començada, prem el botó del QR de dalt a la dre
 
 La primera vegada, l'app mostra el formulari de preparació. Ompli'l i prem **Començar la partida**.
 
-![Dificultat, participants, personatges i objectius.](imatges/ca/03-preparacio.jpg)
+![Dificultat, participants, personatges i objectius.](imatges/ca/03-preparacio-v270.png)
 
 ### Dificultat
 

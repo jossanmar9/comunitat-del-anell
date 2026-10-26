@@ -443,6 +443,40 @@ class Sala(unittest.TestCase):
         self.assertEqual(setup["snapshot"]["docs"]["game/state"]["players"][0]["alias"], male["alias"])
 
 
+    def test_reinici_des_pres_de_tancament_forcat(self):
+        snap = self.s.get("/api/snapshot", self.master)[1]
+        code, created, _ = self.s.post("/api/setup", {"game": partida(players=[{"name": "Reinici", "race": "elf"}]),
+            "name": "Durable", "requestId": "crash-setup", "camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"]}, self.master)
+        self.assertEqual(code, 200)
+        uid = created["pins"][0]["uid"]
+        pin = created["pins"][0]["pin"]
+        code, joined, _ = self.s.post("/api/join", {"uid": uid, "pin": pin})
+        self.assertEqual(code, 200)
+        game = created["snapshot"]["docs"]["game/state"]
+        self.assertEqual(self.s.write(self.master, "game/state", {**game, "hope": 3, "result": "win"}), 200)
+        # Sense SIGTERM ni guardat de tancament: equival al procés interromput.
+        self.s.proc.kill()
+        self.s.proc.wait(10)
+        self.s.proc.stderr.close()
+        for path in (self.s.dir / "comunitat.json", self.s.dir / "historial.json", self.s.dir / "partides/prova.json"):
+            path.write_text("incomplete mirror")
+        self.s.proc = subprocess.Popen([sys.executable, str(ROOT / "comunitat.py"), "--sense-finestra", "--sense-navegador", "--sense-qr",
+            "--port", str(self.s.port), "--dades", str(self.s.dir)], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        for _ in range(100):
+            try:
+                if self.s.get("/api/hello")[0] == 200:
+                    break
+            except OSError:
+                time.sleep(.1)
+        master = self.s.master()
+        self.assertIsNone(self.s.get("/api/snapshot", master)[1]["campaign"])
+        self.assertEqual(self.s.post("/api/join", {"token": joined["token"]})[0], 200)
+        self.assertEqual(self.s.post("/api/campaigns", {"action": "switch", "id": "prova"}, master)[0], 200)
+        recovered = self.s.get("/api/snapshot", joined["token"])[1]["docs"]["game/state"]
+        self.assertEqual(recovered["hope"], 3)
+        self.assertEqual(recovered["players"][0]["uid"], uid)
+        self.assertTrue(any(h["result"] == "win" for h in self.s.get("/api/history", master)[1]["list"]))
+
     def test_rate_limit(self):
         u = self.s.create_player("Intents")
         for _ in range(5):

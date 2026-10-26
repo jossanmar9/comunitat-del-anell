@@ -20,8 +20,12 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/jossanmar9/comunitat-del-anell"
 WEB = "https://jossanmar9.github.io/comunitat-del-anell/"
 
-CAPTURES = ["05-partida", "03-preparacio", "04-comunitat", "07-torn", "11-cerca-daus", "13-batalla-daus",
+CAPTURES = ["05-partida", "00-inici-v270", "03-preparacio-v270", "01-sala-v260", "01-entrada-v260", "04-comunitat", "07-torn", "11-cerca-daus", "13-batalla-daus",
             "09-cel", "18-resum", "20-historial", "21-mobil"]
+
+def capture_filename(name):
+    return name + (".png" if (ROOT / "docs/imatges/ca" / (name + ".png")).exists() else ".jpg")
+
 
 T = {
     "ca": {
@@ -42,6 +46,11 @@ T = {
         "nav_que": "Què fa", "nav_veure": "Captures", "nav_com": "Com començar", "nav_codi": "Codi",
         "que_titol": "Què porta La Comunitat",
         "que_intro": "Les cartes, les tropes i els natzguls continuen al tauler. L'app s'encarrega dels comptes que s'obliden.",
+        "news": [
+            "Guardat conjunt en SQLite de partida activa, jugadors, sessions i historial, amb recuperació de les còpies JSON.",
+            "Inici sense partida, alta automàtica dels participants, àlies per raça i tipus i accés mòbil amb QR i PIN.",
+            "Recuperació més robusta davant de talls i errors de guardat.",
+        ],
         "moduls": [
             ("Pistes", "Esperança, amenaça, cartes de la baralla, cels enfosquits, objectius i ronda, sempre a la vista i amb desfer."),
             ("El torn pas a pas", "Les 4 + 1 accions, robar 2 cartes i resoldre les cartes d'Ombra que toquen, en l'ordre del manual."),
@@ -53,8 +62,13 @@ T = {
             ("Tota la taula", "Una finestra pròpia a l'ordinador principal i, per a la resta, el mòbil amb un QR. Retrats dels 13 personatges, mode fosc i dos idiomes."),
         ],
         "veure_titol": "Així es veu",
-        "veure_intro": "Captures reals d'una partida introductòria.",
+        "veure_intro": "Captures reals: inici, participants, sala, entrada mòbil i partida. Usa les fletxes o les miniatures.",
+        "anterior": "Captura anterior", "seguent": "Captura següent", "novetats": "Novetats",
         "captures": {
+            "00-inici-v270": "Inici sense partida: crear-ne una o obrir un guardat.",
+            "03-preparacio-v270": "Participants, races i tipus d’àlies amb detecció i correcció manual.",
+            "01-sala-v260": "Sala de partida: jugadors, connexions, PIN i sessions controlats pel màster.",
+            "01-entrada-v260": "Entrada mòbil: seleccionar jugador i escriure el PIN.",
             "05-partida": "La pantalla de joc: les eines, el mapa i el torn pas a pas.",
             "03-preparacio": "La preparació: dificultat, participants, personatges i objectius.",
             "04-comunitat": "La pestanya Comunitat: la llista de preparació del tauler i qui porta cada personatge.",
@@ -119,6 +133,11 @@ T = {
         "nav_que": "Qué hace", "nav_veure": "Capturas", "nav_com": "Cómo empezar", "nav_codi": "Código",
         "que_titol": "Qué lleva La Comunidad",
         "que_intro": "Las cartas, las Tropas y los Nazgûl siguen en el tablero. La app se encarga de las cuentas que se olvidan.",
+        "news": [
+            "Guardado conjunto en SQLite de partida activa, jugadores, sesiones e historial, con recuperación de las copias JSON.",
+            "Inicio sin partida, alta automática de participantes, alias por raza y tipo y acceso móvil con QR y PIN.",
+            "Recuperación más robusta ante cortes y errores de guardado.",
+        ],
         "moduls": [
             ("Marcadores", "Esperanza, Amenaza, cartas del mazo, cielos oscurecidos, objetivos y ronda, siempre a la vista y con deshacer."),
             ("El turno paso a paso", "Las 4 + 1 acciones, robar 2 cartas y resolver las cartas de Sombra que tocan, en el orden del reglamento."),
@@ -130,8 +149,13 @@ T = {
             ("Toda la mesa", "Una ventana propia en el ordenador principal y, para el resto, el móvil con un QR. Retratos de los 13 personajes, modo oscuro y dos idiomas."),
         ],
         "veure_titol": "Así se ve",
-        "veure_intro": "Capturas reales de una partida introductoria.",
+        "veure_intro": "Capturas reales: inicio, participantes, sala, entrada móvil y partida. Usa las flechas o las miniaturas.",
+        "anterior": "Captura anterior", "seguent": "Captura siguiente", "novetats": "Novedades",
         "captures": {
+            "00-inici-v270": "Inicio sin partida: crear una o abrir una guardada.",
+            "03-preparacio-v270": "Participantes, razas y tipo de alias con detección y corrección manual.",
+            "01-sala-v260": "Sala de partida: jugadores, conexiones, PIN y sesiones controlados por el máster.",
+            "01-entrada-v260": "Entrada móvil: seleccionar jugador y escribir el PIN.",
             "05-partida": "La pantalla de juego: las herramientas, el mapa y el turno paso a paso.",
             "03-preparacio": "La preparación: dificultad, participantes, personajes y objetivos.",
             "04-comunitat": "La pestaña Comunidad: la lista de preparación del tablero y quién lleva cada personaje.",
@@ -210,7 +234,7 @@ def pagina(t, l, base, v):
     primera = CAPTURES[0]
     miniatures = ""
     for i, c in enumerate(CAPTURES):
-        src = f"{base}img/{l}/{c}.jpg"
+        src = f"{base}img/{l}/{capture_filename(c)}"
         actual = ' aria-current="true"' if i == 0 else ""
         miniatures += (f'<li><button type="button" data-src="{e(src)}" data-peu="{e(t["captures"][c])}"{actual} '
                        f'aria-label="{e(t["captures"][c])}"><img src="{e(src)}" alt="" loading="lazy"></button></li>')
@@ -224,7 +248,7 @@ def pagina(t, l, base, v):
 <meta name="description" content="{e(t['descripcio'])}">
 <meta property="og:title" content="{e(t['titol'])}">
 <meta property="og:description" content="{e(t['descripcio'])}">
-<meta property="og:image" content="{WEB}img/{l}/{primera}.jpg">
+<meta property="og:image" content="{WEB}img/{l}/{capture_filename(primera)}">
 <link rel="icon" href="{base}img/icona.png">
 <link rel="alternate" hreflang="{t['altre']}" href="{t['altre_url']}">
 <link rel="stylesheet" href="{base}fonts/fonts.css">
@@ -257,7 +281,7 @@ def pagina(t, l, base, v):
     <p class="versio">{t['versio'].format(v=v)} · <a href="{base}prova/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a></p>
   </div>
   <figure class="hero-captura">
-    <img src="{base}img/{l}/{primera}.jpg" alt="{e(t['captures'][primera])}" width="1600" height="1012">
+    <img src="{base}img/{l}/{capture_filename(primera)}" alt="{e(t['captures'][primera])}" width="1600" height="1012">
   </figure>
 </section>
 
@@ -269,13 +293,16 @@ def pagina(t, l, base, v):
   <dl class="moduls">{moduls}</dl>
 </section>
 
-<section id="captures" class="seccio galeria">
+<section class="seccio release-news"><h2>{t['novetats']} · {v}</h2><ul class="punts">{"".join("<li>" + e(item) + "</li>" for item in t["news"])}</ul></section>
+
+<section id="captures" class="seccio galeria" tabindex="0" aria-label="{t['veure_titol']}">
   <div class="cap">
     <h2>{t['veure_titol']}</h2>
     <p>{t['veure_intro']}</p>
   </div>
   <figure class="principal">
-    <img id="captura" src="{base}img/{l}/{primera}.jpg" alt="{e(t['captures'][primera])}">
+    <img id="captura" src="{base}img/{l}/{capture_filename(primera)}" alt="{e(t['captures'][primera])}">
+    <div class="gallery-controls"><button type="button" id="gallery-prev" aria-label="{t['anterior']}" aria-controls="captura">←</button><span id="gallery-count" aria-live="polite">1 / {len(CAPTURES)}</span><button type="button" id="gallery-next" aria-label="{t['seguent']}" aria-controls="captura">→</button></div>
     <figcaption id="peu">{e(t['captures'][primera])}</figcaption>
   </figure>
   <ul class="miniatures" aria-label="{t['veure_titol']}">{miniatures}</ul>
@@ -326,16 +353,37 @@ def pagina(t, l, base, v):
   document.querySelectorAll('.boto[data-so]').forEach(function(b){{
     if(b.dataset.so!==(linux?'linux':'win'))b.classList.add('secundari');
   }});
-  // Galeria
-  document.querySelectorAll('.miniatures button').forEach(function(b){{
-    b.addEventListener('click',function(){{
-      var img=document.getElementById('captura');
-      img.src=b.dataset.src;img.alt=b.dataset.peu;
-      document.getElementById('peu').textContent=b.dataset.peu;
-      document.querySelectorAll('.miniatures button').forEach(function(x){{x.removeAttribute('aria-current')}});
-      b.setAttribute('aria-current','true');
-    }});
+  // Galeria: botons, teclat i gest horitzontal; no avança automàticament.
+  var gallery=document.getElementById('captures');
+  var thumbnails=Array.from(document.querySelectorAll('.miniatures button'));
+  var current=0;
+  function showCapture(index){{
+    current=(index+thumbnails.length)%thumbnails.length;
+    var button=thumbnails[current],img=document.getElementById('captura');
+    img.src=button.dataset.src;img.alt=button.dataset.peu;
+    document.getElementById('peu').textContent=button.dataset.peu;
+    document.getElementById('gallery-count').textContent=(current+1)+' / '+thumbnails.length;
+    thumbnails.forEach(function(b){{b.removeAttribute('aria-current')}});
+    button.setAttribute('aria-current','true');
+    var list=document.querySelector('.miniatures');
+    list.scrollLeft=button.parentElement.offsetLeft-list.offsetLeft-list.clientWidth/2+button.offsetWidth/2;
+  }}
+  thumbnails.forEach(function(button,index){{button.addEventListener('click',function(){{showCapture(index)}})}});
+  document.getElementById('gallery-prev').addEventListener('click',function(){{showCapture(current-1)}});
+  document.getElementById('gallery-next').addEventListener('click',function(){{showCapture(current+1)}});
+  gallery.addEventListener('keydown',function(event){{
+    if(event.key==='ArrowRight'||event.key==='ArrowLeft'){{event.preventDefault();showCapture(current+(event.key==='ArrowRight'?1:-1))}}
+    if(event.key==='Home'||event.key==='End'){{event.preventDefault();showCapture(event.key==='Home'?0:thumbnails.length-1)}}
   }});
+  var touchStart=null;
+  document.getElementById('captura').addEventListener('touchstart',function(event){{
+    if(event.touches.length===1)touchStart={{x:event.touches[0].clientX,y:event.touches[0].clientY}};
+  }},{{passive:true}});
+  document.getElementById('captura').addEventListener('touchend',function(event){{
+    if(!touchStart||!event.changedTouches.length)return;
+    var dx=event.changedTouches[0].clientX-touchStart.x,dy=event.changedTouches[0].clientY-touchStart.y;touchStart=null;
+    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)showCapture(current+(dx<0?1:-1));
+  }},{{passive:true}});
   // Mode fosc o clar (segueix el sistema fins que es tria)
   document.getElementById('tema').addEventListener('click',function(){{
     var fosc=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
@@ -364,7 +412,7 @@ def main():
     (eixida / "fonts" / "fonts.css").write_text(build.fonts_css(lambda f: f), encoding="utf-8")
     for l in ("ca", "es"):
         for c in CAPTURES:
-            shutil.copy(ROOT / "docs" / "imatges" / l / f"{c}.jpg", eixida / "img" / l / f"{c}.jpg")
+            shutil.copy(ROOT / "docs" / "imatges" / l / capture_filename(c), eixida / "img" / l / capture_filename(c))
     v = versio()
     (eixida / "index.html").write_text(pagina(T["ca"], "ca", "", v), encoding="utf-8")
     (eixida / "es" / "index.html").write_text(pagina(T["es"], "es", "../", v), encoding="utf-8")

@@ -25,3 +25,8 @@ _site/
 manuals/
 # Dependències locals per a les proves de navegador
 .test-tools/
+
+# Guardats transaccionals locals
+comunitat.sqlite3*
+comunitat.lock
+copies/estat/

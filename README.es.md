@@ -20,6 +20,17 @@ Funciona en **Windows y Linux**. Se instala como cualquier otro programa y, en e
 
 ![La pantalla de juego: las herramientas, el mapa y el turno paso a paso](docs/imatges/es/05-partida.jpg)
 
+## Guardados y recuperación — v2.7.0
+
+La partida activa, identidades, hashes de PIN, sesiones e historial se confirman juntos en **`comunitat.sqlite3`**, mediante transacciones SQLite. Los JSON existentes siguen como copias compatibles de partidas, configuración e historial. Las partidas inactivas y sus copias siguen en JSON; esta versión refuerza el guardado conjunto del estado activo.
+
+La primera lectura importa configuración e historial existentes sin eliminarlos. Cuando existe SQLite, es la fuente del último estado confirmado: no edites manualmente sus JSON de configuración, historial o partida activa; utiliza importar y restaurar. Si falla la proyección JSON, la jugada confirmada sigue en SQLite y se recupera al iniciar. Si falla la transacción, la app no confirma la jugada. Los datos corruptos no se sustituyen silenciosamente por datos vacíos.
+
+Antes de recuperar un inicio, se guarda una copia coherente de SQLite en **`copies/estat/comunitat.sqlite3`**. Para una copia completa, cierra la app y copia **toda la carpeta de datos**, incluyendo base, JSON, partidas y copias. La copia de estado contiene credenciales y sesiones: consérvala en privado. Para volver a una versión anterior, cierra la app y trabaja sobre una copia de la carpeta; los JSON deben estar actualizados. No se permiten dos servidores en la misma carpeta de datos, aunque utilicen puertos distintos.
+
+Si una base queda dañada, cierra la app, conserva toda la carpeta y restaura una copia coherente de `comunitat.sqlite3`; después la app recuperará sus JSON. La copia de estado corresponde al anterior inicio correcto, no necesariamente a la última jugada. Las copias de partida y la exportación JSON siguen disponibles.
+
+
 ## Sala de partida — v2.6.0
 
 **Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
@@ -148,7 +159,9 @@ Solo hace falta **Python 3.8 o más nuevo**, sin dependencias. `comunitat.py` se
 
 | Archivo | Qué hay |
 |---|---|
-| `src/servidor.py` | El servidor, el historial y dónde se guardan los datos |
+| `src/servidor.py` | HTTP, permisos, revisiones y coordinación de la partida |
+| `src/identitats.py` | Identidades, alias, PIN y sesiones |
+| `src/persistencia.py` | SQLite, proyecciones JSON, copias y bloqueo de datos |
 | `src/finestra.py` | La ventanita con la dirección y el QR (Tk) |
 | `src/qr.py` | El generador de códigos QR |
 | `src/mapes/` | Los mapas de ejemplo, en valenciano y castellano, que van dentro del programa |
@@ -169,6 +182,7 @@ Después de cambiar algo:
 python3 build.py                          # vuelve a generar comunitat.py
 python3 eines/comprova-traduccions.py     # comprueba que no falta ninguna traducción
 python3 tests/prova_servidor.py           # pasa las pruebas del servidor
+python3 tests/prova_persistencia.py       # fallos y recuperación de los guardados
 python3 comunitat.py                      # pruébalo
 ```
 

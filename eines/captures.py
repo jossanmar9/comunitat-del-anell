@@ -89,6 +89,7 @@ def captures(lang, carpeta, navegador):
     try:
         foto = lambda loc, nom: loc.screenshot(path=str(carpeta / f"{nom}.png"))  # noqa: E731
         pg = pagina(navegador, lang, GRAN, port)
+        foto(pg, "00-inici-v270")
         entra(pg, "Jugador1")
         pg.click("#profile")
         foto(pg.locator(".modal"), "01-sala-v260")
@@ -120,7 +121,7 @@ def captures(lang, carpeta, navegador):
         pg.fill("#sp-name-1", "Jugador2")
         pg.select_option("#sf-scen", index=1)
         pg.wait_for_timeout(300)
-        foto(pg.locator("#setup-form"), "03-preparacio")
+        foto(pg.locator("#setup-form"), "03-preparacio-v270")
         pg.click(f"text={T['comencar']}")
         pg.wait_for_timeout(800)
         if pg.locator("#pins-done").count():
@@ -253,7 +254,7 @@ def jpeg(carpeta):
     """Passa les captures a JPEG, a 1600 px d'amplada com a màxim."""
     from PIL import Image
     for png in sorted(carpeta.glob("*.png")):
-        if png.stem.endswith("-v260"):
+        if png.stem.endswith(("-v260", "-v270")):
             continue  # Els manuals v2.6 enllacen estes captures en PNG.
         im = Image.open(png).convert("RGB")
         if im.width > 1600:
