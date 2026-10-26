@@ -4,6 +4,26 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR` i etiqueta les versions publicades com `vX.Y`.
 
+## [2.5.0] - 2026-10-26
+
+### Afegit
+- Perfils de jugador editables des de la mateixa partida.
+- Elecció de raça per a l'àlies: Home, Elf, Nan o Hòbbit.
+- Generació automàtica d'un àlies de fantasia segons la raça seleccionada.
+- Opció per generar un nou àlies des del perfil.
+- Visualització del nom i l'àlies del jugador a la capçalera.
+
+### Millorat
+- Els jugadors poden corregir o canviar el seu nom sense abandonar la partida.
+- El canvi de raça genera automàticament un nou àlies.
+- Els noms, la raça i l'àlies es conserven entre sessions.
+- Compatibilitat amb les dades de jugador creades amb versions anteriors.
+
+### Corregit
+- No es permet que dos jugadors utilitzen el mateix nom.
+- La comprovació de noms duplicats ignora majúscules, minúscules, accents i espais sobrants.
+- S'evita l'assignació del mateix àlies a dos jugadors.
+
 ## 2.4.2 — Correcció responsive
 
 - Corregida la disposició de l’aplicació en mòbil i tauleta.
