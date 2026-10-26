@@ -16,7 +16,7 @@
  * Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
  * Middle-earth Enterprises.
  */
-/* ---------- Dades del joc (del manual en castellà, traduïdes) ---------- */
+/* ---------- Dades de referència per a identificar elements del joc; ajuda pròpia del projecte no oficial ---------- */
 const CHARACTERS=[
   {id:'frodosam',name:'Frodo i Sam',start:'La Comarca',color:'#C99A2E',frodo:true,abilities:[
     ['El suport d’Elrond','Preparar','Una vegada per torn: si són en un refugi de la regió de la carta, poden obtindre 1 Amistat.'],

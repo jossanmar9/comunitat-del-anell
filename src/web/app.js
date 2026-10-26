@@ -95,7 +95,7 @@ const BATTLE_FACES=[['rout','Rebutjar',"Retira 1 tropa de l'Ombra."],['tie','Tau
 const SEARCH_FACES=[['slip',"Frodo s'escapoleix",'Sense efecte.'],['tired','Fatiga',"Perd 1 d'esperança."],['seen','Al descobert',"Perd 1 d'esperança (s'ignora en un refugi)."],['call','Convocatòria','Si hi ha natzguls, 1 torna a Mordor.']];
 
 /* ================= store ================= */
-const S={uid:null,token:null,camp:null,epoch:null,revision:-1,es:null,local:false,dades:''};
+const S={uid:null,dm:false,token:null,camp:null,epoch:null,revision:-1,es:null,local:false,dades:''};
 const st={tab:lsGet('cm-tab2')||'partida',loaded:false,forceSetup:false};
 let G=null,LOG=[],UNDO=[],CAMP=null;
 const mem=new Map(),memL=new Set();
@@ -169,7 +169,7 @@ function newGame(cfg){
   const objs=cfg.objectives.map(n=>({id:newId(),name:n,done:false}));objs.push({id:'ring',name:RING_OBJ,done:false,ring:true});
   return {v:2,level:cfg.level,hope:HOPE_START,hopeMax:HOPE_MAX,threat:THREAT.slice(),threatIdx:0,
     skies:{total:lv.skies,drawn:0},deck:48+events+lv.skies-hand*cfg.players.length,
-    players:cfg.players.map(p=>({name:p.name})),chars,objectives:objs,setup:SETUP_STEPS.map(()=>false),
+    players:cfg.players.map(p=>({name:p.name,race:p.race||'home',alias_gender:p.alias_gender||'auto'})),chars,objectives:objs,setup:SETUP_STEPS.map(()=>false),
     round:1,turn:{p:0,step:0,a:[0,0],shadow:0},result:null,created:Date.now(),solo:cfg.players.length===1,
     calc:{naz:0,troops:0,ring:false,haven:false,mordor:false,bKind:'attack',bFr:1,bSh:1,bNaz:false,bHaven:false}};
 }
@@ -345,9 +345,9 @@ function shadowCardFlow(){
 
 /* ================= render ================= */
 function renderHeader(){
-  const n=$('#camp-name');if(document.activeElement!==n)n.value=CAMP?.name||'';
+  const n=$('#camp-name');n.readOnly=!!S.token&&!S.dm;if(document.activeElement!==n)n.value=CAMP?.name||'';
   $$('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===st.tab));
-  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip${S.local?'':' ico'}" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}${S.local?`<span class="inv-t">${esc(t('Convida'))}</span>`:''}</button>`:'')+(S.token?`<button class="chip" id="profile">${esc(mem.get('users/'+S.uid)?.name||'')}${mem.get('users/'+S.uid)?.alias?' · '+esc(mem.get('users/'+S.uid).alias):''}</button><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
+  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip${S.local?'':' ico'}" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}${S.local?`<span class="inv-t">${esc(t('Convida'))}</span>`:''}</button>`:'')+(S.token?`<button class="chip" id="profile">${S.dm?esc(t('Sala de partida')):esc(mem.get('users/'+S.uid)?.name||'')}${mem.get('users/'+S.uid)?.alias?' · '+esc(mem.get('users/'+S.uid).alias):''}</button><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
 }
 function renderTracks(){
   const el=$('#tracks');
@@ -369,7 +369,7 @@ function renderTracks(){
 const step=(id,label,val)=>`<span class="k">${esc(t(label))}</span><span class="stepper"><button class="mini" data-cdec="${id}" aria-label="${esc(t('Menys'))}">−</button><b>${val}</b><button class="mini" data-cinc="${id}" aria-label="${esc(t('Més'))}">+</button></span>`;
 const chk=(id,label,on)=>`<label class="check"><input type="checkbox" data-cchk="${id}" ${on?'checked':''}> ${esc(t(label))}</label>`;
 function renderPlay(){
-  if(!G||st.forceSetup){renderSetup();return}
+  if(!G&&!S.dm&&!OFFLINE){$('#main').innerHTML=`<section class="panel"><h2>${esc(t('Espera que el màster prepare la partida.'))}</h2></section>`;return}if(!S.camp&&!OFFLINE&&!st.forceSetup){renderWelcome();return}if(!G||st.forceSetup){renderSetup();return}
   const c=C(),sd=searchDice(),bd=battleDice(),left=objectivesLeft(G);
   const doomN=Math.min(7,c.naz+c.troops+(G.hopeMax-G.hope));
   const hev=(d,why,label)=>`<button class="btn" data-hev="${d}" data-why="${esc(why)}">${esc(t(label))} <b>${d>0?'+':'−'}${Math.abs(d)}</b></button>`;
@@ -499,7 +499,7 @@ function checkResult(){
 
 /* --- Comunitat tab --- */
 function renderCommunity(){
-  if(!G||st.forceSetup){renderSetup();return}
+  if(!G&&!S.dm&&!OFFLINE){$('#main').innerHTML=`<section class="panel"><h2>${esc(t('Espera que el màster prepare la partida.'))}</h2></section>`;return}if(!S.camp&&!OFFLINE&&!st.forceSetup){renderWelcome();return}if(!G||st.forceSetup){renderSetup();return}
   const done=G.setup.filter(Boolean).length;
   $('#main').innerHTML=`<div class="grid2">
     <section class="panel tool"><h2>${esc(t('Preparació'))}</h2><p class="muted small" style="margin:0">${esc(t('{a} de {b} passos fets.',{a:done,b:SETUP_STEPS.length}))}</p>
@@ -515,11 +515,17 @@ function renderCommunity(){
       <p class="small muted" style="margin:0">${esc(t('Per a conservar aquesta partida i començar-ne una altra, fes servir la pestanya Partides.'))}</p>
     </section></div>`;
 }
+function renderWelcome(){
+  $('#main').innerHTML=`<section class="panel"><h2>${esc(t('Cap partida oberta'))}</h2><p>${esc(t('Crea una partida amb els participants o obri una partida guardada.'))}</p><div class="row"><button class="btn pri" id="welcome-create">${esc(t('Crear partida'))}</button><button class="btn" id="welcome-open">${esc(t('Obrir partida guardada'))}</button></div></section>`;
+  $('#welcome-create').onclick=()=>{st.forceSetup=true;renderSetup()};
+  $('#welcome-open').onclick=()=>{st.tab='partides';renderHeader();renderCamps()};
+}
 function renderSetup(){
   const n=+(lsGet('cm-np')||2);
   $('#main').innerHTML=`<div class="camps" style="max-width:1000px">
     <div><h2 style="font-size:32px">${esc(t('Preparar la partida'))}</h2><p class="muted" style="margin:6px 0 0;max-width:66ch">${esc(t("Tria la dificultat, els participants i els objectius. L'app calcula la baralla de joc i et guia en la preparació del tauler."))}</p></div>
     <form class="panel" id="setup-form" style="display:flex;flex-direction:column;gap:16px">
+      ${!S.camp&&!OFFLINE?`<label class="field">${esc(t('Nom de la partida'))}<input class="in" id="sf-name" maxlength="80" required></label>`:''}
       <div class="row" style="align-items:flex-end;gap:16px">
         <label class="field"><span>${esc(t('Dificultat'))}</span><select class="in" id="sf-level">${Object.entries(LEVELS).map(([k,v])=>`<option value="${k}" ${k==='intro'?'selected':''}>${esc(t('{a} · {b} cels enfosquits · {c} objectius',{a:t(v.name),b:v.skies,c:v.obj}))}</option>`).join('')}</select></label>
         <label class="field"><span>${esc(t('Participants'))}</span><select class="in" id="sf-np">${[1,2,3,4,5].map(i=>`<option ${i===n?'selected':''}>${i}</option>`).join('')}</select></label>
@@ -531,14 +537,18 @@ function renderSetup(){
     </form></div>`;
   drawSetupPlayers();drawSetupObjs();
 }
+function setupPlayerName(i){
+  const players=[...mem.entries()].filter(([path])=>path.startsWith('users/')).map(([,user])=>user);
+  return players[i]?.name||'';
+}
 function drawSetupPlayers(){
   const n=+$('#sf-np').value,box=$('#sf-players');
   const opts=sel=>CHARACTERS.map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(t(c.name))}</option>`).join('');
   if(n===1){
     const def=['frodosam','legolas','arwen','gandalf','gimli'];
-    box.innerHTML=`<div class="prow" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><label class="field"><span>${esc(t('Participant'))}</span><input class="in" id="sp-name-0" value="${esc(mem.get('users/'+S.uid)?.name||'')}"></label>${def.map((d,i)=>`<label class="field"><span>${esc(t('Personatge {n}',{n:i+1}))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-0-${i}">${portrait(d,36)}</span><select class="in" id="sp-c-0-${i}" ${i===0?'disabled':''}>${opts(d)}</select></span></label>`).join('')}</div><p class="small muted" style="margin:0">${esc(t('En solitari portes Frodo i Sam i 4 personatges més.'))}</p>`;return;
+    box.innerHTML=`<div class="prow" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><label class="field"><span>${esc(t('Participant'))}</span><input class="in" id="sp-name-0" maxlength="40" required value="${esc(setupPlayerName(0))}"><select class="in" id="sp-race-0" aria-label="${esc(t("Raça de l'àlies"))}">${raceOptions('home')}</select>${aliasGenderField('sp-gender-0')}</label>${def.map((d,i)=>`<label class="field"><span>${esc(t('Personatge {n}',{n:i+1}))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-0-${i}">${portrait(d,36)}</span><select class="in" id="sp-c-0-${i}" ${i===0?'disabled':''}>${opts(d)}</select></span></label>`).join('')}</div><p class="small muted" style="margin:0">${esc(t('En solitari portes Frodo i Sam i 4 personatges més.'))}</p>`;return;
   }
-  box.innerHTML=Array.from({length:n},(_,i)=>`<div class="prow"><label class="field"><span>${esc(t('Participant {n}',{n:i+1}))}</span><input class="in" id="sp-name-${i}" value="${i===0?esc(mem.get('users/'+S.uid)?.name||''):''}" placeholder="${esc(t('Nom'))}"></label>${[0,1].map(k=>`<label class="field"><span>${esc(t('Personatge'))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-${i}-${k}">${portrait(SUGGESTED[i][k],36)}</span><select class="in" id="sp-c-${i}-${k}">${opts(SUGGESTED[i][k])}</select></span></label>`).join('')}</div>`).join('');
+  box.innerHTML=Array.from({length:n},(_,i)=>`<div class="prow"><label class="field"><span>${esc(t('Participant {n}',{n:i+1}))}</span><input class="in" id="sp-name-${i}" maxlength="40" required value="${esc(setupPlayerName(i))}" placeholder="${esc(t('Nom'))}"><select class="in" id="sp-race-${i}" aria-label="${esc(t("Raça de l'àlies"))}">${raceOptions('home')}</select>${aliasGenderField('sp-gender-'+i)}</label>${[0,1].map(k=>`<label class="field"><span>${esc(t('Personatge'))}</span><span class="selp"><span class="selp-img" data-pv="sp-c-${i}-${k}">${portrait(SUGGESTED[i][k],36)}</span><select class="in" id="sp-c-${i}-${k}">${opts(SUGGESTED[i][k])}</select></span></label>`).join('')}</div>`).join('');
 }
 function drawSetupObjs(fill){
   const lv=LEVELS[$('#sf-level').value],k=lv.obj-1,cur=fill||$$('[data-obj]').map(s=>s.value);
@@ -562,6 +572,7 @@ async function renderCamps(){
     ${S.version?`<p class="small muted" style="margin:0">${esc(t("La Comunitat · versió {v}",{v:S.version}))}</p>`:''}</div>`;
   if(!S.token){$('#camp-list').innerHTML=`<p class="muted">${esc(t("Obri l'app des del servidor per a gestionar partides."))}</p>`;return}
   try{drawCampList(await campApi())}catch(e){$('#camp-list').innerHTML=`<p class="small" style="color:var(--blood)">${esc(e.message)}</p>`}
+  if(!S.dm)$$('.camp-tools,#trash-list,[data-copen],[data-cdup],[data-cbak],[data-cdel],[data-undelete]', $('#main')).forEach(el=>el.hidden=true);
   loadHistory();
 }
 function drawCampList(d){
@@ -593,7 +604,7 @@ function drawHistory(list){
       <p class="small muted" style="margin:0">${esc(t('{r} · {d} · esperança {h} · objectius {o}',{r:pl(h.rounds||0,'ronda','rondes'),d:dur(h.ended-h.created),h:h.hope??'?',o:`${h.done}/${(h.objectives||[]).length+1}`}))}</p>
       <div class="hist-chars">${h.chars.map(id=>portrait(id,34)).join('')}</div>
       <p class="small muted" style="margin:0">${h.players.map((p,i)=>esc(p||t('Participant {n}',{n:i+1}))).join(', ')}</p>
-      <div class="row"><button class="btn sm danger" data-hdel="${esc(h.id)}">${esc(t("Llevar de l'historial"))}</button></div></article>`}).join('')}</div>`;
+      <div class="row" ${S.dm?'':'hidden'}><button class="btn sm danger" data-hdel="${esc(h.id)}">${esc(t("Llevar de l'historial"))}</button></div></article>`}).join('')}</div>`;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-hdel]');if(!b)return;armed(b,async()=>{try{drawHistory(await histApi({action:'delete',id:b.dataset.hdel}))}catch(err){toast(err.message)}},t('Prem de nou per a llevar-la'))});
 
@@ -653,18 +664,29 @@ document.addEventListener('submit',async e=>{
   if(e.target.id==='setup-form'){
     e.preventDefault();
     const n=+$('#sf-np').value,players=[];
-    if(n===1)players.push({name:$('#sp-name-0').value.trim(),chars:[0,1,2,3,4].map(i=>$(`#sp-c-0-${i}`).value)});
-    else for(let i=0;i<n;i++)players.push({name:$(`#sp-name-${i}`).value.trim(),chars:[$(`#sp-c-${i}-0`).value,$(`#sp-c-${i}-1`).value]});
+    if(n===1)players.push({name:$('#sp-name-0').value.trim(),race:$('#sp-race-0').value,alias_gender:$('#sp-gender-0').value,chars:[0,1,2,3,4].map(i=>$(`#sp-c-0-${i}`).value)});
+    else for(let i=0;i<n;i++)players.push({name:$(`#sp-name-${i}`).value.trim(),race:$(`#sp-race-${i}`).value,alias_gender:$(`#sp-gender-${i}`).value,chars:[$(`#sp-c-${i}-0`).value,$(`#sp-c-${i}-1`).value]});
     const all=players.flatMap(p=>p.chars);
     if(new Set(all).size!==all.length){toast(t('Cada personatge només el pot portar un participant.'));return}
     if(!all.includes('frodosam')){toast(t('Algú ha de portar Frodo i Sam.'));return}
     const objs=$$('[data-obj]').map(s=>s.value).filter(Boolean),level=$('#sf-level').value;
     if(new Set(objs).size!==objs.length){toast(t('Hi ha objectius repetits.'));return}
     if(objs.length<LEVELS[level].obj-1){toast(t('Tria {n} objectius.',{n:LEVELS[level].obj-1}));return}
-    const before=G;G=newGame({level,players,objectives:objs});
-    UNDO=before?[{label:M('Preparar una partida nova'),state:before}]:[];
-    LOG=[{k:'Partida preparada: {a}, {b}. Baralla de joc: {c} cartes. Mira la pestanya Comunitat per a preparar el tauler.',v:{a:LEVELS[level].name,b:M(n===1?'1 participant':'{n} participants',{n}),c:G.deck},ts:Date.now(),who:mem.get('users/'+S.uid)?.name||''}];
-    saveGame();
+    if(!OFFLINE){
+      const game=newGame({level,players,objectives:objs});
+      const payload={game,name:$('#sf-name')?.value.trim()||CAMP?.name||'',camp:S.camp,epoch:S.epoch,revision:S.revision};
+      const signature=JSON.stringify({...payload,game:{...game,created:0}});
+      if(st.setupSignature!==signature){st.setupSignature=signature;st.setupRequest=newId();st.setupCreated=game.created}else game.created=st.setupCreated
+      const button=$('button[type=submit]',e.target);button.disabled=true;
+      try{
+        const r=await fetch('api/setup',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:JSON.stringify({...payload,requestId:st.setupRequest})});
+        const d=await r.json();if(!r.ok)throw new Error(t(d.error));
+        S.camp=d.snapshot.campaign;applySnapshot(d.snapshot);G=mem.get('game/state');LOG=[];UNDO=mem.get('game/undo')?.stack||[];
+        st.setupSignature=null;st.setupRequest=null;
+        if(d.pins.length)showCreatedPins(d.pins);
+      }catch(error){toast(error.message||t("No s'ha pogut guardar."));button.disabled=false;return}
+    }else{G=newGame({level,players,objectives:objs});UNDO=[];LOG=[];saveGame()}
+
     st.forceSetup=false;st.tab='comunitat';lsSet('cm-tab2','comunitat');renderAll();return;
   }
   if(e.target.id==='camp-new'){e.preventDefault();const n=$('#cn-name').value.trim();if(!n)return;try{await campApi({action:'create',name:n});lsSet('cm-tab2','partida')}catch(err){toast(err.message)}}
@@ -710,32 +732,66 @@ async function backupsModal(id,name){
 function nextTurn(){commit(M('Torn següent'),(s,log)=>{const np=(s.turn.p+1)%s.players.length;if(np===0)s.round++;s.turn={p:np,step:0,a:[0,0],shadow:0};log.push({k:'Torn de {x}.',v:{x:s.players[np].name||M('Participant {n}',{n:np+1})}})})}
 $('.tabs').addEventListener('click',e=>{const x=e.target.closest('[data-tab]');if(!x)return;st.tab=x.dataset.tab;st.forceSetup=false;lsSet('cm-tab2',st.tab);renderHeader();renderTab()});
 $('#camp-name').addEventListener('change',e=>{CAMP={...(CAMP||{}),name:e.target.value};write('campaign/main',CAMP)});
+async function roomRequest(body){
+  const r=await fetch('api/players',{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},...(body?{body:JSON.stringify(body)}:{})});
+  const d=await r.json();if(!r.ok)throw new Error(t(d.error));return d;
+}
 async function editProfile(){
-  const me=mem.get('users/'+S.uid)||{};
-  openModal(`<h2>${esc(t('El teu perfil'))}</h2>
-    <label class="field"><span>${esc(t('El teu nom'))}</span><input class="in" id="pf-name" maxlength="40" value="${esc(me.name||'')}"></label>
-    <label class="field"><span>${esc(t("Raça de l'àlies"))}</span><select class="in" id="pf-race">
-      <option value="home" ${me.race==='home'?'selected':''}>${esc(t('Home'))}</option>
-      <option value="elf" ${me.race==='elf'?'selected':''}>${esc(t('Elf'))}</option>
-      <option value="nan" ${me.race==='nan'?'selected':''}>${esc(t('Nan'))}</option>
-      <option value="hobbit" ${me.race==='hobbit'?'selected':''}>${esc(t('Hòbbit'))}</option>
-    </select></label>
-    <p><b>${esc(t('Àlies'))}:</b> ${esc(me.alias||'—')}</p>
-    <p class="small" id="pf-err" style="color:var(--blood)"></p>
-    <div class="foot"><button class="btn" id="pf-reroll">${esc(t('🎲 Un altre àlies'))}</button><button class="btn pri" id="pf-save">${esc(t('Guardar'))}</button></div>`,(m,close)=>{
-      async function save(reroll){
-        const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:S.token,name:$('#pf-name',m).value,race:$('#pf-race',m).value,reroll})});
-        const d=await r.json();
-        if(!r.ok){$('#pf-err',m).textContent=t(d.error||"No s'ha pogut guardar.");return}
-        if(d.user)mem.set('users/'+S.uid,d.user);
-        renderHeader();close();toast(t(reroll?'Àlies nou assignat.':'Perfil actualitzat.'));
-      }
-      $('#pf-save',m).onclick=()=>save(false);
-      $('#pf-reroll',m).onclick=()=>save(true);
+  if(!S.dm){const u=mem.get('users/'+S.uid)||{};toast([u.name,u.alias,t('El màster gestiona el teu perfil.')].join(' · '));return}
+  try{const d=await roomRequest();drawRoom(d)}catch(e){toast(e.message)}
+}
+function drawRoom(d){
+  openModal(`<h2>${esc(t('Sala de partida'))}</h2>
+    <p class="small">${esc(t('El PIN només es mostra en crear-lo o regenerar-lo. Després apareix com ••••. Regenerar-lo tanca la sessió anterior.'))}</p>
+    <button class="btn" id="room-refresh">${esc(t('Actualitzar jugadors'))}</button><button class="btn" id="room-lock">${esc(t(d.open?'Bloquejar noves connexions':'Desbloquejar noves connexions'))}</button>
+    <form id="room-create" class="panel"><label class="field">${esc(t('Nom'))}<input class="in" id="room-name" maxlength="40" required></label>
+      <label class="field">${esc(t("Raça de l'àlies"))}<select class="in" id="room-race">${raceOptions('home')}</select></label>
+      <label class="field">${aliasGenderField('room-gender')}</label><button class="btn pri">${esc(t('Crear jugador'))}</button></form>
+    <div>${d.list.map(u=>`<article class="panel" style="margin-top:12px"><b>${esc(u.name)}</b><p>${esc(u.alias)} · ${esc(t(aliasGenderLabel(u.alias_gender)))} · ${esc(t({home:'Humà',elf:'Elf',nan:'Nan',hobbit:'Hòbbit'}[u.race]))}</p>
+      <p class="small">${esc(t(u.connected?'Connectat':'Desconnectat'))} · ${esc(t(u.bound?'Vinculat':'Disponible'))} · PIN: ••••${u.pin_ready?'':' · '+esc(t('Cal generar PIN'))}</p>
+      ${u.last_seen?`<p class="small">${esc(t('Última connexió'))}: ${esc(new Date(u.last_seen).toLocaleString(LANG==='es'?'es':'ca'))}</p>`:''}
+      <div class="row">${[['edit','Editar'],['alias','🎲 Un altre àlies'],['pin','Regenerar PIN'],['revoke','Desvincular'],['delete','Esborrar']].map(([a,l])=>`<button class="btn sm" data-room-action="${a}" data-room-uid="${esc(u.uid)}">${esc(t(l))}</button>`).join('')}</div></article>`).join('')}</div>
+    <p id="room-error" role="alert"></p>`,(m,close)=>{
+      const run=async body=>{try{const next=await roomRequest(body);close();if(next.pin){
+        openModal(`<h2>${esc(t('PIN del jugador'))}</h2><p>${esc(next.list.find(u=>u.uid===next.uid)?.name)}</p><p style="font-size:2rem">${esc(next.pin)}</p><p>${esc(t('Anota el PIN ara. No es pot recuperar.'))}</p><button class="btn pri" id="pin-done">${esc(t('Tancar'))}</button>`,(box,done)=>{$('#pin-done',box).onclick=()=>{done();drawRoom({...next,pin:null})}});
+      }else drawRoom(next)}catch(e){$('#room-error',m).textContent=e.message}};
+      $('#room-refresh',m).onclick=async()=>{try{const next=await roomRequest();close();drawRoom(next)}catch(e){$('#room-error',m).textContent=e.message}};
+      $('#room-lock',m).onclick=()=>run({action:'lock',open:!d.open});
+      $('#room-create',m).onsubmit=e=>{e.preventDefault();run({action:'create',name:$('#room-name',m).value,race:$('#room-race',m).value,alias_gender:$('#room-gender',m).value})};
+      m.addEventListener('click',e=>{const b=e.target.closest('[data-room-action]');if(!b)return;const uid=b.dataset.roomUid,a=b.dataset.roomAction,u=d.list.find(x=>x.uid===uid);
+        if(a==='edit'){
+          close();openModal(`<h2>${esc(t('Editar jugador'))}</h2><label class="field">${esc(t('Nom'))}<input class="in" id="edit-name" maxlength="40" value="${esc(u.name)}"></label><label class="field">${esc(t("Raça de l'àlies"))}<select class="in" id="edit-race">${raceOptions(u.race)}</select></label><label class="field">${aliasGenderField('edit-gender',u.alias_gender||'neutral')}</label><p id="edit-error" role="alert"></p><button class="btn pri" id="edit-save">${esc(t('Guardar'))}</button>`,(box,done)=>{$('#edit-save',box).onclick=async()=>{try{const next=await roomRequest({action:'edit',uid,name:$('#edit-name',box).value,race:$('#edit-race',box).value,alias_gender:$('#edit-gender',box).value});done();drawRoom(next)}catch(e){$('#edit-error',box).textContent=e.message}}});return;
+        }
+        const body=a==='alias'?{action:'edit',uid,name:u.name,race:u.race,reroll:true}:{action:a,uid};
+        armed(b,()=>run(body),t('Segur? Prem de nou'));
+      });
   });
 }
-
-$('#who').addEventListener('click',e=>{if(e.target.closest('#profile')){editProfile();return}if(e.target.id==='logout')armed(e.target,()=>{lsSet('cm-token','');location.reload()},t('Segur? Prem de nou'))});
+function showCreatedPins(pins){
+  openModal(`<h2>${esc(t('PIN dels participants'))}</h2><p>${esc(t('Anota el PIN ara. No es pot recuperar.'))}</p>${pins.map(p=>`<p><b>${esc(p.name)}</b>: <span style="font-size:1.5rem">${esc(p.pin)}</span></p>`).join('')}<button class="btn pri" id="pins-done">${esc(t('Anar a la sala de partida'))}</button>`,(m,close)=>{$('#pins-done',m).onclick=()=>{close();editProfile()}});
+}
+function aliasGenderLabel(value){return {male:'Masculí',female:'Femení',neutral:'Neutre'}[value]||'Neutre'}
+function aliasGenderField(id,value='auto'){
+  return `<span class="small">${esc(t('Tipus d’àlies'))}</span><select class="in" id="${id}" aria-label="${esc(t('Tipus d’àlies'))}">${[['auto','Automàtic segons el nom'],['male','Masculí'],['female','Femení'],['neutral','Neutre']].map(([v,label])=>`<option value="${v}" ${v===value?'selected':''}>${esc(t(label))}</option>`).join('')}</select>`;
+}
+const genderTimers=new Map();
+document.addEventListener('input',e=>{
+  const input=e.target,id=input.id;
+  const selectId=id==='room-name'?'room-gender':id==='edit-name'?'edit-gender':id.startsWith('sp-name-')?id.replace('sp-name-','sp-gender-'):null;
+  if(!selectId||!S.dm)return;
+  clearTimeout(genderTimers.get(id));
+  genderTimers.set(id,setTimeout(async()=>{
+    const name=input.value;
+    try{const r=await fetch('api/alias-gender?name='+encodeURIComponent(name),{headers:{'X-Taula-Token':S.token}});if(!r.ok)return;
+      const d=await r.json(),select=$('#'+selectId);
+      if(select&&input.isConnected&&input.value===name)select.querySelector('[value="auto"]').textContent=t('Automàtic: {x}',{x:aliasGenderLabel(d.alias_gender)});
+    }catch(_){}
+  },250));
+});
+function raceOptions(selected){return Object.entries({home:'Humà',elf:'Elf',nan:'Nan',hobbit:'Hòbbit'}).map(([r,l])=>`<option value="${r}" ${r===selected?'selected':''}>${esc(t(l))}</option>`).join('')}
+$('#who').addEventListener('click',e=>{if(e.target.closest('#profile')){editProfile();return}if(e.target.id==='logout')armed(e.target,async()=>{
+  try{const r=await fetch('api/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':S.token},body:'{}'});if(!r.ok)throw 0;lsSet('cm-token','');location.reload()}catch(_){toast(t('No es pot contactar amb el servidor.'))}
+},t('Segur? Prem de nou'))});
 
 /* ================= connection ================= */
 let lanFirst=null,lanPoll=null,lanErrs=[],lanBannerT=null,lanLast=Date.now();
@@ -746,8 +802,8 @@ function applySnapshot(d){
   if(pendingSave){if(!deferredSnapshot||d.epoch!==deferredSnapshot.epoch||d.revision>=deferredSnapshot.revision)deferredSnapshot=d;return true}
   if(d.epoch===S.epoch&&d.campaign===S.camp&&d.revision<S.revision)return true;
   S.epoch=d.epoch;S.revision=d.revision;
-  S.uid=d.me.uid;
-  if(S.camp&&d.campaign&&d.campaign!==S.camp){location.reload();return false}
+  S.uid=d.me.uid;S.dm=!!d.me.dm;
+  if(S.camp!==d.campaign){if(!S.dm&&S.camp){location.reload();return false}S.camp=d.campaign}
   S.camp=d.campaign;
   if(lanFirst){mem.clear();for(const p in d.docs)mem.set(p,d.docs[p]);const f=lanFirst;lanFirst=null;f();return true}
   const changed=[];
@@ -765,26 +821,28 @@ function lanConnect(){
   if(lanPoll)return;if(S.es)S.es.close();
   const es=new EventSource('api/events?t='+encodeURIComponent(S.token));S.es=es;
   es.addEventListener('snapshot',e=>{lanLast=Date.now();if(applySnapshot(JSON.parse(e.data)))lanOk()});
+  es.addEventListener('revoked',()=>{es.close();lsSet('cm-token','');location.reload()});
   es.addEventListener('ping',()=>{lanLast=Date.now()});
   es.addEventListener('campaign',()=>{showBanner(t("S'ha obert una altra partida. Carregant…"));setTimeout(()=>location.reload(),500)});
   es.addEventListener('doc',e=>{lanLast=Date.now();const d=JSON.parse(e.data);if(d.epoch!==S.epoch||d.revision<S.revision)return;if(d.data==null)mem.delete(d.path);else mem.set(d.path,d.data);memNotify(d.path)});
   es.onerror=()=>{lanTrouble();const now=Date.now();lanErrs=lanErrs.filter(x=>now-x<60000);lanErrs.push(now);if(lanErrs.length>=3)startPolling();else if(es.readyState===2)setTimeout(lanConnect,3000)};
 }
 let joinResolve=null;
-function joinRender(){
-  const prev=$('#j-name')?.value||'';
-  $('#main').innerHTML=`<form id="join" class="panel" style="max-width:440px;display:flex;flex-direction:column;gap:14px"><h2>${esc(t('Uneix-te a la Comunitat'))}</h2>
-    <label class="field"><span>${esc(t('El teu nom'))}</span><input class="in" id="j-name" required maxlength="40" autocomplete="nickname"></label>
-    <label class="field"><span>${esc(t("De quina raça vols l'àlies?"))}</span><select class="in" id="j-race"><option value="home">${esc(t("Home"))}</option><option value="elf">${esc(t("Elf"))}</option><option value="nan">${esc(t("Nan"))}</option><option value="hobbit">${esc(t("Hòbbit"))}</option></select></label>
-    <p class="small" id="j-err" style="margin:0;color:var(--blood)"></p><button class="btn pri" type="submit">${esc(t('Entrar'))}</button></form>`;
-  $('#j-name').value=prev;$('#j-name').focus();
-  $('#join').addEventListener('submit',async e=>{e.preventDefault();$('#j-err').textContent='';
-    try{const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#j-name').value,race:$('#j-race').value})});const d=await r.json();
-      if(!r.ok){$('#j-err').textContent=t(d.error||"No s'ha pogut entrar.");return}lsSet('cm-token',d.token);$('.tabs').hidden=false;joinResolve(d)}
-    catch(_){$('#j-err').textContent=t('No es pot contactar amb el servidor.')}});
+async function joinRender(){
+  $('#main').innerHTML=`<form id="join" class="panel" style="max-width:440px;display:flex;flex-direction:column;gap:14px"><h2>${esc(t('Qui eres?'))}</h2>
+    <label class="field">${esc(t('Jugador'))}<select class="in" id="j-player" required></select></label>
+    <label class="field">PIN<input class="in" id="j-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required></label>
+    <p id="j-err" role="alert"></p><button class="btn pri" type="submit">${esc(t('Entrar'))}</button><button class="btn" type="button" id="j-refresh">${esc(t('Actualitzar jugadors'))}</button></form>`;
+  const refresh=async()=>{try{const d=await roomRequest();$('#j-player').innerHTML=d.list.map(u=>`<option value="${esc(u.uid)}">${esc(u.name)} · ${esc(u.alias)}</option>`).join('');$('#j-err').textContent=t(!d.open?'Les noves connexions estan bloquejades.':!d.list.length?'Espera que el màster prepare els jugadors.':'')}catch(_){$('#j-err').textContent=t('No es pot contactar amb el servidor.')}};
+  $('#j-refresh').onclick=refresh;await refresh();
+  $('#join').addEventListener('submit',async e=>{e.preventDefault();try{
+    const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:$('#j-player').value,pin:$('#j-pin').value})});const d=await r.json();
+    if(!r.ok){$('#j-err').textContent=t(d.error);return}lsSet('cm-token',d.token);$('.tabs').hidden=false;joinResolve(d);
+  }catch(_){$('#j-err').textContent=t('No es pot contactar amb el servidor.')}});
 }
 function joinScreen(){return new Promise(resolve=>{joinResolve=resolve;$('.tabs').hidden=true;joinRender()})}
 function startSubs(){
+  watchDoc('users/'+S.uid,()=>{if(st.loaded)renderHeader()});
   watchDoc('campaign/main',d=>{CAMP=d;renderHeader()});
   watchDoc('game/state',d=>{const ng=d&&d.v===2?d:null;
     const focused=document.activeElement&&document.activeElement.closest('#main')&&document.activeElement.matches('input,select');
@@ -806,10 +864,12 @@ async function boot(){
   }
   let tok=lsGet('cm-token'),me=null;
   if(tok){try{const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok})});if(r.ok)me=await r.json()}catch(_){}}
+  if(!me&&S.local){const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({master:true})});if(r.ok){me=await r.json();lsSet('cm-token',me.token)}}
   if(!me)me=await joinScreen();
-  S.token=me.token;S.uid=me.uid;
+  S.token=me.token;S.uid=me.uid;S.dm=!!me.dm;
   await new Promise(res=>{lanFirst=res;lanConnect();setTimeout(()=>{if(lanFirst)startPolling()},5000)});
   setInterval(()=>{if(!lanPoll&&Date.now()-lanLast>35000)startPolling()},5000);
+  if(!S.camp)st.tab='partida';
   startSubs();
 }
 boot();

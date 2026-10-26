@@ -47,12 +47,12 @@ def free_port():
 
 
 class Servidor:
-    def __init__(self):
+    def __init__(self, wanted="Prova"):
         self.dir = Path(tempfile.mkdtemp(prefix="comunitat-prova-"))
         self.port = free_port()
         self.proc = subprocess.Popen(
             [sys.executable, str(ROOT / "comunitat.py"), "--sense-finestra", "--sense-navegador", "--sense-qr",
-             "--port", str(self.port), "--dades", str(self.dir), "--partida", "Prova"],
+             "--port", str(self.port), "--dades", str(self.dir), *(["--partida", wanted] if wanted else [])],
             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         for _ in range(100):
             try:
@@ -101,8 +101,17 @@ class Servidor:
     def post(self, path, body, tok=None, ctype="application/json"):
         return self.req("POST", path, body, tok=tok, ctype=ctype)
 
+    def master(self):
+        return self.post("/api/join", {"master": True})[1]["token"]
+
+    def create_player(self, name, race="home"):
+        code, d, _ = self.post("/api/players", {"action": "create", "name": name, "race": race}, self.master())
+        assert code == 200, d
+        return d
+
     def join(self, name):
-        code, d, _ = self.post("/api/join", {"name": name})
+        player = self.create_player(name)
+        code, d, _ = self.post("/api/join", {"uid": player["uid"], "pin": player["pin"]})
         assert code == 200, d
         return d["token"]
 
@@ -118,7 +127,7 @@ class Proves(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.s = Servidor()
-        cls.tok = cls.s.join("Jugador1")
+        cls.tok = cls.s.master()
 
     @classmethod
     def tearDownClass(cls):
@@ -152,7 +161,7 @@ class Proves(unittest.TestCase):
         self.assertEqual(self.s.write(self.tok, "game/state", {"hope": 5}, "update"), 200)
         code, d, _ = self.s.get("/api/snapshot", self.tok)
         self.assertEqual(d["docs"]["game/state"]["hope"], 5)
-        self.assertEqual(d["docs"]["users/" + d["me"]["uid"]]["name"], "Jugador1")
+        self.assertTrue(d["me"]["dm"])
 
     def test_05_permisos(self):
         self.assertEqual(self.s.write(self.tok, "dm/secret", {"x": 1}), 403)       # fora de la partida
@@ -161,7 +170,7 @@ class Proves(unittest.TestCase):
         code, d, _ = self.s.get("/api/snapshot", self.tok)
         other = next(p for p, v in d["docs"].items() if p.startswith("users/") and v["name"] == "Jugador2")
         self.assertEqual(self.s.write(self.tok, other, {"name": "Intrús"}), 403)  # el nom d'un altre
-        self.assertEqual(self.s.write(tok2, other, {"name": "Jugadora2"}), 200)
+        self.assertEqual(self.s.write(tok2, other, {"name": "Jugadora2"}), 403)
 
     def test_06_historial(self):
         self.s.write(self.tok, "game/state", {"v": 2, "created": 7, "result": "win", "level": "intro",
@@ -227,14 +236,14 @@ class Proves(unittest.TestCase):
         self.assertEqual(code, 404)
 
     def test_10_conflicte_i_transaccio(self):
+        tok2 = self.s.join("Simultani")
         _, snap, _ = self.s.get("/api/snapshot", self.tok)
         def transaction(hope, request_id):
             return {"camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"], "requestId": request_id,
-                    "changes": [{"path": "game/state", "data": partida(hope=hope)},
+                    "changes": [{"path": "game/state", "data": partida(hope=hope, players=snap["docs"]["game/state"]["players"])},
                                 {"path": "game/log", "data": {"list": [{"k": request_id}]}},
                                 {"path": "game/undo", "data": {"stack": []}}]}
         a, b = transaction(5, "jugador-a"), transaction(2, "jugador-b")
-        tok2 = self.s.join("Simultani")
         with ThreadPoolExecutor(max_workers=2) as pool:
             first = pool.submit(self.s.post, "/api/transaction", a, self.tok)
             second = pool.submit(self.s.post, "/api/transaction", b, tok2)
@@ -277,6 +286,211 @@ class Proves(unittest.TestCase):
         self.assertEqual(self.s.post("/api/transaction", body, self.tok)[0], 409)
         _, after, _ = self.s.get("/api/snapshot", self.tok)
         self.assertEqual(before, after)
+
+
+class Sala(unittest.TestCase):
+    def setUp(self):
+        self.s = Servidor()
+        self.master = self.s.master()
+
+    def tearDown(self):
+        self.s.stop()
+
+    def admin(self, **body):
+        return self.s.post("/api/players", body, self.master)
+
+    def test_identitat_pin_sessions_i_permisos(self):
+        code, u, _ = self.admin(action="create", name="  Jósé   Pla ", race="elf")
+        self.assertEqual(code, 200)
+        uid, pin = u["uid"], u["pin"]
+        self.assertRegex(pin, r"^[0-9]{4}$")
+        self.assertEqual(self.admin(action="create", name="JOSE PLA", race="home")[0], 409)
+        self.assertEqual(self.admin(action="create", uid=uid, name="Jose Pla", race="home")[0], 409)
+        self.assertEqual(self.admin(action="create", name="Invalid", race=[])[0], 400)
+        self.assertEqual(self.s.post("/api/join", {"name": "Lliure"})[0], 403)
+        wrong_pin = f"{(int(pin) + 1) % 10000:04d}"
+        self.assertEqual(self.s.post("/api/join", {"uid": uid, "pin": wrong_pin})[0], 403)
+        code, joined, _ = self.s.post("/api/join", {"uid": uid, "pin": pin})
+        self.assertEqual(code, 200)
+        tok = joined["token"]
+        self.assertFalse(joined["dm"])
+        self.assertEqual(self.s.post("/api/join", {"uid": uid, "pin": pin})[0], 409)
+        self.assertEqual(self.s.post("/api/join", {"token": tok})[1]["token"], tok)
+        self.assertEqual(self.s.post("/api/players", {"action": "delete", "uid": uid}, tok)[0], 403)
+        self.assertEqual(self.s.post("/api/campaigns", {"action": "create", "name": "Intrus"}, tok)[0], 403)
+        self.assertEqual(self.s.post("/api/import", {"docs": {}}, tok)[0], 403)
+        self.assertEqual(self.s.write(tok, "users/" + uid, {"name": "intrus"}), 403)
+        public = self.s.get("/api/players")[1]
+        self.assertNotIn(uid, [p["uid"] for p in public["list"]])
+        snapshot = self.s.get("/api/snapshot", tok)[1]
+        self.assertNotIn("pin", snapshot["docs"]["users/" + uid])
+        old_alias = snapshot["docs"]["users/" + uid]["alias"]
+        _, edited, _ = self.admin(action="edit", uid=uid, name="Josep", race="nan")
+        new = next(p for p in edited["list"] if p["uid"] == uid)
+        self.assertNotEqual(new["alias"], old_alias)
+        self.assertEqual(new["race"], "nan")
+        self.admin(action="lock", open=False)
+        self.assertEqual(self.s.post("/api/join", {"token": tok})[0], 200)
+        self.admin(action="revoke", uid=uid)
+        self.assertEqual(self.s.get("/api/snapshot", tok)[0], 401)
+        self.assertEqual(self.s.post("/api/join", {"uid": uid, "pin": pin})[0], 403)
+        self.admin(action="lock", open=True)
+        _, reset, _ = self.admin(action="pin", uid=uid)
+        self.assertEqual(self.s.post("/api/join", {"uid": uid, "pin": reset["pin"]})[0], 200)
+        token_after_reset = next(iter(json.loads((self.s.dir / "comunitat.json").read_text())["sessions"]))
+        _, second_reset, _ = self.admin(action="pin", uid=uid)
+        self.assertEqual(self.s.get("/api/snapshot", token_after_reset)[0], 401)
+        if second_reset["pin"] != reset["pin"]:
+            self.assertEqual(self.s.post("/api/join", {"uid": uid, "pin": reset["pin"]})[0], 403)
+        persisted = json.loads((self.s.dir / "comunitat.json").read_text())
+        self.assertIsInstance(persisted["users"][uid]["pin"], dict)
+        self.assertNotIn('"pin": "', json.dumps(persisted))
+        self.admin(action="delete", uid=uid)
+        self.assertNotIn(uid, [u["uid"] for u in self.s.get("/api/players", self.master)[1]["list"]])
+
+    def test_master_local_i_origen(self):
+        import urllib.request
+        for headers in ({"Host": "evil.example"}, {"Origin": "http://evil.example"}, {"Sec-Fetch-Site": "cross-site"}):
+            req = urllib.request.Request(f"http://127.0.0.1:{self.s.port}/api/join", data=b'{"master":true}', headers={"Content-Type": "application/json", **headers})
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                urllib.request.urlopen(req, timeout=5)
+            self.assertEqual(error.exception.code, 403)
+            error.exception.close()
+
+    def test_crear_partida_i_recuperar_jugadors(self):
+        def setup(players, request_id):
+            snap = self.s.get("/api/snapshot", self.master)[1]
+            game = partida(players=players)
+            return self.s.post("/api/setup", {"game": game, "name": "Partida amb sala", "requestId": request_id,
+                "camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"]}, self.master)
+        snap = self.s.get("/api/snapshot", self.master)[1]
+        player_token = self.s.join("Sense permisos")
+        self.assertEqual(self.s.post("/api/setup", {}, player_token)[0], 403)
+        count = len(self.s.get("/api/players", self.master)[1]["list"])
+        self.assertEqual(setup([{"name": "Ànna", "race": "elf"}, {"name": " ANNA ", "race": "home"}], "duplicate")[0], 409)
+        self.assertEqual(len(self.s.get("/api/players", self.master)[1]["list"]), count)
+        code, created, _ = setup([{"name": "Anna nova", "race": "elf"}], "create-roster")
+        self.assertEqual(code, 200)
+        self.assertEqual(len(created["pins"]), 1)
+        participant = created["snapshot"]["docs"]["game/state"]["players"][0]
+        uid, pin = participant["uid"], created["pins"][0]["pin"]
+        code, joined, _ = self.s.post("/api/join", {"uid": uid, "pin": pin})
+        self.assertEqual(code, 200)
+        changed = created["snapshot"]["docs"]["game/state"].copy()
+        changed["players"] = [{**participant, "name": "Intrus"}]
+        self.assertEqual(self.s.write(joined["token"], "game/state", changed), 403)
+        code, reused, _ = setup([{"name": "ANNA NOVA", "race": "elf"}], "reuse-roster")
+        self.assertEqual(code, 200)
+        self.assertEqual(reused["pins"], [])
+        self.assertEqual(reused["snapshot"]["docs"]["game/state"]["players"][0]["uid"], uid)
+        self.s.post("/api/campaigns", {"action": "create", "name": "Altra"}, self.master)
+        self.s.post("/api/players", {"action": "delete", "uid": uid}, self.master)
+        code, _, _ = self.s.post("/api/campaigns", {"action": "switch", "id": snap["campaign"]}, self.master)
+        self.assertEqual(code, 200)
+        roster = self.s.get("/api/players", self.master)[1]["list"]
+        recovered = next(u for u in roster if u["uid"] == uid)
+        self.assertEqual(recovered["alias"], participant["alias"])
+        self.assertEqual(recovered["alias_gender"], participant["alias_gender"])
+        self.assertFalse(recovered["pin_ready"])
+
+    def test_arrancada_sense_partida(self):
+        other = Servidor(wanted=None)
+        try:
+            token = other.master()
+            snapshot = other.get("/api/snapshot", token)[1]
+            self.assertIsNone(snapshot["campaign"])
+            self.assertEqual(snapshot["docs"], {})
+            self.assertEqual(list((other.dir / "partides").glob("*.json")), [])
+            self.assertEqual(other.write(token, "game/state", partida()), 403)
+            code, result, _ = other.post("/api/setup", {"game": partida(players=[{"name": "Primer", "race": "nan"}]),
+                "name": "Des de zero", "requestId": "first", "epoch": snapshot["epoch"], "revision": snapshot["revision"], "camp": None}, token)
+            self.assertEqual(code, 200)
+            self.assertEqual(result["snapshot"]["campaign"], "des-de-zero")
+            self.assertEqual(len(result["pins"]), 1)
+        finally:
+            other.stop()
+
+    def test_alias_masculi_femeni_i_correccio(self):
+        cases = [("José", "male"), ("Núria", "female"), ("Maria José", "female"),
+                 ("Josep Maria", "male"), ("Àlex", "neutral"), ("Nom desconegut", "neutral")]
+        from urllib.parse import quote
+        for name, gender in cases:
+            self.assertEqual(self.s.get("/api/alias-gender?name=" + quote(name), self.master)[1]["alias_gender"], gender)
+        code, created, _ = self.admin(action="create", name="Núria", race="nan")
+        self.assertEqual(code, 200)
+        uid = created["uid"]
+        female = next(u for u in created["list"] if u["uid"] == uid)
+        self.assertEqual(female["alias_gender"], "female")
+        self.assertIn(female["alias"].split()[0], ("Drevuka", "Zavruna", "Kelvuda", "Pravneka", "Veskuda", "Drumveka"))
+        persisted = json.loads((self.s.dir / "comunitat.json").read_text())["users"][uid]
+        pin_record = persisted["pin"]
+        code, edited, _ = self.admin(action="edit", uid=uid, name="Núria", race="nan", alias_gender="male")
+        self.assertEqual(code, 200)
+        male = next(u for u in edited["list"] if u["uid"] == uid)
+        self.assertEqual(male["alias_gender"], "male")
+        self.assertNotEqual(male["alias"], female["alias"])
+        self.assertEqual(json.loads((self.s.dir / "comunitat.json").read_text())["users"][uid]["pin"], pin_record)
+        self.assertEqual(self.admin(action="edit", uid=uid, name="Núria", race="nan", alias_gender="invalid")[0], 400)
+        # Preferència manual: en reanomenar no es torna a deduir.
+        _, renamed, _ = self.admin(action="edit", uid=uid, name="Maria", race="nan")
+        self.assertEqual(next(u for u in renamed["list"] if u["uid"] == uid)["alias"], male["alias"])
+        # La preparació automàtica d'una altra partida respecta la correcció guardada.
+        snap = self.s.get("/api/snapshot", self.master)[1]
+        code, setup, _ = self.s.post("/api/setup", {"game": partida(players=[{"name": "Maria", "race": "nan", "alias_gender": "auto"}]),
+            "name": "Preferència", "requestId": "manual-gender", "camp": snap["campaign"], "epoch": snap["epoch"], "revision": snap["revision"]}, self.master)
+        self.assertEqual(code, 200)
+        self.assertEqual(setup["snapshot"]["docs"]["game/state"]["players"][0]["alias_gender"], "male")
+        self.assertEqual(setup["snapshot"]["docs"]["game/state"]["players"][0]["alias"], male["alias"])
+
+
+    def test_rate_limit(self):
+        u = self.s.create_player("Intents")
+        for _ in range(5):
+            self.assertEqual(self.s.post("/api/join", {"uid": u["uid"], "pin": "bad"})[0], 403)
+        self.assertEqual(self.s.post("/api/join", {"uid": u["uid"], "pin": u["pin"]})[0], 429)
+        # El màster encara pot administrar la sala.
+        self.assertEqual(self.admin(action="pin", uid=u["uid"])[0], 200)
+
+    def test_alias_unics(self):
+        aliases = set()
+        for i in range(20):
+            d = self.s.create_player("Alias " + str(i), ["home", "elf", "nan", "hobbit"][i % 4])
+            u = next(u for u in d["list"] if u["uid"] == d["uid"])
+            self.assertNotIn(u["alias"], aliases)
+            aliases.add(u["alias"])
+
+    def test_migracio_i_reinici(self):
+        # Executa les funcions reals del mòdul generat amb dades temporals.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("comunitat_migration", ROOT / "comunitat.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as folder:
+            module.set_data_dir(folder)
+            module.DATA_DIR.mkdir(exist_ok=True)
+            module.CAMP_DIR.mkdir()
+            legacy_docs = {"campaign/main": {"name": "Llegat"}, "game/state": partida(hope=4)}
+            module.write_json(module.camp_file("legacy"), {"docs": legacy_docs})
+            module.write_json(module.META, {"active": "legacy", "users": {"old": "Ànna", "dict": {"name": "ANNA", "alias": "Bungo", "race": "hobbit"}},
+                                          "sessions": {"insecure": {"uid": "old", "dm": True}}})
+            module.load("legacy")
+            self.assertEqual(module.state["docs"]["game/state"]["hope"], legacy_docs["game/state"]["hope"])
+            self.assertTrue({"old", "dict"}.issubset(module.state["users"]))
+            self.assertNotEqual(module.state["users"]["old"]["name"], module.state["users"]["dict"]["name"])
+            self.assertEqual(module.state["sessions"], {})
+            self.assertNotEqual(module.state["users"]["dict"]["alias"], "Bungo")
+            module.set_pin(module.state["users"]["old"])
+            module.state["sessions"]["secure"] = {"uid": "old", "dm": False, "auth_version": 2}
+            module.state["connections_open"] = False
+            module.save_now()
+            before = module.state["users"].copy()
+            module.load()
+            self.assertEqual(module.state["users"], before)
+            self.assertIsNone(module.state["active"])
+            self.assertEqual(module.state["docs"], {})
+            self.assertTrue(module.camp_file("legacy").exists())
+            self.assertIn("secure", module.state["sessions"])
+            self.assertFalse(module.state["connections_open"])
 
 
 if __name__ == "__main__":

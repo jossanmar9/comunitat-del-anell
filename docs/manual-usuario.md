@@ -4,6 +4,27 @@ Guía de uso de La Comunidad, el ayudante libre para llevar las partidas de «El
 
 Para instalarla, consulta la [guía de instalación](guia-instalacion.md).
 
+## Sala de partida — v2.6.0
+
+**Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
+
+La aplicación arranca sin ninguna partida cargada. Elige **Crear partida**, escribe el nombre de la partida y los nombres y razas de los participantes, y prepárala. Al confirmar, los jugadores se incorporan automáticamente a **Sala de partida**, con alias y PIN. Los PIN nuevos se muestran una sola vez al máster. Si un nombre ya corresponde a un jugador registrado, se reutilizan su identidad y PIN existente. Los nombres de los participantes de una misma partida no pueden repetirse, ignorando acentos, mayúsculas y espacios sobrantes.
+
+**Abrir partida guardada** recupera la partida e incorpora sus jugadores a la sala sin duplicarlos. Las partidas nuevas guardan UID, nombre, raza y alias, pero no el PIN ni su hash dentro del archivo de partida. Los PIN y sesiones siguen en la configuración local. Si importas una partida en otro ordenador o recuperas jugadores eliminados, el máster debe generarles PIN nuevos. Las partidas antiguas recuperan los jugadores por el nombre. No se abre la última partida al reiniciar; la opción explícita de terminal `--partida` sigue disponible.
+
+El máster abre la app en el PC mediante `http://localhost:8766` (o el puerto elegido). **Sala de partida** permite crear jugadores con nombre y raza, editarlos, generar otro alias, eliminarlos, regenerar el PIN y desvincular sesiones. Las acciones destructivas requieren una segunda pulsación. Los alias son inventados; no son personajes del juego.
+
+Al crear o regenerar un PIN de cuatro dígitos, anótalo y comunícalo al jugador: solo se muestra una vez y después aparece como **••••**. Se guarda con sal aleatoria y PBKDF2-HMAC-SHA256 (200.000 iteraciones), sin PIN en claro. Regenerarlo revoca la sesión anterior.
+
+El jugador escanea el QR común, sigue **¿Quién eres? → jugador → PIN → Entrar**. Solo aparecen jugadores con PIN y sin vinculación. El navegador recuerda la sesión y reconecta después de recargar, de un corte de wifi o de reiniciar el servidor. **Salir** revoca la sesión; cerrar una pestaña no la desvincula. Si se pierde el dispositivo o los datos del navegador, el máster debe pulsar **Desvincular**. La posesión del token autoriza la sesión: no lo compartas.
+
+**Bloquear nuevas conexiones** impide nuevas vinculaciones; las sesiones autorizadas pueden continuar y reconectar. El panel muestra conexión SSE, vinculación y última petición autenticada. Sin partida preparada, el jugador espera. Las jugadas siguen siendo cooperativas; el máster local administra jugadores, partidas e historial. Con sondeo, un dispositivo puede aparecer desconectado aunque siga autorizado; consulta también la última conexión.
+
+Al actualizar desde v2.5 o anteriores se conservan partidas, configuración y UID. Los nombres duplicados reciben un sufijo, se sustituyen prudentemente los alias antiguos y se revocan las sesiones sin autenticación. El máster debe generar PIN para los jugadores migrados. Haz una copia de la carpeta de datos antes de actualizar. La sala es común a las partidas guardadas, como en la v2.5.
+
+Funciona en una LAN de confianza con HTTP; el PIN y los tokens viajan sin cifrado de transporte. No expongas el puerto a Internet. Tras cinco intentos de PIN fallidos por IP en un minuto hay que esperar. El máster solo se autoriza desde loopback con Host local y se rechazan escrituras entre orígenes.
+
+
 ## Qué es y qué necesitas
 
 La Comunidad es una página web que funciona en casa, sin Internet. Un ordenador hace de servidor y el resto de la mesa entra desde el navegador del móvil, la tableta o el portátil. Todos ven lo mismo al momento: si alguien pierde Esperanza o pasa el turno, los demás lo ven enseguida.
@@ -39,14 +60,16 @@ Abre **La Comunidad** desde el menú Inicio (Windows) o desde el menú de aplica
 ## Entrar desde los dispositivos
 
 1. Con la cámara del móvil, escanea el QR del botón **Invitar** del ordenador principal. También puedes escribir en el navegador la dirección para los demás, por ejemplo `http://192.168.1.40:8766`.
-2. Escribe tu nombre y pulsa **Entrar**. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
+2. Selecciona el jugador creado por el máster, escribe su PIN y pulsa **Entrar**.
 3. El navegador recuerda quién eres. La próxima vez entrarás directamente.
 
-Para entrar con otro nombre, pulsa **Salir**, arriba a la derecha, y vuelve a entrar.
+El máster puede cambiar tu nombre desde **Sala de partida**.
 
 Si llega alguien con la partida empezada, pulsa el botón del QR de arriba a la derecha (en el ordenador principal, **Invitar**): muestra el código en grande para que lo escanee.
 
-![La pantalla de entrada.](imatges/es/01-entrada.jpg)
+![Entrada con jugador y PIN.](imatges/es/01-entrada-v260.png)
+
+![Sala de partida del máster.](imatges/es/01-sala-v260.png)
 
 ![El botón del QR, para invitar.](imatges/es/02-qr.jpg)
 
@@ -304,10 +327,12 @@ El botón de la luna (◐ ☀ ☾) cambia entre el tema automático (el del sist
 | Aparece «Se ha perdido la conexión con el servidor» | La Comunidad se ha cerrado o el ordenador se ha dormido. Cuando la vuelvas a abrir, la página se reconecta sola y no se pierde nada. |
 | Aparece «Modo de prueba» | Se ha abierto la página sin el programa (por ejemplo, la prueba de la web). No se guarda nada: entra con la dirección de la ventana. |
 | Me he equivocado en algún número | Pulsa **Deshacer**, o corrígelo con los botones − y + de la barra de arriba. |
-| Un jugador quiere entrar con otro nombre | Que pulse **Salir**, arriba a la derecha. |
+| Un jugador quiere entrar con otro nombre | Pide al máster que edite el jugador. |
 
 > **Recuerda:** la app solo lleva las cuentas. Si la app y el tablero no coinciden, manda el tablero: corregid la app para que quede igual.
 
 ## Licencia
 
 La Comunidad es software libre con licencia GPL-3.0: la podéis usar, copiar, modificar y compartir, y las versiones modificadas que publiquéis también tienen que ser libres. El mapa de ejemplo, el logo y los retratos de los personajes se han generado con IA, y el programa y este manual se han escrito con ayuda de un asistente de IA. Es un proyecto de fans no oficial, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. Para jugar hay que tener el juego.
+
+> Los textos de ayuda son redacción propia del proyecto. Consulta los avisos de marcas y materiales de terceros en [NOTICE.md](../NOTICE.md).

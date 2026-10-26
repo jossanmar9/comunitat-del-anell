@@ -2,7 +2,23 @@
 
 Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
-El projecte utilitza versions `MAJOR.MINOR` i etiqueta les versions publicades com `vX.Y`.
+El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions publicades com `vX.Y.Z`.
+
+## [2.6.0] - 2026-10-27
+
+- Etiqueta de raça «Humà» / «Humano», mantenint el codi intern compatible amb els guardats.
+- Proposta local d’àlies masculí/femení segons el nom, selector de correcció i opció neutra; pools inventats diferenciats per raça, preferència guardada sense alterar PIN ni sessions.
+
+- Inici sense partida carregada, alta automàtica de jugadors en crear-la amb noms i races, i recuperació de la sala en obrir guardats; identitats i PIN existents es reutilitzen.
+
+- Sala de partida amb alta, edició i eliminació de jugadors pel màster local.
+- UID estable, noms únics normalitzats, àlies inventats per raça i canvi d’àlies controlat pel màster.
+- PIN de quatre dígits amb salt i PBKDF2-HMAC-SHA256; visualització única i límit d’intents per IP.
+- Una sessió revocable per jugador, reconnexió amb token, desvinculació i bloqueig de noves vinculacions.
+- Entrada mòbil amb QR comú → jugador → PIN; espera fins que es prepare la partida.
+- Separació d’administració local i jugades cooperatives; identitats protegides d’escriptures genèriques.
+- Migració de jugadors antics, conservació de guardats i revocació de sessions v2.5 sense autenticació.
+- Interfície VAL/CAS, manuals, web i avisos de projecte no oficial actualitzats; proves de sala i compatibilitat.
 
 ## [2.5.0] - 2026-10-26
 

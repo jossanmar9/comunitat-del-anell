@@ -17,12 +17,12 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 2.5.0) — servidor local per a portar partides de
+La Comunitat (versió 2.6.0) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
 Un ordinador l'executa i la resta s'hi connecta des del navegador. És cooperatiu:
-tothom pot fer canvis, no hi ha màster.
+les jugades són cooperatives; el màster local administra jugadors i partides.
 
 Ús (a Windows, canvia python3 per py, o fes doble clic a arrancar-windows.bat):
     python3 comunitat.py
@@ -44,6 +44,8 @@ import argparse
 import base64
 import copy
 import gzip
+import hashlib
+import hmac
 import json
 import os
 import queue
@@ -59,7 +61,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.5.0"
+VERSION = "2.6.0"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
@@ -92,39 +94,92 @@ BACKUP_RE = re.compile(r"\d{8}-\d{6}(?:-\d+)?-[a-z]+")
 MAX_IMPORT = 5 * 1024 * 1024
 
 RACE_ALIASES = {
-    "home": (["Aldren","Berenor","Calendir","Daren","Eldric","Faren","Galdor","Haldren","Ivoran","Meren","Rodan","Turen"],
-             ["Valclar","Riuargent","Montverd","Ferroclar","Ventdelnord","Guardabosc","Pedrablanca","Camillarg","Llumalta","Rocafreda"]),
-    "elf": (["Aelion","Caelir","Elarin","Faelorn","Ithariel","Laerion","Naeril","Orelion","Saelir","Thaelion","Vaeril","Ylendir"],
-            ["Fullaclara","Llunaargent","Boscestel","Brisaverda","Llumdelriu","Cantdelbosc","Estelblau","Rosadafina","Celargent","Fulladormida"]),
-    "nan": (["Borin","Doren","Fargrim","Gorin","Haldin","Korin","Narin","Ordin","Rurik","Thoren","Vardin","Zorin"],
-            ["Barbaferma","Rocaforta","Martellgris","Ferroroig","Pedrafonda","Escutdur","Picdacer","Muntanyaalta","Forjaforta","Barbagrisa"]),
-    "hobbit": (["Adelard","Bungo","Codo","Doderic","Everard","Fosco","Milo","Nilo","Odo","Ponto","Rollo","Tobold"],
-               ["Peuverd","Bonacasa","Tossalbaix","Campsdolcos","Rierol","Fullatendra","Camicurt","Pomaroja","Pratverd","Bonataula"]),
+    "home": (["Vespran", "Talvex", "Odravel", "Cervun", "Peldrav", "Zervat"],
+             ["Valclar", "Riuargent", "Montverd", "Ferroclar", "Ventdelnord", "Pedrablanca"]),
+    "elf": (["Vaelusi", "Nuvarel", "Isevria", "Lumaves", "Cirevua", "Esvuli"],
+            ["Fullaclara", "Brisaverda", "Llumdelriu", "Rosadafina", "Celargent", "Fulladormida"]),
+    "nan": (["Drevuk", "Zavruk", "Kelvud", "Pravnek", "Veskud", "Drumvek"],
+            ["Barbaferma", "Rocaforta", "Martellgris", "Ferroroig", "Pedrafonda", "Escutdur"]),
+    "hobbit": (["Pebrun", "Tavop", "Nuvet", "Cerpuli", "Vespuc", "Melvot"],
+               ["Peuverd", "Bonacasa", "Tossalbaix", "Fullatendra", "Pomaroja", "Bonataula"]),
 }
 
 def norm_player_name(value):
     value = " ".join(str(value or "").strip().split())
-    return unicodedata.normalize("NFKD", value).encode("ascii","ignore").decode().casefold()
+    return "".join(c for c in unicodedata.normalize("NFKD", value.casefold())
+                   if not unicodedata.combining(c))
+
+# Orientació lingüística local; els noms desconeguts o ambigus queden neutres.
+ALIAS_GENDERS = ("male", "female", "neutral")
+FEMALE_NAMES = set("maria maría anna ana nuria núria laura carmen carme rosa roser teresa teresa isabel elisabet elena helena marta clara sara sarah silvia sílvia sandra raquel cristina paula julia júlia lucia lucía llucia llúcia irene ines inés blanca alba ainhoa ainara mireia laia neus montserrat merce mercè esther ester natalia natàlia patricia patrícia andrea beatriz beatriu eva olga monica mònica sonia sònia noelia noèlia nerea vanessa veronica verònica victoria victòria amparo empar dolores dolors pilar rocio rocío candela carolina diana alicia alícia susana susanna estela adriana aurora lola pepa josefa joana juana concepcion concepció mariona martina emma olivia chloe sofia sofía lluisa lluïsa luisa elvira irati aitana belen belén arantxa itziar maite gemma gema leire alejandra alexia elisa elsa lara amelia cecilia cecília fátima fatima francesca francisca gabriela georgina gloria glòria jessica joaquina judith lidia lídia lorena lourdes magdalena manuela mar margarita margalida mirian miriam nadia naia paloma rebecca rebeca remedios remei rita salome salomé valentina valeria yolanda iolanda zoe".split())
+MALE_NAMES = set("jose josé josep joan juan josepmiquel josepmaria jesus jesús manuel manel vicent vicente carlos carles antonio antoni toni francisco francesc paco miguel miquel angel àngel ángel david daniel dani pablo pau pedro pere javier xavier xavi jordi jorge joel marc marcos mario mário sergio sergi luis lluis lluís jaume jaime ramon ramón ramón raul raúl ruben rubén robert roberto ricard ricardo albert alberto alejandro alexandre alexander ferran fernando enric enrique hector héctor oscar òscar óscar ivan iván ivà isaac adrian adrián adrià adria andres andrés andreu guillem guillermo bernat bernardo artur arturo marti martí martin martín mateu mateo pol nil nicolau nicolas nicolás eduard eduardo ignasi ignacio santi santiago salvador pasqual pascual emili emilio eugeni eugenio gabriel gerard gerardo guille gonzalo hugo iker iñaki inaki leandro leonardo leroy lucas marcelo marcel matias matías max maximo máximo noel oriol ot pio pío rafael rafa ramiro rodrigo rubens saul saúl sebastia sebastià sebastian sebastián tomas tomás tomàs valentí valenti valentin valentín victor víctor ximo yago eric erik henry john james william michael thomas peter paul george anthony".split())
+AMBIGUOUS_NAMES = {"alex", "aleks", "alix", "ariel", "andrea", "noa", "noah", "gael", "rene", "renee", "sasha", "sacha", "sam", "cris", "chris", "dani", "toni", "toni", "francis", "angel", "montse", "trini", "toni", "pat", "robin", "charlie", "jordan", "taylor", "kim"}
+GENDER_ALIAS_NAMES = {
+    "male": {
+        "home": ["Vespran", "Talvex", "Odravel", "Cervun", "Peldrav", "Zervat"],
+        "elf": ["Nuvarel", "Lumaves", "Cirevun", "Esvulon", "Vaeluso", "Isevran"],
+        "nan": ["Drevuk", "Zavruk", "Kelvud", "Pravnek", "Veskud", "Drumvek"],
+        "hobbit": ["Pebrun", "Tavop", "Nuvet", "Cerpuli", "Vespuc", "Melvot"],
+    },
+    "female": {
+        "home": ["Vesprina", "Talvessa", "Odravela", "Cervuna", "Peldriva", "Zervata"],
+        "elf": ["Vaelusia", "Nuvareva", "Isevria", "Lumavessa", "Cirevua", "Esvulia"],
+        "nan": ["Drevuka", "Zavruna", "Kelvuda", "Pravneka", "Veskuda", "Drumveka"],
+        "hobbit": ["Pebruna", "Tavopa", "Nuveta", "Cerpula", "Vespuca", "Melvota"],
+    },
+}
+
+
+def detect_alias_gender(name):
+    words = norm_player_name(name).replace(".", " ").split()
+    if not words:
+        return "neutral"
+    if words[0] in ("m", "ma", "mª") and len(words) > 1:
+        return "female"
+    first = words[0]
+    if first in AMBIGUOUS_NAMES:
+        return "neutral"
+    female = {norm_player_name(n) for n in FEMALE_NAMES}
+    male = {norm_player_name(n) for n in MALE_NAMES}
+    if first in female and first not in male:
+        return "female"
+    if first in male and first not in female:
+        return "male"
+    return "neutral"
+
+
+def resolve_alias_gender(value, name):
+    if value in (None, "auto"):
+        return detect_alias_gender(name)
+    if not isinstance(value, str) or value not in ALIAS_GENDERS:
+        raise ValueError("alias_gender")
+    return value
+
 
 def user_record(value):
     if isinstance(value, dict):
         return {"name": str(value.get("name") or ""), "alias": str(value.get("alias") or ""),
-                "race": str(value.get("race") or "home")}
-    return {"name": str(value or ""), "alias": "", "race": "home"}
+                "race": str(value.get("race") or "home"),
+                "alias_gender": value.get("alias_gender") if value.get("alias_gender") in ALIAS_GENDERS else "neutral"}
+    return {"name": str(value or ""), "alias": "", "race": "home", "alias_gender": "neutral"}
 
 def alias_in_use(alias, except_uid=None):
     wanted = norm_player_name(alias)
     return any(uid != except_uid and norm_player_name(user_record(raw)["alias"]) == wanted
                for uid, raw in state["users"].items())
 
-def generate_alias(race, except_uid=None):
+def generate_alias(race, except_uid=None, alias_gender="neutral"):
     race = race if race in RACE_ALIASES else "home"
     names, surnames = RACE_ALIASES[race]
+    names = GENDER_ALIAS_NAMES.get(alias_gender, {}).get(race, names)
     for _ in range(300):
         alias = f"{secrets.choice(names)} {secrets.choice(surnames)}"
-        if not alias_in_use(alias, except_uid):
+        if not alias_in_use(alias) and (except_uid is None or alias != user_record(state["users"].get(except_uid))["alias"]):
             return alias
-    return f"{secrets.choice(names)} {secrets.token_hex(2).upper()}"
+    while True:
+        alias = f"{secrets.choice(names)} {secrets.token_hex(6).upper()}"
+        if not alias_in_use(alias):
+            return alias
 
 
 lock = threading.RLock()
@@ -132,8 +187,10 @@ state = {
     "epoch": secrets.token_hex(12),
     "revision": 0,  # epoch distingeix les revisions després de reiniciar
     "docs": {},        # partida oberta: ruta -> dict
-    "sessions": {},    # token -> {uid, dm}
-    "users": {},       # uid -> nom (comú a totes les partides)
+    "sessions": {},    # token -> {uid, dm, auth_version}
+    "connections_open": True,
+    "pin_attempts": {},
+    "users": {},       # uid -> identitat i hash PIN (comú a totes les partides)
     "active": None,    # id de la partida oberta
     "history": [],     # partides acabades
     "port": 8766,
@@ -142,6 +199,107 @@ state = {
 clients = []
 completed_requests = {}
 dirty = threading.Event()
+
+
+PIN_ITERATIONS = 200_000
+
+
+def set_pin(user):
+    pin = f"{secrets.randbelow(10000):04d}"
+    while user.get("pin") and verify_pin(user, pin):
+        pin = f"{secrets.randbelow(10000):04d}"
+    salt = secrets.token_hex(16)
+    user["pin"] = {"salt": salt, "iterations": PIN_ITERATIONS,
+                   "hash": hashlib.pbkdf2_hmac("sha256", pin.encode(), bytes.fromhex(salt), PIN_ITERATIONS).hex()}
+    return pin
+
+
+def verify_pin(user, pin):
+    record = user.get("pin") or {}
+    if not re.fullmatch(r"[0-9]{4}", str(pin)) or not record:
+        return False
+    digest = hashlib.pbkdf2_hmac("sha256", str(pin).encode(), bytes.fromhex(record["salt"]), record["iterations"]).hex()
+    return hmac.compare_digest(digest, record["hash"])
+
+
+def migrate_users():
+    # No convertim les credencials antigues sense autenticació en sessions vàlides.
+    state["sessions"] = {tok: sess for tok, sess in state["sessions"].items()
+                         if isinstance(sess, dict) and sess.get("auth_version") == 2
+                         and not sess.get("dm") and sess.get("uid") in state["users"]}
+    used = set()
+    for uid, raw in list(state["users"].items()):
+        user = user_record(raw)
+        name = " ".join(user["name"].split())[:40] or "Jugador"
+        base, n = name, 2
+        while norm_player_name(name) in used:
+            name = f"{base[:32]} ({n})"
+            n += 1
+        used.add(norm_player_name(name))
+        user["name"] = name
+        user["uid"] = uid
+        user["race"] = user["race"] if user["race"] in RACE_ALIASES else "home"
+        if isinstance(raw, dict):
+            for key in ("pin", "last_seen", "alias_version"):
+                if key in raw:
+                    user[key] = raw[key]
+        state["users"][uid] = user
+        # Els pools antics incloïen noms canònics: substitució prudent, sense tocar les partides.
+        if user.get("alias_version") != 2 or not user["alias"] or alias_in_use(user["alias"], uid):
+            user["alias"] = generate_alias(user["race"], uid)
+        user["alias_version"] = 2
+
+
+def restore_roster(docs):
+    """Recupera identitats de la partida; mai importa PIN ni sessions."""
+    game = docs.get("game/state") or {}
+    used = set()
+    for i, player in enumerate(game.get("players", [])):
+        if not isinstance(player, dict):
+            continue
+        uid = player.get("uid")
+        if not isinstance(uid, str) or uid not in state["users"]:
+            uid = next((key for key, user in state["users"].items()
+                        if norm_player_name(user["name"]) == norm_player_name(player.get("name"))), None)
+        if not uid or uid in used:
+            name = " ".join(str(player.get("name") or f"Jugador {i+1}").split())[:40]
+            base, n = name, 2
+            while any(norm_player_name(u["name"]) == norm_player_name(name) for u in state["users"].values()):
+                name = f"{base[:32]} ({n})"
+                n += 1
+            saved_uid = player.get("uid")
+            uid = saved_uid if isinstance(saved_uid, str) and re.fullmatch(r"u[a-f0-9]{12,24}", saved_uid) and saved_uid not in state["users"] else "u" + secrets.token_hex(12)
+            race = player.get("race", "home")
+            if not isinstance(race, str) or race not in RACE_ALIASES:
+                race = "home"
+            alias = player.get("alias")
+            if player.get("alias_version") != 2 or not isinstance(alias, str) or not alias or alias_in_use(alias):
+                alias = generate_alias(race, alias_gender=player.get("alias_gender") if player.get("alias_gender") in ALIAS_GENDERS else "neutral")
+            state["users"][uid] = {"uid": uid, "name": name, "race": race, "alias": alias, "alias_version": 2,
+                                    "alias_gender": player.get("alias_gender") if player.get("alias_gender") in ALIAS_GENDERS else "neutral"}
+        user = state["users"][uid]
+        player.update(uid=uid, **user_record(user), alias_version=2)
+        used.add(uid)
+
+
+def revoke_player(uid):
+    for tok, sess in list(state["sessions"].items()):
+        if sess["uid"] == uid:
+            del state["sessions"][tok]
+    for client in list(clients):
+        if client.sess["uid"] == uid:
+            client.send("revoked", {})
+
+
+def room_players(admin=False):
+    out = []
+    for uid, raw in state["users"].items():
+        bound = any(s["uid"] == uid for s in state["sessions"].values())
+        if admin or (not bound and raw.get("pin")):
+            out.append({"uid": uid, **user_record(raw), "bound": bound,
+                        "connected": any(c.sess["uid"] == uid for c in clients),
+                        "last_seen": raw.get("last_seen"), "pin_ready": bool(raw.get("pin"))})
+    return out
 
 
 # ---------------------------------------------------------------- emmagatzematge
@@ -178,7 +336,7 @@ def slugify(name):
 
 
 def camp_name(docs, cid):
-    return ((docs.get("campaign/main") or {}).get("name") or "").strip() or cid
+    return ((docs.get("campaign/main") or {}).get("name") or "").strip() or cid or "—"
 
 
 def list_campaigns():
@@ -211,7 +369,9 @@ def list_trash():
 
 def save_now():
     with lock:
-        meta = copy.deepcopy({"sessions": state["sessions"], "users": state["users"], "active": state["active"]})
+        meta = copy.deepcopy({"auth_version": 2, "connections_open": state["connections_open"],
+                              "sessions": {t: s for t, s in state["sessions"].items() if not s.get("dm")},
+                              "users": state["users"], "active": state["active"]})
         docs = {"docs": copy.deepcopy(state["docs"])}
         cid = state["active"]
         write_json(META, meta)
@@ -248,6 +408,7 @@ def activate(cid):
         camp_file(cid).replace(bad)
         print(f"[!] No s'ha pogut llegir {cid}.json ({e}). L'he mogut a {bad.name}.")
         docs = {}
+    restore_roster(docs)
     state["docs"] = docs
     state["revision"] += 1
     state["active"] = cid
@@ -272,8 +433,10 @@ def load(wanted=None):
             state["sessions"] = meta.get("sessions", {})
             state["users"] = meta.get("users", {})
             state["active"] = meta.get("active")
+            state["connections_open"] = bool(meta.get("connections_open", True))
         except Exception as e:  # noqa: BLE001
             print(f"[!] No s'ha pogut llegir comunitat.json ({e}). Els jugadors hauran de tornar a entrar.")
+    migrate_users()
     if wanted:
         state["active"] = None  # perquè list_campaigns llija tots els fitxers del disc
         match = None
@@ -282,10 +445,12 @@ def load(wanted=None):
                 match = c["id"]
                 break
         state["active"] = match or new_campaign(wanted)
-    if not state["active"] or not camp_file(state["active"]).exists():
-        existing = sorted(CAMP_DIR.glob("*.json"), key=lambda f: -f.stat().st_mtime)
-        state["active"] = existing[0].stem if existing else new_campaign("Primera partida")
-    activate(state["active"])
+    if wanted:
+        activate(state["active"])
+    else:
+        state["active"] = None
+        state["docs"] = {}
+        state["revision"] += 1
     save_now()
 
 
@@ -528,12 +693,30 @@ def get_doc(path):
     return state["docs"].get(path)
 
 
+def roster_unchanged(docs, sess):
+    """Les escriptures del joc no poden inventar identitats per a una futura càrrega."""
+    before = (state["docs"].get("game/state") or {}).get("players", [])
+    after = (docs.get("game/state") or {}).get("players", [])
+    if before == after:
+        return True
+    if not sess.get("dm"):
+        return False
+    # Clients locals antics poden escriure el format v2.5 sense UID.
+    if any("uid" in p for p in after if isinstance(p, dict)):
+        for player in after:
+            user = state["users"].get(player.get("uid"))
+            if not user:
+                return False
+            player.update(**user_record(user))
+    return True
+
+
 def can_write(path, mode, sess):
-    """Joc cooperatiu: tothom pot canviar la partida; cadascú només el seu nom."""
+    """Jugades cooperatives; identitats només pel panell i campanya només pel màster."""
     s = seg(path)
     if s[0] == "users":
-        return len(s) == 2 and s[1] == sess["uid"] and mode != "delete"
-    return s[0] in ("game", "map", "campaign")
+        return False
+    return s[0] in ("game", "map") or (s[0] == "campaign" and sess.get("dm"))
 
 
 # ---------------------------------------------------------------- actualitzacions en directe
@@ -558,7 +741,7 @@ def snapshot():
 
 
 def session_snapshot(sess):
-    return {"me": {"uid": sess["uid"], "dm": True}, "campaign": state["active"],
+    return {"me": {"uid": sess["uid"], "dm": bool(sess.get("dm"))}, "campaign": state["active"],
             "epoch": state["epoch"], "revision": state["revision"], "docs": snapshot()}
 
 
@@ -641,7 +824,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _body(self):
         n = int(self.headers.get("Content-Length") or 0)
-        if n > 2_000_000:
+        if n < 0 or n > 2_000_000:
             raise ValueError("massa gran")
         return json.loads(self.rfile.read(n) or b"{}")
 
@@ -651,7 +834,15 @@ class Handler(BaseHTTPRequestHandler):
     def _session(self):
         tok = self.headers.get("X-Taula-Token") or (self._query().get("t") or [""])[0]
         with lock:
-            return state["sessions"].get(tok)
+            sess = state["sessions"].get(tok)
+            if not sess or (sess.get("dm") and not self._local()):
+                return None
+            if not sess.get("dm"):
+                user = state["users"].get(sess["uid"])
+                if not user:
+                    return None
+                user["last_seen"] = int(time.time() * 1000)
+            return sess
 
     # -- GET
     def do_GET(self):
@@ -663,6 +854,18 @@ class Handler(BaseHTTPRequestHandler):
             lang = "es" if (self._query().get("lang") or ["val"])[0] == "es" else "val"
             body, ctype = map_image(lang)
             return self._send(200, body, ctype, {"Cache-Control": "no-cache"})
+        if route == "/api/players":
+            with lock:
+                sess = self._session()
+                return self._json(200, {"list": room_players(bool(sess and sess.get("dm"))),
+                                        "open": state["connections_open"]})
+        if route == "/api/alias-gender":
+            sess = self._session()
+            if not sess or not sess.get("dm"):
+                return self._json(403, {"error": "Només el màster pot administrar la sala."})
+            name = (self._query().get("name") or [""])[0][:40]
+            existing = next((u for u in state["users"].values() if norm_player_name(u["name"]) == norm_player_name(name)), None)
+            return self._json(200, {"alias_gender": existing.get("alias_gender", "neutral") if existing else detect_alias_gender(name)})
         if route == "/api/hello":
             out = {"taula": 1, "version": VERSION, "local": self._local()}
             if out["local"]:
@@ -691,7 +894,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _local(self):
         """La petició ve d'aquest mateix ordinador (la finestra pròpia o un navegador en el servidor)?"""
-        return self.client_address[0].startswith("127.") or self.client_address[0] == "::1"
+        host = urlparse("http://" + self.headers.get("Host", "")).hostname
+        return (self.client_address[0].startswith("127.") or self.client_address[0] == "::1") and host in ("localhost", "127.0.0.1", "::1")
 
     def _export(self):
         cid = (self._query().get("id") or [""])[0]
@@ -726,10 +930,22 @@ class Handler(BaseHTTPRequestHandler):
         try:
             self._sse("snapshot", first)
             while True:
+                with lock:
+                    valid = any(current is sess for current in state["sessions"].values())
+                if not valid:
+                    self._sse("revoked", {})
+                    break
                 try:
                     kind, payload = c.q.get(timeout=10)
+                    if kind == "revoked":
+                        self._sse(kind, {})
+                        break
                     self._sse(kind, payload)
                 except queue.Empty:
+                    with lock:
+                        if sess["uid"] in state["users"]:
+                            state["users"][sess["uid"]]["last_seen"] = int(time.time() * 1000)
+                            dirty.set()
                     self._sse("ping", {})
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
             pass
@@ -745,6 +961,10 @@ class Handler(BaseHTTPRequestHandler):
 
     # -- POST
     def do_POST(self):
+        origin = self.headers.get("Origin")
+        if (origin and origin != "http://" + self.headers.get("Host", "")) or self.headers.get("Sec-Fetch-Site") == "cross-site":
+            self.close_connection = True
+            return self._json(403, {"error": "Origen no permés."})
         route = self.path.split("?")[0]
         if route == "/api/import":
             return self._import()
@@ -759,6 +979,17 @@ class Handler(BaseHTTPRequestHandler):
         sess = self._session()
         if not sess:
             return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+        if route in ("/api/setup", "/api/players", "/api/campaigns", "/api/history", "/api/carpeta") and not sess.get("dm"):
+            return self._json(403, {"error": "Només el màster pot administrar la sala."})
+        if route == "/api/setup":
+            return self._setup(body)
+        if route == "/api/players":
+            return self._players(body)
+        if route == "/api/logout":
+            with lock:
+                revoke_player(sess["uid"])
+                save_now()
+            return self._json(200, {"ok": True})
         if route == "/api/write":
             return self._write(body, sess)
         if route == "/api/transaction":
@@ -776,8 +1007,11 @@ class Handler(BaseHTTPRequestHandler):
         self._json(404, {"error": "No trobat"})
 
     def _import(self):
-        if not self._session():
+        sess = self._session()
+        if not sess:
             return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+        if not sess.get("dm"):
+            return self._json(403, {"error": "Només el màster pot administrar la sala."})
         try:
             n = int(self.headers.get("Content-Length") or 0)
         except ValueError:
@@ -794,39 +1028,179 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, result)
 
     def _join(self, body):
-        name = " ".join(str(body.get("name") or "").strip().split())[:40]
-        old_tok = str(body.get("token") or "")
-        race = str(body.get("race") or "").lower()
-        reroll = bool(body.get("reroll"))
         with lock:
+            old_tok = str(body.get("token") or "")
             sess = state["sessions"].get(old_tok)
-            existing = user_record(state["users"].get(sess["uid"])) if sess else None
-            if not sess:
-                if not name:
-                    return self._json(400, {"error": "Escriu el teu nom."})
-                if race not in RACE_ALIASES:
-                    race = "home"
-                tok = secrets.token_urlsafe(24)
-                sess = {"uid": "u" + secrets.token_hex(6)}
+            if sess and (not sess.get("dm") or self._local()):
+                tok = old_tok
+            elif body.get("master") is True and self._local():
+                tok = next((t for t, s in state["sessions"].items() if s.get("dm")), secrets.token_urlsafe(32))
+                sess = {"uid": "master", "dm": True, "auth_version": 2}
                 state["sessions"][tok] = sess
             else:
-                tok = old_tok
-                if not name: name = existing["name"]
-                if race not in RACE_ALIASES:
-                    race = existing["race"] if existing["race"] in RACE_ALIASES else "home"
-            wanted = norm_player_name(name)
-            for uid, raw in state["users"].items():
-                if uid != sess["uid"] and norm_player_name(user_record(raw)["name"]) == wanted:
+                uid = str(body.get("uid") or "")
+                now = time.monotonic()
+                # Límit per IP, també per a UID inexistents i intents amb altres noms.
+                key = self.client_address[0]
+                attempts = [ts for ts in state["pin_attempts"].get(key, []) if now - ts < 60]
+                state["pin_attempts"] = {ip: ts for ip, ts in state["pin_attempts"].items() if ts and now - ts[-1] < 60}
+                state["pin_attempts"][key] = attempts
+                if len(attempts) >= 5:
+                    return self._json(429, {"error": "Massa intents. Espera un minut."})
+                if not state["connections_open"]:
+                    return self._json(403, {"error": "Les noves connexions estan bloquejades."})
+                user = state["users"].get(uid)
+                if not user or not verify_pin(user, body.get("pin", "")):
+                    attempts.append(now)
+                    return self._json(403, {"error": "Jugador o PIN incorrecte."})
+                if any(s["uid"] == uid for s in state["sessions"].values()):
+                    return self._json(409, {"error": "Jugador vinculat. Demana al màster que tanque la sessió anterior."})
+                tok = secrets.token_urlsafe(32)
+                sess = {"uid": uid, "dm": False, "auth_version": 2}
+                state["sessions"][tok] = sess
+                user["last_seen"] = int(time.time() * 1000)
+            save_now()
+            return self._json(200, {"token": tok, "uid": sess["uid"], "dm": bool(sess.get("dm")),
+                                    "user": user_record(state["users"].get(sess["uid"]))})
+
+    def _setup(self, body):
+        with lock:
+            sess = self._session()
+            if not sess or not sess.get("dm"):
+                return self._json(403, {"error": "Només el màster pot administrar la sala."})
+            request_id = body.get("requestId")
+            if not isinstance(request_id, str) or not 1 <= len(request_id) <= 100:
+                return self._json(400, {"error": "Petició mal formada"})
+            key = ("setup", request_id)
+            if key in completed_requests:
+                return self._json(200, {"snapshot": session_snapshot(self._session()), "pins": []})
+            if (body.get("epoch") != state["epoch"] or body.get("revision") != state["revision"]
+                    or body.get("camp") != state["active"]):
+                return self._json(409, {"error": "La sala ha canviat. Recarrega abans de crear la partida."})
+            game = copy.deepcopy(body.get("game"))
+            try:
+                check_game(game)
+            except (ImportError_, AttributeError, TypeError, ValueError):
+                return self._json(400, {"error": NO_ES_PARTIDA})
+            if not 1 <= len(game["players"]) <= 5:
+                return self._json(400, {"error": "Nom o raça no vàlids."})
+            names = set()
+            for player in game["players"]:
+                name = " ".join(player["name"].split())
+                race = player.get("race")
+                normal = norm_player_name(name)
+                if not normal or len(name) > 40 or not isinstance(race, str) or race not in RACE_ALIASES:
+                    return self._json(400, {"error": "Nom o raça no vàlids."})
+                if normal in names:
                     return self._json(409, {"error": "Este nom ja està en ús. Tria'n un altre."})
-            alias = existing["alias"] if existing else ""
-            old_race = existing["race"] if existing else race
-            if not alias or reroll or race != old_race:
-                alias = generate_alias(race, sess["uid"])
-            state["users"][sess["uid"]] = {"name": name, "alias": alias, "race": race}
-            dirty.set()
-            user = user_record(state["users"][sess["uid"]])
-        broadcast(["users/" + sess["uid"]])
-        return self._json(200, {"token": tok, "uid": sess["uid"], "dm": True, "user": user})
+                names.add(normal)
+                player["name"] = name
+                try:
+                    existing = next((u for u in state["users"].values() if norm_player_name(u["name"]) == normal), None)
+                    preference = player.get("alias_gender")
+                    if preference in (None, "auto") and existing:
+                        preference = existing.get("alias_gender", "neutral")
+                    player["alias_gender"] = resolve_alias_gender(preference, name)
+                except ValueError:
+                    return self._json(400, {"error": "Tipus d’àlies no vàlid."})
+            name = " ".join(str(body.get("name") or "").split())
+            if not state["active"] and (not name or len(name) > 80):
+                return self._json(400, {"error": "Posa-li un nom a la partida."})
+            previous = copy.deepcopy({k: state[k] for k in ("users", "docs", "active", "revision")})
+            pins = []
+            for player in game["players"]:
+                uid = next((uid for uid, u in state["users"].items()
+                            if norm_player_name(u["name"]) == norm_player_name(player["name"])), None)
+                if uid is None:
+                    uid = "u" + secrets.token_hex(12)
+                    user = {"uid": uid, "name": player["name"], "race": player["race"],
+                            "alias": generate_alias(player["race"], alias_gender=player["alias_gender"]), "alias_version": 2,
+                            "alias_gender": player["alias_gender"]}
+                    state["users"][uid] = user
+                else:
+                    user = state["users"][uid]
+                    if user["race"] != player["race"] or user.get("alias_gender", "neutral") != player["alias_gender"]:
+                        user["alias"] = generate_alias(player["race"], uid, player["alias_gender"])
+                        user["race"] = player["race"]
+                        user["alias_gender"] = player["alias_gender"]
+                if not user.get("pin"):
+                    pins.append({"uid": uid, "name": user["name"], "pin": set_pin(user)})
+                player.clear()
+                player.update(uid=uid, **user_record(user), alias_version=2)
+            cid = state["active"] or slugify(name)
+            docs = copy.deepcopy(state["docs"])
+            docs.update({"campaign/main": {**docs.get("campaign/main", {}), "name": name or camp_name(docs, cid)},
+                         "game/state": game, "game/log": {"list": []},
+                         "game/undo": {"stack": [{"label": {"k": "Preparar una partida nova"},
+                                                   "state": copy.deepcopy(state["docs"]["game/state"])}]
+                                       if state["docs"].get("game/state") else []}})
+            state["docs"], state["active"] = docs, cid
+            state["revision"] += 1
+            try:
+                save_now()
+            except OSError:
+                state.update(previous)
+                return self._json(503, {"error": "No s'ha pogut guardar."})
+            completed_requests[key] = True
+            if len(completed_requests) > 1000:
+                del completed_requests[next(iter(completed_requests))]
+            broadcast_event("snapshot", {})
+            return self._json(200, {"snapshot": session_snapshot(self._session()), "pins": pins})
+
+    def _players(self, body):
+        action = body.get("action")
+        uid = str(body.get("uid") or "")
+        pin = None
+        with lock:
+            if action == "lock":
+                if type(body.get("open")) is not bool:
+                    return self._json(400, {"error": "Petició mal formada"})
+                state["connections_open"] = body["open"]
+            elif action in ("create", "edit"):
+                if action == "create":
+                    uid = ""
+                name = " ".join(str(body.get("name") or "").split())
+                race = body.get("race")
+                if not name or len(name) > 40 or not isinstance(race, str) or race not in RACE_ALIASES:
+                    return self._json(400, {"error": "Nom o raça no vàlids."})
+                if action == "edit" and uid not in state["users"]:
+                    return self._json(404, {"error": "Jugador desconegut."})
+                if any(k != uid and norm_player_name(v["name"]) == norm_player_name(name)
+                       for k, v in state["users"].items()):
+                    return self._json(409, {"error": "Este nom ja està en ús. Tria'n un altre."})
+                if action == "create":
+                    uid = "u" + secrets.token_hex(12)
+                    user = {"uid": uid, "alias_version": 2}
+                else:
+                    user = dict(state["users"][uid])
+                try:
+                    gender = resolve_alias_gender(body.get("alias_gender", user.get("alias_gender") if action == "edit" else "auto"), name)
+                except ValueError:
+                    return self._json(400, {"error": "Tipus d’àlies no vàlid."})
+                if user.get("race") != race or user.get("alias_gender", "neutral") != gender or body.get("reroll") or not user.get("alias"):
+                    user["alias"] = generate_alias(race, uid, gender)
+                user.update(name=name, race=race, alias_gender=gender)
+                if action == "create":
+                    pin = set_pin(user)
+                state["users"][uid] = user
+                for player in (state["docs"].get("game/state") or {}).get("players", []):
+                    if player.get("uid") == uid:
+                        player.update(**user_record(user))
+            elif action in ("delete", "revoke", "pin"):
+                if uid not in state["users"]:
+                    return self._json(404, {"error": "Jugador desconegut."})
+                revoke_player(uid)
+                if action == "delete":
+                    del state["users"][uid]
+                elif action == "pin":
+                    pin = set_pin(state["users"][uid])
+            else:
+                return self._json(400, {"error": "Acció desconeguda."})
+            state["revision"] += 1
+            save_now()
+            broadcast_event("snapshot", {})
+            return self._json(200, {"list": room_players(True), "open": state["connections_open"],
+                                    "uid": uid, "pin": pin})
 
     def _write(self, body, sess):
         path, mode, data = body.get("path"), body.get("mode"), body.get("data")
@@ -837,30 +1211,32 @@ class Handler(BaseHTTPRequestHandler):
         if mode != "delete" and len(json.dumps(data)) > 256_000:
             return self._json(413, {"error": "Document massa gran"})
         with lock:
+            if not self._session():
+                return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+            if not state["active"]:
+                return self._json(403, {"error": "No hi ha cap partida oberta."})
             if body.get("epoch") != state["epoch"] or body.get("revision") != state["revision"] or body.get("camp") != state["active"]:
                 return self._json(409, session_snapshot(sess))
             if body.get("camp") and body.get("camp") != state["active"]:
                 return self._json(409, {"error": "S'ha obert una altra partida."})
             if not can_write(path, mode, sess):
                 return self._json(403, {"error": "No tens permís per a canviar això."})
-            if seg(path)[0] == "users":
-                merged = deep_merge(get_doc(path) or {}, data) if mode == "update" else data
-                state["users"][sess["uid"]] = str(merged.get("name") or "")[:40]
+            docs = copy.deepcopy(state["docs"])
+            if mode == "delete":
+                docs.pop(path, None)
+            elif mode == "set":
+                docs[path] = data
             else:
-                docs = copy.deepcopy(state["docs"])
-                if mode == "delete":
-                    docs.pop(path, None)
-                elif mode == "set":
-                    docs[path] = data
-                else:
-                    docs[path] = deep_merge(docs.get(path) or {}, data)
-                try:
-                    check_docs(docs)
-                except (ImportError_, TypeError, ValueError, RecursionError):
-                    return self._json(400, {"error": NO_ES_PARTIDA})
-                state["docs"] = docs
-                if path == "game/state" and track_result(docs.get(path)):
-                    save_history()
+                docs[path] = deep_merge(docs.get(path) or {}, data)
+            try:
+                check_docs(docs)
+            except (ImportError_, TypeError, ValueError, RecursionError):
+                return self._json(400, {"error": NO_ES_PARTIDA})
+            if not roster_unchanged(docs, sess):
+                return self._json(403, {"error": "No tens permís per a canviar això."})
+            state["docs"] = docs
+            if path == "game/state" and track_result(docs.get(path)):
+                save_history()
             dirty.set()
             state["revision"] += 1
             broadcast_event("snapshot", session_snapshot(sess))
@@ -872,6 +1248,10 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(changes, list) or not 1 <= len(changes) <= 10:
             return self._json(400, {"error": "Petició mal formada"})
         with lock:
+            if not self._session():
+                return self._json(401, {"error": "Sessió no vàlida. Torna a entrar."})
+            if not state["active"]:
+                return self._json(403, {"error": "No hi ha cap partida oberta."})
             # Reintentar una petició ja confirmada no ha de repetir la jugada.
             request_id = body.get("requestId")
             if not isinstance(request_id, str) or not 1 <= len(request_id) <= 100:
@@ -895,6 +1275,8 @@ class Handler(BaseHTTPRequestHandler):
                 check_docs(docs)
             except (ImportError_, TypeError, ValueError, RecursionError):
                 return self._json(400, {"error": NO_ES_PARTIDA})
+            if not roster_unchanged(docs, sess):
+                return self._json(403, {"error": "No tens permís per a canviar això."})
             previous, history = state["docs"], copy.deepcopy(state["history"])
             state["docs"] = docs
             try:
@@ -995,6 +1377,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json(400, {"error": "La còpia està danyada."})
                 make_backup(cid, campaign_docs(cid), "abans")     # per si de cas, una còpia del que hi havia
                 if cid == state["active"]:
+                    restore_roster(docs)
                     state["docs"] = docs
                     state["revision"] += 1
                     save_now()

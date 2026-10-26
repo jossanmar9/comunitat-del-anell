@@ -12,11 +12,96 @@ from prova_servidor import Servidor, partida
 
 
 class Navegador(unittest.TestCase):
+    def test_sala_pc_i_mobil(self):
+        server = Servidor()
+        try:
+            with sync_playwright() as pw:
+                browser = pw.chromium.launch(channel=os.environ.get("PLAYWRIGHT_CHANNEL") or None)
+                pc = browser.new_page(locale="ca-ES", viewport={"width": 1280, "height": 900})
+                errors = []
+                pc.on("pageerror", lambda error: errors.append(str(error)))
+                pc.goto(f"http://127.0.0.1:{server.port}/")
+                pc.locator("#profile").click()
+                expect(pc.locator(".modal h2")).to_have_text("Sala de partida")
+                pc.locator("#room-name").fill("Anna Sala")
+                pc.locator("#room-race").select_option("elf")
+                with pc.expect_response("**/api/players") as response:
+                    pc.locator("#room-create button").click()
+                created = response.value.json()
+                expect(pc.locator(".modal")).to_contain_text("Anota el PIN ara")
+                pc.locator("#pin-done").click()
+                expect(pc.locator(".modal")).to_contain_text("••••")
+                pc.locator(".modal").screenshot(path="/tmp/comunitat-sala-pc.png")
+                pc.keyboard.press("Escape")
+                pc.locator('[data-lang="es"]').click()
+                pc.locator("#profile").click()
+                pc.locator(".modal").screenshot(path="/tmp/comunitat-sala-pc-es.png")
+                # Host loopback alternatiu: el servidor no l'autoritza com a màster.
+                mobile = browser.new_page(locale="es-ES", viewport={"width": 390, "height": 844})
+                mobile.on("pageerror", lambda error: errors.append(str(error)))
+                mobile.goto(f"http://127.0.0.2:{server.port}/")
+                expect(mobile.locator("#join h2")).to_have_text("¿Quién eres?")
+                mobile.locator("#j-player").select_option(created["uid"])
+                mobile.locator("#j-pin").fill(created["pin"])
+                mobile.screenshot(path="/tmp/comunitat-sala-mobil.png")
+                mobile.locator('[data-lang="val"]').click()
+                expect(mobile.locator("#join h2")).to_have_text("Qui eres?")
+                mobile.locator("#j-player").select_option(created["uid"])
+                mobile.locator("#j-pin").fill(created["pin"])
+                mobile.screenshot(path="/tmp/comunitat-sala-mobil-val.png")
+                mobile.locator('[data-lang="es"]').click()
+                mobile.locator("#j-player").select_option(created["uid"])
+                mobile.locator("#j-pin").fill(created["pin"])
+                mobile.locator("#join button[type=submit]").click()
+                expect(mobile.locator("#main")).to_contain_text("Espera a que el máster prepare la partida.")
+                mobile.reload()
+                expect(mobile.locator("#main")).to_contain_text("Espera a que el máster prepare la partida.")
+                expect(mobile.locator("#join")).to_have_count(0)
+                master = server.master()
+                server.post("/api/players", {"action": "revoke", "uid": created["uid"]}, master)
+                expect(mobile.locator("#join")).to_be_visible(timeout=15000)
+                self.assertFalse(errors, errors)
+                browser.close()
+        finally:
+            server.stop()
+
+    def test_inici_buit_i_alta_amb_la_partida(self):
+        server = Servidor(wanted=None)
+        try:
+            with sync_playwright() as pw:
+                browser = pw.chromium.launch(channel=os.environ.get("PLAYWRIGHT_CHANNEL") or None)
+                page = browser.new_page(locale="ca-ES")
+                errors = []
+                page.on("pageerror", lambda error: errors.append(str(error)))
+                page.goto(f"http://127.0.0.1:{server.port}/")
+                expect(page.locator("#main")).to_contain_text("Cap partida oberta")
+                page.locator("#welcome-create").click()
+                page.locator("#sf-name").fill("Partida nova")
+                page.locator("#sf-np").select_option("1")
+                page.locator("#sp-name-0").fill("Núria")
+                expect(page.locator('#sp-gender-0 option[value="auto"]')).to_have_text("Automàtic: Femení")
+                page.locator("#sp-race-0").select_option("elf")
+                page.locator("#sf-scen").select_option(index=1)
+                page.locator("#setup-form button[type=submit]").click()
+                expect(page.locator(".modal")).to_contain_text("PIN dels participants")
+                expect(page.locator(".modal")).to_contain_text("Núria")
+                page.locator("#pins-done").click()
+                expect(page.locator(".modal")).to_contain_text("Núria")
+                expect(page.locator(".modal")).to_contain_text("••••")
+                expect(page.locator(".modal")).to_contain_text("Femení")
+                page.keyboard.press("Escape")
+                page.reload()
+                expect(page.locator("#camp-name")).to_have_value("Partida nova")
+                self.assertFalse(errors, errors)
+                browser.close()
+        finally:
+            server.stop()
+
     def test_jugada_conflicte_reintent_i_teclat(self):
         server = Servidor()
         try:
             token_a, token_b = server.join("Anna"), server.join("Bernat")
-            self.assertEqual(server.write(token_a, "game/state", partida()), 200)
+            self.assertEqual(server.write(server.master(), "game/state", partida()), 200)
             with sync_playwright() as pw:
                 browser = pw.chromium.launch(channel=os.environ.get("PLAYWRIGHT_CHANNEL") or None)
                 contexts, pages, errors = [], [], []

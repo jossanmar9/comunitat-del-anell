@@ -20,6 +20,26 @@ Funciona a **Windows i Linux**. S'instal·la com qualsevol altre programa i, a l
 
 ![La pantalla de joc: les eines, el mapa i el torn pas a pas](docs/imatges/ca/05-partida.jpg)
 
+## Sala de partida — v2.6.0
+
+**Àlies masculins i femenins:** en escriure un nom, l’app proposa un tipus d’àlies amb una llista local de noms habituals; no fa consultes a Internet. Pots corregir-lo amb **Tipus d’àlies → Masculí / Femení / Neutre**. Els noms desconeguts o ambigus es proposen com a neutres. És una ajuda lingüística per a l’àlies, no una determinació del gènere de la persona. Cada raça té noms inventats diferenciats. La preferència manual es conserva; canviar-la des de **Sala de partida → Editar** genera un altre àlies sense canviar el PIN ni tancar la sessió. Els jugadors antics conserven l’àlies existent fins que el màster el canvie.
+
+L’aplicació arranca sense cap partida carregada. Tria **Crear partida**, escriu el nom de la partida i els noms i les races dels participants, i prepara-la. En confirmar, els jugadors s’incorporen automàticament a **Sala de partida**, amb àlies i PIN. Els PIN nous es mostren una sola vegada al màster. Si un nom ja correspon a un jugador registrat, es reutilitza la seua identitat i el PIN existent. Els noms dels participants d’una mateixa partida no es poden repetir, ignorant accents, majúscules i espais sobrants.
+
+**Obrir partida guardada** recupera la partida i incorpora els seus jugadors a la sala sense duplicar-los. Les partides noves guarden UID, nom, raça i àlies, però no el PIN ni el seu hash dins del fitxer de partida. Els PIN i sessions continuen en la configuració local. Si importes una partida a un altre ordinador o recuperes jugadors eliminats, el màster haurà de generar-los PIN nous. Les partides antigues recuperen els jugadors pel nom. No s’obri l’última partida en reiniciar; l’opció explícita de terminal `--partida` continua disponible.
+
+El màster obri l’app en el PC amb `http://localhost:8766` (o el port triat). El botó **Sala de partida** permet crear jugadors amb nom i raça, editar-los, generar un altre àlies, eliminar-los, regenerar el PIN i desvincular sessions. Les accions destructives demanen una segona pulsació. Els àlies són inventats; no són personatges del joc.
+
+En crear o regenerar un PIN de quatre dígits, anota’l i comunica’l al jugador: només es mostra una vegada i després apareix com **••••**. Es guarda amb salt aleatori i PBKDF2-HMAC-SHA256 (200.000 iteracions), sense PIN en clar. Regenerar-lo revoca la sessió anterior.
+
+El jugador escaneja el QR comú de la taula, tria **Qui eres? → jugador → PIN → Entrar**. Només apareixen jugadors amb PIN i sense vinculació. Un jugador té una sessió autoritzada; el navegador la recorda i reconnecta després de recarregar, d’un tall de wifi o de reiniciar el servidor. **Eixir** revoca la sessió; tancar una pestanya no la desvincula. Si es perd el dispositiu o les dades del navegador, el màster ha de prémer **Desvincular**. La possessió del token autoritza la sessió: no el compartisques.
+
+**Bloquejar noves connexions** impedeix noves vinculacions; les sessions autoritzades poden continuar i reconnectar. El panell mostra connexió SSE, vinculació i última petició autenticada. Sense partida preparada, el jugador espera. Les jugades continuen sent cooperatives; l’administració de jugadors, partides i historial correspon al màster local. En mode de sondeig, un dispositiu pot aparéixer desconnectat encara que continue autoritzat; consulta també l’última connexió.
+
+En actualitzar des de v2.5 o anteriors es conserven partides, configuració i UID. Els noms duplicats reben un sufix, els àlies antics se substitueixen prudentment i es revoquen les sessions sense autenticació. El màster ha de generar PIN per als jugadors migrats. Fes una còpia de la carpeta de dades abans d’actualitzar. La sala de jugadors és comuna a les partides guardades, com en la v2.5.
+
+Funciona en una LAN de confiança amb HTTP; el PIN i els tokens viatgen sense xifrat de transport. No exposes el port a Internet. Després de cinc intents de PIN fallits per IP en un minut, cal esperar. El màster només s’autoritza des de loopback amb Host local i es rebutgen escriptures entre orígens.
+
 ## Contingut
 
 - [Què fa](#què-fa)
@@ -84,7 +104,7 @@ Més detalls, el tallafoc de Linux i com passar les partides de les versions 1.x
 ## Primers passos
 
 1. Obri **La Comunitat**. L'app s'obri en una finestra pròpia, sense navegador (a Windows amb WebView2, a Linux amb WebKitGTK). Mentre la finestra estiga oberta, La Comunitat funciona; en tancar-la, ho guarda tot i s'atura.
-2. El botó **Convida** mostra l'adreça per als altres i un **codi QR**. Cada jugador l'escaneja amb el mòbil i entra amb el seu nom. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
+2. El botó **Convida** mostra l'adreça per als altres i un **codi QR**. El màster escriu els participants en crear la partida; apareixen automàticament en **Sala de partida**. Cada jugador escaneja el QR, selecciona el seu jugador i entra amb el PIN.
 3. Ompliu el formulari de preparació, prepareu el tauler amb la llista de la pestanya **Comunitat** i a jugar.
 
 Opcions per al terminal:
@@ -194,3 +214,5 @@ Aquest projecte s'ha fet amb ajuda d'IA:
 Les tipografies [Alegreya](https://github.com/huertatipografica/Alegreya) i [IM Fell English](https://iginomarini.com/fell/) són lliures, amb la llicència SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). A Windows, la finestra fa servir [pywebview](https://pywebview.flowrl.com/) (llicència BSD).
 
 **Avís:** projecte de fans **no oficial**, sense relació amb Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» i els noms relacionats són marques dels seus propietaris. Aquest programa no inclou cap component del joc: per a jugar cal tindre'l.
+
+Vegeu també [NOTICE.md](NOTICE.md) per als avisos sobre marques i materials de tercers.

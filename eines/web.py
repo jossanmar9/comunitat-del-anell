@@ -73,7 +73,7 @@ T = {
                          "o el <code>.tar.gz</code> per a la resta."),
             ("Obri-la", "S'obri en una finestra pròpia, sense navegador. El botó <b>Convida</b> mostra el codi QR "
                         "per als mòbils. Mentre la finestra estiga oberta, La Comunitat funciona."),
-            ("Convida la taula", "Els jugadors escanegen el QR amb el mòbil i entren amb el seu nom. Prepareu la partida "
+            ("Convida la taula", "L’app arranca sense partida. En crear-ne una, els participants passen automàticament a la sala; escanegen el QR i entren amb jugador i PIN. Prepareu la partida "
                                  "i comenceu: el tauler mana, l'app porta els comptes."),
         ],
         "dades_titol": "Tot es queda a casa",
@@ -150,7 +150,7 @@ T = {
                            "o el <code>.tar.gz</code> para el resto."),
             ("Ábrela", "Se abre en una ventana propia, sin navegador. El botón <b>Invitar</b> muestra el código QR "
                        "para los móviles. Mientras la ventana esté abierta, La Comunidad funciona."),
-            ("Invita a la mesa", "Los jugadores escanean el QR con el móvil y entran con su nombre. Preparad la partida "
+            ("Invita a la mesa", "La app arranca sin partida. Al crear una, los participantes pasan automáticamente a la sala; escanean el QR y entran con jugador y PIN. Preparad la partida "
                                  "y empezad: el tablero manda, la app lleva las cuentas."),
         ],
         "dades_titol": "Todo se queda en casa",

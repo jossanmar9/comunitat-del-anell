@@ -119,7 +119,7 @@ jobs:
       - name: Prepara la versió portable i la de l'instal·lador
         shell: pwsh
         run: |
-          $docs = "README.md", "README.es.md", "LICENSE"
+          $docs = "README.md", "README.es.md", "LICENSE", "NOTICE.md"
           # Portable: les partides es guarden al costat de l'executable
           $port = "dist\portable\LaComunitat"
           New-Item -ItemType Directory "$port\docs" -Force | Out-Null

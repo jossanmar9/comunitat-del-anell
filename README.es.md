@@ -20,6 +20,26 @@ Funciona en **Windows y Linux**. Se instala como cualquier otro programa y, en e
 
 ![La pantalla de juego: las herramientas, el mapa y el turno paso a paso](docs/imatges/es/05-partida.jpg)
 
+## Sala de partida — v2.6.0
+
+**Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
+
+La aplicación arranca sin ninguna partida cargada. Elige **Crear partida**, escribe el nombre de la partida y los nombres y razas de los participantes, y prepárala. Al confirmar, los jugadores se incorporan automáticamente a **Sala de partida**, con alias y PIN. Los PIN nuevos se muestran una sola vez al máster. Si un nombre ya corresponde a un jugador registrado, se reutilizan su identidad y PIN existente. Los nombres de los participantes de una misma partida no pueden repetirse, ignorando acentos, mayúsculas y espacios sobrantes.
+
+**Abrir partida guardada** recupera la partida e incorpora sus jugadores a la sala sin duplicarlos. Las partidas nuevas guardan UID, nombre, raza y alias, pero no el PIN ni su hash dentro del archivo de partida. Los PIN y sesiones siguen en la configuración local. Si importas una partida en otro ordenador o recuperas jugadores eliminados, el máster debe generarles PIN nuevos. Las partidas antiguas recuperan los jugadores por el nombre. No se abre la última partida al reiniciar; la opción explícita de terminal `--partida` sigue disponible.
+
+El máster abre la app en el PC mediante `http://localhost:8766` (o el puerto elegido). **Sala de partida** permite crear jugadores con nombre y raza, editarlos, generar otro alias, eliminarlos, regenerar el PIN y desvincular sesiones. Las acciones destructivas requieren una segunda pulsación. Los alias son inventados; no son personajes del juego.
+
+Al crear o regenerar un PIN de cuatro dígitos, anótalo y comunícalo al jugador: solo se muestra una vez y después aparece como **••••**. Se guarda con sal aleatoria y PBKDF2-HMAC-SHA256 (200.000 iteraciones), sin PIN en claro. Regenerarlo revoca la sesión anterior.
+
+El jugador escanea el QR común, sigue **¿Quién eres? → jugador → PIN → Entrar**. Solo aparecen jugadores con PIN y sin vinculación. El navegador recuerda la sesión y reconecta después de recargar, de un corte de wifi o de reiniciar el servidor. **Salir** revoca la sesión; cerrar una pestaña no la desvincula. Si se pierde el dispositivo o los datos del navegador, el máster debe pulsar **Desvincular**. La posesión del token autoriza la sesión: no lo compartas.
+
+**Bloquear nuevas conexiones** impide nuevas vinculaciones; las sesiones autorizadas pueden continuar y reconectar. El panel muestra conexión SSE, vinculación y última petición autenticada. Sin partida preparada, el jugador espera. Las jugadas siguen siendo cooperativas; el máster local administra jugadores, partidas e historial. Con sondeo, un dispositivo puede aparecer desconectado aunque siga autorizado; consulta también la última conexión.
+
+Al actualizar desde v2.5 o anteriores se conservan partidas, configuración y UID. Los nombres duplicados reciben un sufijo, se sustituyen prudentemente los alias antiguos y se revocan las sesiones sin autenticación. El máster debe generar PIN para los jugadores migrados. Haz una copia de la carpeta de datos antes de actualizar. La sala es común a las partidas guardadas, como en la v2.5.
+
+Funciona en una LAN de confianza con HTTP; el PIN y los tokens viajan sin cifrado de transporte. No expongas el puerto a Internet. Tras cinco intentos de PIN fallidos por IP en un minuto hay que esperar. El máster solo se autoriza desde loopback con Host local y se rechazan escrituras entre orígenes.
+
 ## Contenido
 
 - [Qué hace](#qué-hace)
@@ -84,7 +104,7 @@ Más detalles, el cortafuegos de Linux y cómo pasar las partidas de las version
 ## Primeros pasos
 
 1. Abre **La Comunidad**. La app se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK). Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
-2. El botón **Invitar** muestra la dirección para los demás y un **código QR**. Cada jugador lo escanea con el móvil y entra con su nombre. No hay contraseña: el juego es cooperativo y todo el mundo puede hacer cambios.
+2. El botón **Invitar** muestra la dirección para los demás y un **código QR**. El máster escribe los participantes al crear la partida; aparecen automáticamente en **Sala de partida**. Cada jugador escanea el QR, selecciona su jugador y entra con el PIN.
 3. Rellenad el formulario de preparación, preparad el tablero con la lista de la pestaña **Comunidad** y a jugar.
 
 Opciones para el terminal (los nombres de las opciones están en valenciano):
@@ -194,3 +214,5 @@ Este proyecto se ha hecho con ayuda de IA:
 Las tipografías [Alegreya](https://github.com/huertatipografica/Alegreya) e [IM Fell English](https://iginomarini.com/fell/) son libres, con la licencia SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). En Windows, la ventana usa [pywebview](https://pywebview.flowrl.com/) (licencia BSD).
 
 **Aviso:** proyecto de fans **no oficial**, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» y los nombres relacionados son marcas de sus propietarios. Este programa no incluye ningún componente del juego: para jugar hay que tenerlo.
+
+Consulta también [NOTICE.md](NOTICE.md) para los avisos sobre marcas y materiales de terceros.

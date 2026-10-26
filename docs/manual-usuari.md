@@ -4,6 +4,27 @@ Guia d'ús de La Comunitat, l'ajudant lliure per a portar les partides d'«El Se
 
 Per a instal·lar-la, consulta la [guia d'instal·lació](guia-installacio.md).
 
+## Sala de partida — v2.6.0
+
+**Àlies masculins i femenins:** en escriure un nom, l’app proposa un tipus d’àlies amb una llista local de noms habituals; no fa consultes a Internet. Pots corregir-lo amb **Tipus d’àlies → Masculí / Femení / Neutre**. Els noms desconeguts o ambigus es proposen com a neutres. És una ajuda lingüística per a l’àlies, no una determinació del gènere de la persona. Cada raça té noms inventats diferenciats. La preferència manual es conserva; canviar-la des de **Sala de partida → Editar** genera un altre àlies sense canviar el PIN ni tancar la sessió. Els jugadors antics conserven l’àlies existent fins que el màster el canvie.
+
+L’aplicació arranca sense cap partida carregada. Tria **Crear partida**, escriu el nom de la partida i els noms i les races dels participants, i prepara-la. En confirmar, els jugadors s’incorporen automàticament a **Sala de partida**, amb àlies i PIN. Els PIN nous es mostren una sola vegada al màster. Si un nom ja correspon a un jugador registrat, es reutilitza la seua identitat i el PIN existent. Els noms dels participants d’una mateixa partida no es poden repetir, ignorant accents, majúscules i espais sobrants.
+
+**Obrir partida guardada** recupera la partida i incorpora els seus jugadors a la sala sense duplicar-los. Les partides noves guarden UID, nom, raça i àlies, però no el PIN ni el seu hash dins del fitxer de partida. Els PIN i sessions continuen en la configuració local. Si importes una partida a un altre ordinador o recuperes jugadors eliminats, el màster haurà de generar-los PIN nous. Les partides antigues recuperen els jugadors pel nom. No s’obri l’última partida en reiniciar; l’opció explícita de terminal `--partida` continua disponible.
+
+El màster obri l’app en el PC amb `http://localhost:8766` (o el port triat). El botó **Sala de partida** permet crear jugadors amb nom i raça, editar-los, generar un altre àlies, eliminar-los, regenerar el PIN i desvincular sessions. Les accions destructives demanen una segona pulsació. Els àlies són inventats; no són personatges del joc.
+
+En crear o regenerar un PIN de quatre dígits, anota’l i comunica’l al jugador: només es mostra una vegada i després apareix com **••••**. Es guarda amb salt aleatori i PBKDF2-HMAC-SHA256 (200.000 iteracions), sense PIN en clar. Regenerar-lo revoca la sessió anterior.
+
+El jugador escaneja el QR comú de la taula, tria **Qui eres? → jugador → PIN → Entrar**. Només apareixen jugadors amb PIN i sense vinculació. Un jugador té una sessió autoritzada; el navegador la recorda i reconnecta després de recarregar, d’un tall de wifi o de reiniciar el servidor. **Eixir** revoca la sessió; tancar una pestanya no la desvincula. Si es perd el dispositiu o les dades del navegador, el màster ha de prémer **Desvincular**. La possessió del token autoritza la sessió: no el compartisques.
+
+**Bloquejar noves connexions** impedeix noves vinculacions; les sessions autoritzades poden continuar i reconnectar. El panell mostra connexió SSE, vinculació i última petició autenticada. Sense partida preparada, el jugador espera. Les jugades continuen sent cooperatives; l’administració de jugadors, partides i historial correspon al màster local. En mode de sondeig, un dispositiu pot aparéixer desconnectat encara que continue autoritzat; consulta també l’última connexió.
+
+En actualitzar des de v2.5 o anteriors es conserven partides, configuració i UID. Els noms duplicats reben un sufix, els àlies antics se substitueixen prudentment i es revoquen les sessions sense autenticació. El màster ha de generar PIN per als jugadors migrats. Fes una còpia de la carpeta de dades abans d’actualitzar. La sala de jugadors és comuna a les partides guardades, com en la v2.5.
+
+Funciona en una LAN de confiança amb HTTP; el PIN i els tokens viatgen sense xifrat de transport. No exposes el port a Internet. Després de cinc intents de PIN fallits per IP en un minut, cal esperar. El màster només s’autoritza des de loopback amb Host local i es rebutgen escriptures entre orígens.
+
+
 ## Què és i què necessites
 
 La Comunitat és una pàgina web que funciona a casa, sense Internet. Un ordinador fa de servidor i la resta de la taula hi entra des del navegador del mòbil, la tauleta o el portàtil. Tots veuen el mateix al moment: si algú perd esperança o passa el torn, els altres ho veuen de seguida.
@@ -39,14 +60,16 @@ Obri **La Comunitat** des del menú Inici (Windows) o des del menú d'aplicacion
 ## Entrar des dels dispositius
 
 1. Amb la càmera del mòbil, escaneja el QR del botó **Convida** de l'ordinador principal. També pots escriure al navegador l'adreça per als altres, per exemple `http://192.168.1.40:8766`.
-2. Escriu el teu nom i prem **Entrar**. No hi ha contrasenya: el joc és cooperatiu i tothom pot fer canvis.
+2. Selecciona el jugador creat pel màster, escriu el seu PIN i prem **Entrar**.
 3. El navegador recorda qui eres. La pròxima vegada entraràs directament.
 
-Per a entrar amb un altre nom, prem **Eixir**, dalt a la dreta, i torna a entrar.
+El màster pot canviar el teu nom des de **Sala de partida**.
 
 Si arriba algú amb la partida començada, prem el botó del QR de dalt a la dreta (a l'ordinador principal, **Convida**): mostra el codi en gran perquè l'escanege.
 
-![La pantalla d'entrada.](imatges/ca/01-entrada.jpg)
+![Entrada amb jugador i PIN.](imatges/ca/01-entrada-v260.png)
+
+![Sala de partida del màster.](imatges/ca/01-sala-v260.png)
 
 ![El botó del QR, per a convidar.](imatges/ca/02-qr.jpg)
 
@@ -304,10 +327,12 @@ El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del siste
 | Apareix «S'ha perdut la connexió amb el servidor» | La Comunitat s'ha tancat o l'ordinador s'ha adormit. Quan tornes a obrir-la, la pàgina es reconnecta sola i no es perd res. |
 | Apareix «Mode de prova» | S'ha obert la pàgina sense el programa (per exemple, la prova de la web). Res no es guarda: entra amb l'adreça de la finestra. |
 | M'he equivocat en algun número | Prem **Desfer**, o corregeix-lo amb els botons − i + de la barra de dalt. |
-| Un jugador vol entrar amb un altre nom | Que prema **Eixir**, dalt a la dreta. |
+| Un jugador vol entrar amb un altre nom | Demana al màster que edite el jugador. |
 
 > **Recorda:** l'app només porta els comptes. Si l'app i el tauler no coincideixen, mana el tauler: corregiu l'app perquè quede igual.
 
 ## Llicència
 
 La Comunitat és programari lliure amb llicència GPL-3.0: la podeu usar, copiar, modificar i compartir, i les versions modificades que publiqueu també han de ser lliures. El mapa d'exemple, el logo i els retrats dels personatges s'han generat amb IA, i el programa i aquest manual s'han escrit amb ajuda d'un assistent d'IA. És un projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni Middle-earth Enterprises. Per a jugar cal tindre el joc.
+
+> Els textos d’ajuda són redacció pròpia del projecte. Vegeu els avisos de marques i materials de tercers en [NOTICE.md](../NOTICE.md).

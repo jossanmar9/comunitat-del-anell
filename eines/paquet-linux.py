@@ -67,7 +67,7 @@ def ar(membres):
 
 
 def documents(pdf_dir):
-    docs = {n: (ROOT / n).read_bytes() for n in ("README.md", "README.es.md")}
+    docs = {n: (ROOT / n).read_bytes() for n in ("README.md", "README.es.md", "NOTICE.md")}
     if pdf_dir:
         for pdf in sorted(Path(pdf_dir).glob("*.pdf")):
             docs[pdf.name] = pdf.read_bytes()
