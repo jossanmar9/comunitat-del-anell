@@ -6,6 +6,20 @@
  * Llicència GPL-3.0 o posterior.
  */
 const I18N={es:{
+"Guardar":"Guardar",
+"El teu perfil":"Tu perfil",
+"De quina raça vols l'àlies?":"¿De qué raza quieres el alias?",
+"Raça de l'àlies":"Raza del alias",
+"Àlies":"Alias",
+"🎲 Un altre àlies":"🎲 Otro alias",
+"Perfil actualitzat.":"Perfil actualizado.",
+"Àlies nou assignat.":"Nuevo alias asignado.",
+"Home":"Hombre",
+"Elf":"Elfo",
+"Nan":"Enano",
+"Hòbbit":"Hobbit",
+"Este nom ja està en ús. Tria'n un altre.":"Este nombre ya está en uso. Elige otro.",
+"Tria de quina raça vols l'àlies.":"Elige de qué raza quieres el alias.",
 "Guardant…":"Guardando…",
 "Guardat":"Guardado",
 "No s'ha pogut guardar.":"No se ha podido guardar.",

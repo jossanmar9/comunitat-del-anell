@@ -347,7 +347,7 @@ function shadowCardFlow(){
 function renderHeader(){
   const n=$('#camp-name');if(document.activeElement!==n)n.value=CAMP?.name||'';
   $$('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===st.tab));
-  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip${S.local?'':' ico'}" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}${S.local?`<span class="inv-t">${esc(t('Convida'))}</span>`:''}</button>`:'')+(S.token?`<span class="chip">${esc(mem.get('users/'+S.uid)?.name||'')}</span><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
+  $('#who').innerHTML=langSwitch()+themeBtn()+(S.token?`<button class="chip${S.local?'':' ico'}" id="invite" title="${esc(t('Convida a la taula'))}" aria-label="${esc(t('Convida a la taula'))}">${QR_ICON}${S.local?`<span class="inv-t">${esc(t('Convida'))}</span>`:''}</button>`:'')+(S.token?`<button class="chip" id="profile">${esc(mem.get('users/'+S.uid)?.name||'')}${mem.get('users/'+S.uid)?.alias?' · '+esc(mem.get('users/'+S.uid).alias):''}</button><button class="chip" id="logout">${esc(t('Eixir'))}</button>`:'');
 }
 function renderTracks(){
   const el=$('#tracks');
@@ -710,7 +710,32 @@ async function backupsModal(id,name){
 function nextTurn(){commit(M('Torn següent'),(s,log)=>{const np=(s.turn.p+1)%s.players.length;if(np===0)s.round++;s.turn={p:np,step:0,a:[0,0],shadow:0};log.push({k:'Torn de {x}.',v:{x:s.players[np].name||M('Participant {n}',{n:np+1})}})})}
 $('.tabs').addEventListener('click',e=>{const x=e.target.closest('[data-tab]');if(!x)return;st.tab=x.dataset.tab;st.forceSetup=false;lsSet('cm-tab2',st.tab);renderHeader();renderTab()});
 $('#camp-name').addEventListener('change',e=>{CAMP={...(CAMP||{}),name:e.target.value};write('campaign/main',CAMP)});
-$('#who').addEventListener('click',e=>{if(e.target.id==='logout')armed(e.target,()=>{lsSet('cm-token','');location.reload()},t('Segur? Prem de nou'))});
+async function editProfile(){
+  const me=mem.get('users/'+S.uid)||{};
+  openModal(`<h2>${esc(t('El teu perfil'))}</h2>
+    <label class="field"><span>${esc(t('El teu nom'))}</span><input class="in" id="pf-name" maxlength="40" value="${esc(me.name||'')}"></label>
+    <label class="field"><span>${esc(t("Raça de l'àlies"))}</span><select class="in" id="pf-race">
+      <option value="home" ${me.race==='home'?'selected':''}>${esc(t('Home'))}</option>
+      <option value="elf" ${me.race==='elf'?'selected':''}>${esc(t('Elf'))}</option>
+      <option value="nan" ${me.race==='nan'?'selected':''}>${esc(t('Nan'))}</option>
+      <option value="hobbit" ${me.race==='hobbit'?'selected':''}>${esc(t('Hòbbit'))}</option>
+    </select></label>
+    <p><b>${esc(t('Àlies'))}:</b> ${esc(me.alias||'—')}</p>
+    <p class="small" id="pf-err" style="color:var(--blood)"></p>
+    <div class="foot"><button class="btn" id="pf-reroll">${esc(t('🎲 Un altre àlies'))}</button><button class="btn pri" id="pf-save">${esc(t('Guardar'))}</button></div>`,(m,close)=>{
+      async function save(reroll){
+        const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:S.token,name:$('#pf-name',m).value,race:$('#pf-race',m).value,reroll})});
+        const d=await r.json();
+        if(!r.ok){$('#pf-err',m).textContent=t(d.error||"No s'ha pogut guardar.");return}
+        if(d.user)mem.set('users/'+S.uid,d.user);
+        renderHeader();close();toast(t(reroll?'Àlies nou assignat.':'Perfil actualitzat.'));
+      }
+      $('#pf-save',m).onclick=()=>save(false);
+      $('#pf-reroll',m).onclick=()=>save(true);
+  });
+}
+
+$('#who').addEventListener('click',e=>{if(e.target.closest('#profile')){editProfile();return}if(e.target.id==='logout')armed(e.target,()=>{lsSet('cm-token','');location.reload()},t('Segur? Prem de nou'))});
 
 /* ================= connection ================= */
 let lanFirst=null,lanPoll=null,lanErrs=[],lanBannerT=null,lanLast=Date.now();
@@ -750,10 +775,11 @@ function joinRender(){
   const prev=$('#j-name')?.value||'';
   $('#main').innerHTML=`<form id="join" class="panel" style="max-width:440px;display:flex;flex-direction:column;gap:14px"><h2>${esc(t('Uneix-te a la Comunitat'))}</h2>
     <label class="field"><span>${esc(t('El teu nom'))}</span><input class="in" id="j-name" required maxlength="40" autocomplete="nickname"></label>
+    <label class="field"><span>${esc(t("De quina raça vols l'àlies?"))}</span><select class="in" id="j-race"><option value="home">${esc(t("Home"))}</option><option value="elf">${esc(t("Elf"))}</option><option value="nan">${esc(t("Nan"))}</option><option value="hobbit">${esc(t("Hòbbit"))}</option></select></label>
     <p class="small" id="j-err" style="margin:0;color:var(--blood)"></p><button class="btn pri" type="submit">${esc(t('Entrar'))}</button></form>`;
   $('#j-name').value=prev;$('#j-name').focus();
   $('#join').addEventListener('submit',async e=>{e.preventDefault();$('#j-err').textContent='';
-    try{const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#j-name').value})});const d=await r.json();
+    try{const r=await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#j-name').value,race:$('#j-race').value})});const d=await r.json();
       if(!r.ok){$('#j-err').textContent=t(d.error||"No s'ha pogut entrar.");return}lsSet('cm-token',d.token);$('.tabs').hidden=false;joinResolve(d)}
     catch(_){$('#j-err').textContent=t('No es pot contactar amb el servidor.')}});
 }

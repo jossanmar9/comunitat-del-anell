@@ -17,7 +17,7 @@
 # Projecte de fans no oficial, sense relació amb Z-Man Games, Asmodee ni
 # Middle-earth Enterprises.
 """
-La Comunitat (versió 2.4.2) — servidor local per a portar partides de
+La Comunitat (versió 2.5.0) — servidor local per a portar partides de
 «El Señor de los Anillos: El Destino de la Comunidad».
 
 Tot va en aquest únic fitxer: el servidor, la pàgina web i els mapes d'exemple.
@@ -59,7 +59,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.4.2"
+VERSION = "2.5.0"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
@@ -90,6 +90,42 @@ BACKUP_KEEP = 15            # còpies que es guarden de cada partida
 BACKUP_EVERY = 30 * 60      # mentre es juga, una còpia cada mitja hora (si hi ha hagut canvis)
 BACKUP_RE = re.compile(r"\d{8}-\d{6}(?:-\d+)?-[a-z]+")
 MAX_IMPORT = 5 * 1024 * 1024
+
+RACE_ALIASES = {
+    "home": (["Aldren","Berenor","Calendir","Daren","Eldric","Faren","Galdor","Haldren","Ivoran","Meren","Rodan","Turen"],
+             ["Valclar","Riuargent","Montverd","Ferroclar","Ventdelnord","Guardabosc","Pedrablanca","Camillarg","Llumalta","Rocafreda"]),
+    "elf": (["Aelion","Caelir","Elarin","Faelorn","Ithariel","Laerion","Naeril","Orelion","Saelir","Thaelion","Vaeril","Ylendir"],
+            ["Fullaclara","Llunaargent","Boscestel","Brisaverda","Llumdelriu","Cantdelbosc","Estelblau","Rosadafina","Celargent","Fulladormida"]),
+    "nan": (["Borin","Doren","Fargrim","Gorin","Haldin","Korin","Narin","Ordin","Rurik","Thoren","Vardin","Zorin"],
+            ["Barbaferma","Rocaforta","Martellgris","Ferroroig","Pedrafonda","Escutdur","Picdacer","Muntanyaalta","Forjaforta","Barbagrisa"]),
+    "hobbit": (["Adelard","Bungo","Codo","Doderic","Everard","Fosco","Milo","Nilo","Odo","Ponto","Rollo","Tobold"],
+               ["Peuverd","Bonacasa","Tossalbaix","Campsdolcos","Rierol","Fullatendra","Camicurt","Pomaroja","Pratverd","Bonataula"]),
+}
+
+def norm_player_name(value):
+    value = " ".join(str(value or "").strip().split())
+    return unicodedata.normalize("NFKD", value).encode("ascii","ignore").decode().casefold()
+
+def user_record(value):
+    if isinstance(value, dict):
+        return {"name": str(value.get("name") or ""), "alias": str(value.get("alias") or ""),
+                "race": str(value.get("race") or "home")}
+    return {"name": str(value or ""), "alias": "", "race": "home"}
+
+def alias_in_use(alias, except_uid=None):
+    wanted = norm_player_name(alias)
+    return any(uid != except_uid and norm_player_name(user_record(raw)["alias"]) == wanted
+               for uid, raw in state["users"].items())
+
+def generate_alias(race, except_uid=None):
+    race = race if race in RACE_ALIASES else "home"
+    names, surnames = RACE_ALIASES[race]
+    for _ in range(300):
+        alias = f"{secrets.choice(names)} {secrets.choice(surnames)}"
+        if not alias_in_use(alias, except_uid):
+            return alias
+    return f"{secrets.choice(names)} {secrets.token_hex(2).upper()}"
+
 
 lock = threading.RLock()
 state = {
@@ -487,8 +523,8 @@ def seg(path):
 def get_doc(path):
     s = seg(path)
     if s[0] == "users" and len(s) == 2:
-        n = state["users"].get(s[1])
-        return {"name": n} if n is not None else None
+        raw = state["users"].get(s[1])
+        return user_record(raw) if raw is not None else None
     return state["docs"].get(path)
 
 
@@ -516,8 +552,8 @@ class Client:
 def snapshot():
     with lock:
         out = dict(state["docs"])
-        for uid, name in state["users"].items():
-            out["users/" + uid] = {"name": name}
+        for uid, raw in state["users"].items():
+            out["users/" + uid] = user_record(raw)
         return out
 
 
@@ -758,24 +794,39 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(200, result)
 
     def _join(self, body):
-        name = str(body.get("name") or "").strip()[:40]
+        name = " ".join(str(body.get("name") or "").strip().split())[:40]
         old_tok = str(body.get("token") or "")
+        race = str(body.get("race") or "").lower()
+        reroll = bool(body.get("reroll"))
         with lock:
             sess = state["sessions"].get(old_tok)
-            if sess:
-                tok = old_tok
-            else:
+            existing = user_record(state["users"].get(sess["uid"])) if sess else None
+            if not sess:
                 if not name:
                     return self._json(400, {"error": "Escriu el teu nom."})
+                if race not in RACE_ALIASES:
+                    race = "home"
                 tok = secrets.token_urlsafe(24)
                 sess = {"uid": "u" + secrets.token_hex(6)}
                 state["sessions"][tok] = sess
-            if name:
-                state["users"][sess["uid"]] = name
+            else:
+                tok = old_tok
+                if not name: name = existing["name"]
+                if race not in RACE_ALIASES:
+                    race = existing["race"] if existing["race"] in RACE_ALIASES else "home"
+            wanted = norm_player_name(name)
+            for uid, raw in state["users"].items():
+                if uid != sess["uid"] and norm_player_name(user_record(raw)["name"]) == wanted:
+                    return self._json(409, {"error": "Este nom ja està en ús. Tria'n un altre."})
+            alias = existing["alias"] if existing else ""
+            old_race = existing["race"] if existing else race
+            if not alias or reroll or race != old_race:
+                alias = generate_alias(race, sess["uid"])
+            state["users"][sess["uid"]] = {"name": name, "alias": alias, "race": race}
             dirty.set()
-        if name:
-            broadcast(["users/" + sess["uid"]])
-        return self._json(200, {"token": tok, "uid": sess["uid"], "dm": True})
+            user = user_record(state["users"][sess["uid"]])
+        broadcast(["users/" + sess["uid"]])
+        return self._json(200, {"token": tok, "uid": sess["uid"], "dm": True, "user": user})
 
     def _write(self, body, sess):
         path, mode, data = body.get("path"), body.get("mode"), body.get("data")
