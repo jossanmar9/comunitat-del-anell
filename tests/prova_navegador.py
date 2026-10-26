@@ -140,6 +140,12 @@ class Navegador(unittest.TestCase):
                     page.on("pageerror", lambda error: errors.append(str(error)))
                     for path in ("/", "/es/"):
                         page.goto(f"http://127.0.0.1:{port}{path}")
+                        expect(page.locator(".release-news")).to_have_count(0)
+                        changelog = page.locator('a[href$="/CHANGELOG.md"]')
+                        expect(changelog).to_have_count(1)
+                        expect(changelog).to_have_attribute("target", "_blank")
+                        expect(changelog).to_have_attribute("rel", "noopener noreferrer")
+                        self.assertTrue(page.locator('a[href]:not([href^="#"])').evaluate_all("links => links.every(a => a.target === '_blank' && a.rel.includes('noopener'))"))
                         buttons = page.locator(".miniatures button")
                         count = buttons.count()
                         self.assertGreater(count, 10)

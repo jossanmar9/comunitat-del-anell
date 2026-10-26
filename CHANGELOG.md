@@ -11,7 +11,7 @@ El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions public
 - Errors d’escriptura amb rollback de memòria; dades corruptes preservades en lloc de sobreescriure-les amb un estat buit.
 - Persistència i identitats separades en mòduls, incrustats en el programa distribuït.
 - Proves de disc ple, transacció interrompuda, corrupció, migració, còpies, sessions i recuperació.
-- Web amb novetats i captures actuals, galeria amb fletxes, teclat, miniatures i gestos mòbils en VAL/CAS.
+- Web amb enllaç al CHANGELOG i captures actuals, galeria amb fletxes, teclat, miniatures i gestos mòbils en VAL/CAS. Enllaços a pàgines, documents i descàrregues en pestanya nova.
 
 ## [2.6.0] - 2026-10-27
 

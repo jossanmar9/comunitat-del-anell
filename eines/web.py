@@ -46,11 +46,6 @@ T = {
         "nav_que": "Què fa", "nav_veure": "Captures", "nav_com": "Com començar", "nav_codi": "Codi",
         "que_titol": "Què porta La Comunitat",
         "que_intro": "Les cartes, les tropes i els natzguls continuen al tauler. L'app s'encarrega dels comptes que s'obliden.",
-        "news": [
-            "Guardat conjunt en SQLite de partida activa, jugadors, sessions i historial, amb recuperació de les còpies JSON.",
-            "Inici sense partida, alta automàtica dels participants, àlies per raça i tipus i accés mòbil amb QR i PIN.",
-            "Recuperació més robusta davant de talls i errors de guardat.",
-        ],
         "moduls": [
             ("Pistes", "Esperança, amenaça, cartes de la baralla, cels enfosquits, objectius i ronda, sempre a la vista i amb desfer."),
             ("El torn pas a pas", "Les 4 + 1 accions, robar 2 cartes i resoldre les cartes d'Ombra que toquen, en l'ordre del manual."),
@@ -63,7 +58,7 @@ T = {
         ],
         "veure_titol": "Així es veu",
         "veure_intro": "Captures reals: inici, participants, sala, entrada mòbil i partida. Usa les fletxes o les miniatures.",
-        "anterior": "Captura anterior", "seguent": "Captura següent", "novetats": "Novetats",
+        "anterior": "Captura anterior", "seguent": "Captura següent", "canvis": "Historial de canvis",
         "captures": {
             "00-inici-v270": "Inici sense partida: crear-ne una o obrir un guardat.",
             "03-preparacio-v270": "Participants, races i tipus d’àlies amb detecció i correcció manual.",
@@ -133,11 +128,6 @@ T = {
         "nav_que": "Qué hace", "nav_veure": "Capturas", "nav_com": "Cómo empezar", "nav_codi": "Código",
         "que_titol": "Qué lleva La Comunidad",
         "que_intro": "Las cartas, las Tropas y los Nazgûl siguen en el tablero. La app se encarga de las cuentas que se olvidan.",
-        "news": [
-            "Guardado conjunto en SQLite de partida activa, jugadores, sesiones e historial, con recuperación de las copias JSON.",
-            "Inicio sin partida, alta automática de participantes, alias por raza y tipo y acceso móvil con QR y PIN.",
-            "Recuperación más robusta ante cortes y errores de guardado.",
-        ],
         "moduls": [
             ("Marcadores", "Esperanza, Amenaza, cartas del mazo, cielos oscurecidos, objetivos y ronda, siempre a la vista y con deshacer."),
             ("El turno paso a paso", "Las 4 + 1 acciones, robar 2 cartas y resolver las cartas de Sombra que tocan, en el orden del reglamento."),
@@ -150,7 +140,7 @@ T = {
         ],
         "veure_titol": "Así se ve",
         "veure_intro": "Capturas reales: inicio, participantes, sala, entrada móvil y partida. Usa las flechas o las miniaturas.",
-        "anterior": "Captura anterior", "seguent": "Captura siguiente", "novetats": "Novedades",
+        "anterior": "Captura anterior", "seguent": "Captura siguiente", "canvis": "Historial de cambios",
         "captures": {
             "00-inici-v270": "Inicio sin partida: crear una o abrir una guardada.",
             "03-preparacio-v270": "Participantes, razas y tipo de alias con detección y corrección manual.",
@@ -239,7 +229,7 @@ def pagina(t, l, base, v):
         miniatures += (f'<li><button type="button" data-src="{e(src)}" data-peu="{e(t["captures"][c])}"{actual} '
                        f'aria-label="{e(t["captures"][c])}"><img src="{e(src)}" alt="" loading="lazy"></button></li>')
     any_ = datetime.date.today().year
-    return f"""<!doctype html>
+    page = f"""<!doctype html>
 <html lang="{t['lang']}">
 <head>
 <meta charset="utf-8">
@@ -278,7 +268,7 @@ def pagina(t, l, base, v):
       <a class="boto" data-so="win" href="{descarrega}">{ICONA_WIN}{t['baixa_win']}</a>
       <a class="boto" data-so="linux" href="{descarrega}">{ICONA_LINUX}{t['baixa_linux']}</a>
     </div>
-    <p class="versio">{t['versio'].format(v=v)} · <a href="{base}prova/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a></p>
+    <p class="versio">{t['versio'].format(v=v)} · <a href="{base}prova/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a> · <a href="{REPO}/blob/main/CHANGELOG.md">{t['canvis']}</a></p>
   </div>
   <figure class="hero-captura">
     <img src="{base}img/{l}/{capture_filename(primera)}" alt="{e(t['captures'][primera])}" width="1600" height="1012">
@@ -292,8 +282,6 @@ def pagina(t, l, base, v):
   </div>
   <dl class="moduls">{moduls}</dl>
 </section>
-
-<section class="seccio release-news"><h2>{t['novetats']} · {v}</h2><ul class="punts">{"".join("<li>" + e(item) + "</li>" for item in t["news"])}</ul></section>
 
 <section id="captures" class="seccio galeria" tabindex="0" aria-label="{t['veure_titol']}">
   <div class="cap">
@@ -395,6 +383,14 @@ def pagina(t, l, base, v):
 </body>
 </html>
 """
+    # Els salts a seccions són navegació de la pàgina; la resta obri una pestanya.
+    def new_tab(match):
+        attributes = match.group(1)
+        href = re.search(r'\bhref="([^"]*)"', attributes)
+        if not href or href.group(1).startswith("#"):
+            return match.group(0)
+        return '<a' + attributes + ' target="_blank" rel="noopener noreferrer">'
+    return re.sub(r'<a\b([^>]*)>', new_tab, page)
 
 
 def main():
