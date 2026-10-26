@@ -6,6 +6,7 @@ Cal Playwright amb Chromium (pip install playwright). Les dades d'exemple van a 
 Ús:  python3 build.py && python3 eines/captures.py
 """
 import shutil
+import os
 import socket
 import subprocess
 import sys
@@ -232,7 +233,9 @@ def jpeg(carpeta):
 
 def main():
     with sync_playwright() as p:
-        navegador = p.chromium.launch()
+        # En entorns on Playwright no porta Chromium propi, reutilitza el navegador del sistema.
+        chromium = os.environ.get("CHROMIUM") or shutil.which("chromium") or shutil.which("chromium-browser")
+        navegador = p.chromium.launch(executable_path=chromium) if chromium else p.chromium.launch()
         for lang, nom in (("val", "ca"), ("es", "es")):
             carpeta = ROOT / "docs" / "imatges" / nom
             captures(lang, carpeta, navegador)
