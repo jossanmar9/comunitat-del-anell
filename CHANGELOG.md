@@ -4,6 +4,15 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR` i etiqueta les versions publicades com `vX.Y`.
 
+## [2.4] - 2026-10-26
+
+### Canviat
+- Renovació visual completa de la interfície de l’app, amb una capçalera més compacta, navegació en forma de selector, marcadors més clars i una jerarquia visual més marcada.
+- Panells, mapa, torn, botons, modals, personatges i objectius adopten un estil més coherent amb la identitat de La Comunitat.
+- Millora de l’adaptació a pantalles menudes i de la distribució de la barra lateral del torn.
+- Renovació de la web pública amb una portada més visual, millor presentació de les captures, targetes de característiques i crides a l’acció més clares.
+- Es manté l’estètica de pergamí i Terra Mitjana, però amb un acabat més net i modern.
+
 ## [2.3] - 2026-10-26
 
 ### Afegit
