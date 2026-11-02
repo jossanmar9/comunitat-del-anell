@@ -115,6 +115,8 @@ En el ordenador, cada partida se guarda en `partides/<nombre>.json`, sus copias 
 
 En Android y en el navegador, la app guarda los mismos archivos dentro de ella. Si desinstalas la app o borras los datos del navegador, se pierden: **exporta** las partidas que quieras conservar. Exportar e importar es también la manera de pasar una partida de un dispositivo a otro.
 
+La app no recoge ningún dato personal: ver la [política de privacidad](https://jossanmar9.github.io/comunitat-del-anell/es/privacidad.html).
+
 La Comunidad hace una copia de cada partida al abrirla y cada media hora mientras se juega, y guarda las 15 últimas; se restauran desde **Partidas → Copias**.
 
 ## Documentación

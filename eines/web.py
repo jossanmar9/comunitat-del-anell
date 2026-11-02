@@ -194,6 +194,138 @@ T = {
     },
 }
 
+# La política de privacitat (per a la web, l'app web i l'APK): l'app no recull res.
+PRIV = {
+    "ca": {
+        "fitxer": "privacitat.html", "titol": "Privacitat", "tornar": "Tornar a l'inici",
+        "data": "Darrera actualització: {d}.",
+        "intro": "La Comunitat és un programa lliure i gratuït per a portar les partides d'un joc de taula. "
+                 "Aquesta pàgina explica quines dades fa servir. En resum: <b>cap</b>.",
+        "seccions": [
+            ("Què recull l'app", [
+                "La Comunitat no recull, no envia i no ven cap dada personal. No té comptes d'usuari, publicitat, "
+                "estadístiques d'ús, galetes de seguiment ni informes d'errors automàtics.",
+                "No demana permisos per a la ubicació, la càmera, el micròfon, els contactes ni cap altra dada del "
+                "telèfon.",
+            ]),
+            ("On es guarden les partides", [
+                "Tot el que escrius a l'app (el nom de la partida, els noms dels participants, l'estat del joc, "
+                "l'historial, les còpies de seguretat i el mapa que tries) es guarda només en el teu aparell:",
+                "<b>A Windows i Linux</b>, en fitxers dins de la carpeta de dades del programa. El programa només "
+                "accepta connexions del mateix ordinador.",
+                "<b>A Android i a l'app web</b>, dins de l'emmagatzematge de l'app o del navegador. Si desinstal·les "
+                "l'app o esborres les dades del navegador, s'esborren.",
+                "Ningú més hi té accés, tampoc qui ha fet el programa.",
+            ]),
+            ("Exportar i compartir", [
+                "Quan exportes una partida, es crea un fitxer i tu tries on va (Baixades, Fitxers, Drive, un missatge…). "
+                "A partir d'eixe moment, el tracta el servei que hages triat, amb les seues condicions.",
+            ]),
+            ("Connexió a Internet", [
+                "L'app funciona sense Internet. Les lletres, les imatges i el mapa d'exemple van dins de l'app i no es "
+                "baixen de cap servidor de fora.",
+                "L'app web i aquesta pàgina s'allotgen a GitHub Pages. Quan les obris, GitHub pot registrar dades "
+                "tècniques de la connexió, com l'adreça IP, segons la "
+                "<a href=\"https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement\">declaració de privacitat de GitHub</a>. "
+                "Els fitxers de l'app es baixen de GitHub de la mateixa manera.",
+            ]),
+            ("Menors", [
+                "Com que l'app no recull dades, no recull tampoc dades de menors.",
+            ]),
+            ("Canvis i contacte", [
+                "Si algun dia canvia el que fa l'app amb les dades, s'actualitzarà aquesta pàgina i el "
+                "<a href=\"" + REPO + "/blob/main/CHANGELOG.md\">registre de canvis</a>.",
+                "Per a qualsevol dubte, obri una <a href=\"" + REPO + "/issues\">incidència a GitHub</a>.",
+            ]),
+        ],
+    },
+    "es": {
+        "fitxer": "privacidad.html", "titol": "Privacidad", "tornar": "Volver al inicio",
+        "data": "Última actualización: {d}.",
+        "intro": "La Comunidad es un programa libre y gratuito para llevar las partidas de un juego de mesa. "
+                 "Esta página explica qué datos usa. En resumen: <b>ninguno</b>.",
+        "seccions": [
+            ("Qué recoge la app", [
+                "La Comunidad no recoge, no envía y no vende ningún dato personal. No tiene cuentas de usuario, "
+                "publicidad, estadísticas de uso, cookies de seguimiento ni informes de errores automáticos.",
+                "No pide permisos para la ubicación, la cámara, el micrófono, los contactos ni ningún otro dato del "
+                "teléfono.",
+            ]),
+            ("Dónde se guardan las partidas", [
+                "Todo lo que escribes en la app (el nombre de la partida, los nombres de los participantes, el estado "
+                "del juego, el historial, las copias de seguridad y el mapa que eliges) se guarda solo en tu dispositivo:",
+                "<b>En Windows y Linux</b>, en archivos dentro de la carpeta de datos del programa. El programa solo "
+                "acepta conexiones del mismo ordenador.",
+                "<b>En Android y en la app web</b>, dentro del almacenamiento de la app o del navegador. Si desinstalas "
+                "la app o borras los datos del navegador, se borran.",
+                "Nadie más tiene acceso, tampoco quien ha hecho el programa.",
+            ]),
+            ("Exportar y compartir", [
+                "Cuando exportas una partida, se crea un archivo y tú eliges adónde va (Descargas, Archivos, Drive, un "
+                "mensaje…). A partir de ese momento, lo trata el servicio que hayas elegido, con sus condiciones.",
+            ]),
+            ("Conexión a Internet", [
+                "La app funciona sin Internet. Las letras, las imágenes y el mapa de ejemplo van dentro de la app y no "
+                "se descargan de ningún servidor de fuera.",
+                "La app web y esta página se alojan en GitHub Pages. Cuando las abres, GitHub puede registrar datos "
+                "técnicos de la conexión, como la dirección IP, según la "
+                "<a href=\"https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement\">declaración de privacidad de GitHub</a>. "
+                "Los archivos de la app se descargan de GitHub de la misma manera.",
+            ]),
+            ("Menores", [
+                "Como la app no recoge datos, tampoco recoge datos de menores.",
+            ]),
+            ("Cambios y contacto", [
+                "Si algún día cambia lo que hace la app con los datos, se actualizará esta página y el "
+                "<a href=\"" + REPO + "/blob/main/CHANGELOG.md\">registro de cambios</a> (en valenciano).",
+                "Para cualquier duda, abre una <a href=\"" + REPO + "/issues\">incidencia en GitHub</a>.",
+            ]),
+        ],
+    },
+}
+
+
+def privacitat(t, l, base, v):
+    p = PRIV[l]
+    cos = "".join(f"<h2>{e(titol)}</h2>" + "".join(f"<p>{par}</p>" for par in pars) for titol, pars in p["seccions"])
+    d = datetime.date.today()
+    data = f"{d.day}/{d.month}/{d.year}"
+    altre = "es/privacidad.html" if l == "ca" else "../privacitat.html"
+    return f"""<!doctype html>
+<html lang="{t['lang']}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{e(p['titol'])} · {e(t['nom'])}</title>
+<meta name="description" content="{e(p['titol'])}: {e(t['nom'])} no recull dades personals.">
+<link rel="icon" href="{base}img/icona.png">
+<link rel="alternate" hreflang="{t['altre']}" href="{altre}">
+<link rel="stylesheet" href="{base}fonts/fonts.css">
+<link rel="stylesheet" href="{base}estil.css">
+<script>try{{var t=localStorage.getItem('cm-web-tema');if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
+</head>
+<body>
+<header class="barra">
+  <a class="marca" href="./"><img src="{base}img/icona.png" alt="" width="40" height="40"><span>{e(t['nom'])}</span></a>
+  <nav aria-label="{e(p['titol'])}">
+    <a href="./">{e(p['tornar'])}</a>
+    <a class="idioma" href="{altre}" hreflang="{t['altre']}" lang="{t['altre']}">{t['altre_nom']}</a>
+  </nav>
+</header>
+<main class="seccio legal">
+  <h1>{e(p['titol'])}</h1>
+  <p class="entrada">{p['intro']}</p>
+  {cos}
+  <p class="nota">{e(p['data'].format(d=data))} · {e(t['nom'])} {e(v)}</p>
+</main>
+<footer class="peu">
+  <div class="orla" aria-hidden="true"><span>✦</span></div>
+  <p class="avis">{t['avis']}</p>
+</footer>
+</body>
+</html>
+"""
+
 ICONA_WIN = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10 4.5v7H3zm8-1.2L21 3v8.5H11zM3 12.5h7v7L3 18.5zm8 0h10V21l-10-1.4z"/></svg>')
 ICONA_ANDROID = ('<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" '
                  'stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V11a7 7 0 0 1 14 0v6z"/>'
@@ -335,7 +467,7 @@ def pagina(t, l, base, v):
 
 <footer class="peu">
   <div class="orla" aria-hidden="true"><span>✦</span></div>
-  <p><img src="{base}img/icona.png" alt="" width="28" height="28"> <span>{e(t['nom'])}, {any_}.</span> <a href="{REPO}/blob/main/LICENSE">GPL-3.0-or-later</a></p>
+  <p><img src="{base}img/icona.png" alt="" width="28" height="28"> <span>{e(t['nom'])}, {any_}.</span> <a href="{REPO}/blob/main/LICENSE">GPL-3.0-or-later</a> · <a href="{PRIV[l]['fitxer']}">{PRIV[l]['titol']}</a></p>
   <p class="avis">{t['avis']}</p>
 </footer>
 
@@ -418,6 +550,8 @@ def main():
     v = versio()
     (eixida / "index.html").write_text(pagina(T["ca"], "ca", "", v), encoding="utf-8")
     (eixida / "es" / "index.html").write_text(pagina(T["es"], "es", "../", v), encoding="utf-8")
+    (eixida / "privacitat.html").write_text(privacitat(T["ca"], "ca", "", v), encoding="utf-8")
+    (eixida / "es" / "privacidad.html").write_text(privacitat(T["es"], "es", "../", v), encoding="utf-8")
     # L'app web (la mateixa que va dins de l'APK), a app/; prova/ era l'adreça de la v2
     build.web(eixida / "app")
     (eixida / "prova").mkdir(exist_ok=True)

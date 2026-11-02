@@ -34,3 +34,6 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.modul,.boto,.miniatures button img{transition:none}}
 
 .gallery-controls{display:flex;align-items:center;justify-content:center;gap:1.3rem;margin-top:1rem}.gallery-controls button{width:48px;height:48px;border:1px solid var(--gold);border-radius:50%;background:var(--forest-2);color:var(--gold-2);font-size:1.5rem;cursor:pointer}.gallery-controls button:hover{background:var(--forest)}.gallery-controls button:focus-visible,.galeria:focus-visible{outline:3px solid var(--gold-2);outline-offset:4px}#gallery-count{min-width:5ch;text-align:center;color:var(--white);font-variant-numeric:tabular-nums}.principal img{touch-action:pan-y}
+/* Pàgina de privacitat */
+.legal{max-width:46rem}.legal h1{margin:0 0 1rem;font:400 clamp(2.6rem,5vw,4rem)/1 var(--display)}.legal h2{margin:2.4rem 0 .6rem;font-size:clamp(1.6rem,2.6vw,2.1rem)!important}.legal h2::before{display:none!important}.legal p{line-height:1.65;font-size:1.08rem}.legal .entrada{font-size:1.22rem;color:inherit;opacity:1}.legal .nota{margin-top:2.5rem;color:var(--muted);font-size:.95rem}
+@media(max-width:560px){body:has(.legal) .marca span{display:none}}
