@@ -15,7 +15,7 @@ Todo se descarga de la página de [descargas](https://github.com/jossanmar9/comu
 
 Hay dos versiones; elige una.
 
-**Instalador (recomendado):** `LaComunitat-X.Y-installador.exe`
+**Instalador (recomendado):** `LaComunitat-installador.exe`
 
 1. Descárgalo y ábrelo. No pide permisos de administrador.
 2. Windows SmartScreen puede avisar de que es un programa de un editor desconocido, porque no está firmado digitalmente. Pulsa **Más información → Ejecutar de todas formas**.
@@ -23,7 +23,7 @@ Hay dos versiones; elige una.
 
 La Comunidad se abre en una ventana propia gracias a **WebView2**, el componente de Microsoft que traen Windows 11 y Windows 10 actualizado. Si en un ordenador no está, se abre la app en el navegador; para tener la ventana, instala «Microsoft Edge WebView2 Runtime» desde la web de Microsoft.
 
-**Portable:** `LaComunitat-X.Y-windows-portable.zip`
+**Portable:** `LaComunitat-windows-portable.zip`
 
 1. Descomprímelo donde quieras, también en un pendrive.
 2. Abre `LaComunitat.exe` desde dentro de la carpeta.
@@ -38,11 +38,11 @@ En la versión portable, las partidas se guardan dentro de la misma carpeta, as�
 
 ### Ubuntu, Debian, Linux Mint y similares: el paquete .deb
 
-1. Descarga `comunitat-del-anell_X.Y_all.deb`.
+1. Descarga `comunitat-del-anell.deb`.
 2. Haz doble clic para abrirlo con el instalador de software y pulsa **Instalar**. Desde el terminal también se puede hacer:
 
 ```
-sudo apt install ./comunitat-del-anell_X.Y_all.deb
+sudo apt install ./comunitat-del-anell.deb
 ```
 
 3. Abre **La Comunidad** desde el menú de aplicaciones (en la sección de juegos).
@@ -62,11 +62,11 @@ El paquete instala también lo que necesita (Python 3, GTK y WebKitGTK, para la 
 | Arch, Manjaro | `sudo pacman -S python-gobject webkit2gtk-4.1` | `sudo pacman -S tk` |
 | openSUSE | `sudo zypper install python3-gobject typelib-1_0-WebKit2-4_1` | `sudo zypper install python3-tk` |
 
-2. Descarga `LaComunitat-X.Y-linux.tar.gz` y descomprímelo donde quieras:
+2. Descarga `LaComunitat-linux.tar.gz` y descomprímelo donde quieras:
 
 ```
-tar xzf LaComunitat-X.Y-linux.tar.gz
-cd LaComunitat-X.Y-linux
+tar xzf LaComunitat-linux.tar.gz
+cd LaComunitat-linux
 ./comunitat-del-anell.sh
 ```
 
@@ -76,7 +76,7 @@ Como en la versión portable de Windows, las partidas se guardan dentro de esa c
 
 ## Android
 
-**El APK:** `LaComunitat-X.Y.Z-android.apk`
+**El APK:** `LaComunitat-android.apk`
 
 1. Descárgalo desde el móvil o la tableta (o pásaselo desde el ordenador).
 2. Ábrelo. Android avisa de que es una app de fuera de Google Play: permite que el navegador o el gestor de archivos instalen apps («Instalar aplicaciones desconocidas») y vuelve a intentarlo.

@@ -71,11 +71,11 @@ Baixa l'[última versió](../../releases/latest):
 
 | Sistema | Fitxer |
 |---|---|
-| **Windows** (recomanat) | `LaComunitat-X.Y.Z-installador.exe`. No demana permisos d'administrador; crea l'accés al menú Inici i, si vols, a l'escriptori. |
-| **Windows** portable | `LaComunitat-X.Y.Z-windows-portable.zip`. Descomprimeix-lo on vulgues (també en una memòria USB) i obri `LaComunitat.exe`. |
-| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y.Z_all.deb`. Doble clic per a instal·lar-lo, o `sudo apt install ./comunitat-del-anell_X.Y.Z_all.deb`. |
-| **Altres Linux** | `LaComunitat-X.Y.Z-linux.tar.gz`. Descomprimeix-lo i obri `comunitat-del-anell.sh`; `./installa.sh` l'afig al menú. Cal Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. |
-| **Android** | `LaComunitat-X.Y.Z-android.apk`. Obri'l des del mòbil i permet «Instal·lar apps desconegudes» si t'ho demana. |
+| **Windows** (recomanat) | `LaComunitat-installador.exe`. No demana permisos d'administrador; crea l'accés al menú Inici i, si vols, a l'escriptori. |
+| **Windows** portable | `LaComunitat-windows-portable.zip`. Descomprimeix-lo on vulgues (també en una memòria USB) i obri `LaComunitat.exe`. |
+| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell.deb`. Doble clic per a instal·lar-lo, o `sudo apt install ./comunitat-del-anell.deb`. |
+| **Altres Linux** | `LaComunitat-linux.tar.gz`. Descomprimeix-lo i obri `comunitat-del-anell.sh`; `./installa.sh` l'afig al menú. Cal Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. |
+| **Android** | `LaComunitat-android.apk`. Obri'l des del mòbil i permet «Instal·lar apps desconegudes» si t'ho demana. |
 | **Sense instal·lar res** | L'[app web](https://jossanmar9.github.io/comunitat-del-anell/app/): des del menú del navegador la pots afegir a la pantalla d'inici, i funciona sense connexió. També a l'iPhone i a l'iPad. |
 
 El programa de Windows no està signat digitalment: SmartScreen pot avisar. Prem **Més informació → Executa igualment**.

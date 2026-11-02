@@ -138,7 +138,7 @@ jobs:
 
       - name: Crea el zip portable
         shell: pwsh
-        run: Compress-Archive -Path dist\portable\LaComunitat -DestinationPath "dist\LaComunitat-$env:VERSIO-windows-portable.zip"
+        run: Compress-Archive -Path dist\portable\LaComunitat -DestinationPath "dist\LaComunitat-windows-portable.zip"
 
       - name: Crea l'instal·lador
         shell: pwsh
@@ -178,7 +178,7 @@ jobs:
       - name: Prova el .deb
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q ./dist/comunitat-del-anell_${VERSIO}_all.deb
+          sudo apt-get install -y -q ./dist/comunitat-del-anell.deb
           comunitat-del-anell --sense-finestra --sense-navegador --port 8799 & PID=$!
           sleep 3
           curl -fsS http://127.0.0.1:8799/api/hola
@@ -198,8 +198,8 @@ jobs:
 
       - name: Prova el .tar.gz
         run: |
-          mkdir prova && tar xzf dist/LaComunitat-${VERSIO}-linux.tar.gz -C prova
-          cd prova/LaComunitat-${VERSIO}-linux
+          mkdir prova && tar xzf dist/LaComunitat-linux.tar.gz -C prova
+          cd prova/LaComunitat-linux
           ./comunitat-del-anell.sh --sense-finestra --sense-navegador --port 8798 & PID=$!
           sleep 3
           curl -fsS http://127.0.0.1:8798/api/hola
@@ -257,16 +257,16 @@ jobs:
             "$BT/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/alineat.apk"
             "$BT/apksigner" sign --ks "$RUNNER_TEMP/clau.p12" --ks-type PKCS12 --ks-key-alias comunitat \
               --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEYSTORE_PASSWORD \
-              --out "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android.apk" "$RUNNER_TEMP/alineat.apk"
+              --out "$GITHUB_WORKSPACE/LaComunitat-android.apk" "$RUNNER_TEMP/alineat.apk"
             rm -f "$RUNNER_TEMP/clau.p12"
-            "$BT/apksigner" verify --print-certs "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android.apk"
+            "$BT/apksigner" verify --print-certs "$GITHUB_WORKSPACE/LaComunitat-android.apk"
           elif [ "${{ github.ref_type }}" = "tag" ]; then
             echo "::error::Falten els secrets ANDROID_KEYSTORE i ANDROID_KEYSTORE_PASSWORD (vegeu paquets/android/README.md)."
             exit 1
           else
             echo "::warning::Sense la clau de signatura: es fa un APK de prova (debug) que no serveix per a actualitzar el de veritat."
             ./gradlew --no-daemon assembleDebug
-            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android-prova.apk"
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/LaComunitat-android-prova.apk"
           fi
           ls -l "$GITHUB_WORKSPACE"/*.apk
 
@@ -295,11 +295,11 @@ jobs:
 
             | Sistema | Fitxer |
             |---|---|
-            | Windows 10/11 (recomanat) | `LaComunitat-${{ needs.proves.outputs.versio }}-installador.exe` — no demana permisos d'administrador |
-            | Windows portable | `LaComunitat-${{ needs.proves.outputs.versio }}-windows-portable.zip` — descomprimeix-lo i obri `LaComunitat.exe` |
-            | Ubuntu, Debian, Linux Mint… | `comunitat-del-anell_${{ needs.proves.outputs.versio }}_all.deb` |
-            | Altres Linux | `LaComunitat-${{ needs.proves.outputs.versio }}-linux.tar.gz` — descomprimeix-lo i obri `comunitat-del-anell.sh` |
-            | Android 5.1 o més nou | `LaComunitat-${{ needs.proves.outputs.versio }}-android.apk` — o, sense instal·lar res, l'app web: https://jossanmar9.github.io/comunitat-del-anell/app/ |
+            | Windows 10/11 (recomanat) | `LaComunitat-installador.exe` — no demana permisos d'administrador |
+            | Windows portable | `LaComunitat-windows-portable.zip` — descomprimeix-lo i obri `LaComunitat.exe` |
+            | Ubuntu, Debian, Linux Mint… | `comunitat-del-anell.deb` |
+            | Altres Linux | `LaComunitat-linux.tar.gz` — descomprimeix-lo i obri `comunitat-del-anell.sh` |
+            | Android 5.1 o més nou | `LaComunitat-android.apk` — o, sense instal·lar res, l'app web: https://jossanmar9.github.io/comunitat-del-anell/app/ |
 
             Manuals en PDF (valencià i castellà) adjunts i dins de cada paquet. Instruccions: `guia-installacio.pdf` / `guia-instalacion.pdf`.
 

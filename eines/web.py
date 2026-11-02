@@ -40,9 +40,9 @@ T = {
         "hero_text": "Per a «El Señor de los Anillos: El Destino de la Comunidad». Una persona porta la partida des de "
                      "l'ordinador, la tauleta o el mòbil: l'esperança, l'amenaça, el torn pas a pas i els daus de cada "
                      "tirada, sempre al dia. Sense Internet, sense comptes ni quotes, en valencià i castellà.",
-        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android",
+        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android", "baixa_web": "Navegador",
         "versio": "Versió {v} · Windows 10 i 11 · Ubuntu, Debian, Fedora, Arch… · Android 5.1 o més nou · Gratuït i lliure",
-        "manual": "Llig el manual", "prova": "Usa-la al navegador",
+        "manual": "Llig el manual", "totes": "Totes les descàrregues",
         "nav_que": "Què fa", "nav_veure": "Captures", "nav_com": "Com començar", "nav_codi": "Codi",
         "que_titol": "Què porta La Comunitat",
         "que_intro": "Les cartes, les tropes i els natzguls continuen al tauler. L'app s'encarrega dels comptes que s'obliden.",
@@ -122,9 +122,9 @@ T = {
         "hero_text": "Para «El Señor de los Anillos: El Destino de la Comunidad». Una persona lleva la partida desde el "
                      "ordenador, la tableta o el móvil: la Esperanza, la Amenaza, el turno paso a paso y los dados de "
                      "cada tirada, siempre al día. Sin Internet, sin cuentas ni cuotas, en castellano y valenciano.",
-        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android",
+        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android", "baixa_web": "Navegador",
         "versio": "Versión {v} · Windows 10 y 11 · Ubuntu, Debian, Fedora, Arch… · Android 5.1 o posterior · Gratuito y libre",
-        "manual": "Leer el manual", "prova": "Úsala en el navegador",
+        "manual": "Leer el manual", "totes": "Todas las descargas",
         "nav_que": "Qué hace", "nav_veure": "Capturas", "nav_com": "Cómo empezar", "nav_codi": "Código",
         "que_titol": "Qué lleva La Comunidad",
         "que_intro": "Las cartas, las Tropas y los Nazgûl siguen en el tablero. La app se encarga de las cuentas que se olvidan.",
@@ -328,6 +328,9 @@ def privacitat(t, l, base, v):
 """
 
 ICONA_WIN = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10 4.5v7H3zm8-1.2L21 3v8.5H11zM3 12.5h7v7L3 18.5zm8 0h10V21l-10-1.4z"/></svg>')
+ICONA_WEB = ('<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" '
+             'stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.4 5.2 3.4 8.5s-1.1 6.1-3.4 8.5'
+             'M12 3.5C9.7 5.9 8.6 8.7 8.6 12s1.1 6.1 3.4 8.5"/></svg>')
 ICONA_ANDROID = ('<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" '
                  'stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V11a7 7 0 0 1 14 0v6z"/>'
                  '<path d="M8 4.5 9.3 6.6M16 4.5l-1.3 2.1"/><circle cx="9.5" cy="10.5" r=".6" fill="currentColor"/>'
@@ -353,6 +356,13 @@ def e(s):
 
 def pagina(t, l, base, v):
     descarrega = REPO + "/releases/latest"
+    # Cada botó baixa directament el fitxer de l'última versió (els noms no porten el número de versió)
+    fitxer = REPO + "/releases/latest/download/"
+    botons = "\n".join(f'<a class="boto" data-so="{so}" href="{href}">{icona}{t[clau]}</a>' for so, href, icona, clau in (
+        ("win", fitxer + "LaComunitat-installador.exe", ICONA_WIN, "baixa_win"),
+        ("linux", fitxer + "comunitat-del-anell.deb", ICONA_LINUX, "baixa_linux"),
+        ("android", fitxer + "LaComunitat-android.apk", ICONA_ANDROID, "baixa_android"),
+        ("web", base + "app/", ICONA_WEB, "baixa_web")))
     moduls = "".join(f'<div class="modul"><dt>{e(n)}</dt><dd>{e(d)}</dd></div>' for n, d in t["moduls"])
     passos = "".join(f"<li><h3>{e(n)}</h3><p>{d}</p></li>" for n, d in t["passos"])
     dades = "".join(f"<li>{e(d)}</li>" for d in t["dades"])
@@ -403,11 +413,9 @@ def pagina(t, l, base, v):
     <h1>{t['hero']}</h1>
     <p class="entrada">{t['hero_text']}</p>
     <div class="accions">
-      <a class="boto" data-so="win" href="{descarrega}">{ICONA_WIN}{t['baixa_win']}</a>
-      <a class="boto" data-so="linux" href="{descarrega}">{ICONA_LINUX}{t['baixa_linux']}</a>
-      <a class="boto" data-so="android" href="{descarrega}">{ICONA_ANDROID}{t['baixa_android']}</a>
+      {botons}
     </div>
-    <p class="versio">{t['versio'].format(v=v)} · <a href="{base}app/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a> · <a href="{REPO}/blob/main/CHANGELOG.md">{t['canvis']}</a></p>
+    <p class="versio">{t['versio'].format(v=v)} · <a href="{descarrega}">{t['totes']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a> · <a href="{REPO}/blob/main/CHANGELOG.md">{t['canvis']}</a></p>
   </div>
   <figure class="hero-captura">
     <img src="{base}img/{l}/{capture_filename(primera)}" alt="{e(t['captures'][primera])}" width="1600" height="1012">
@@ -439,9 +447,7 @@ def pagina(t, l, base, v):
   <div class="cap"><h2>{t['com_titol']}</h2></div>
   <ol class="passos">{passos}</ol>
   <div class="accions">
-    <a class="boto" data-so="win" href="{descarrega}">{ICONA_WIN}{t['baixa_win']}</a>
-    <a class="boto" data-so="linux" href="{descarrega}">{ICONA_LINUX}{t['baixa_linux']}</a>
-    <a class="boto" data-so="android" href="{descarrega}">{ICONA_ANDROID}{t['baixa_android']}</a>
+    {botons}
   </div>
 </section>
 
@@ -477,7 +483,8 @@ def pagina(t, l, base, v):
 (function(){{
   var root=document.documentElement;
   // Destaca el botó de descàrrega del sistema del visitant
-  var ua=navigator.userAgent,so=/Android/.test(ua)?'android':/Linux|X11/.test(ua)?'linux':'win';
+  // (a l'iPhone, l'iPad, el Mac i els Chromebook no hi ha programa: l'app web)
+  var ua=navigator.userAgent,so=/Android/.test(ua)?'android':/iPhone|iPad|iPod|Macintosh|CrOS/.test(ua)?'web':/Linux|X11/.test(ua)?'linux':'win';
   document.querySelectorAll('.boto[data-so]').forEach(function(b){{
     if(b.dataset.so!==so)b.classList.add('secundari');
   }});

@@ -71,11 +71,11 @@ Descarga la [última versión](../../releases/latest):
 
 | Sistema | Archivo |
 |---|---|
-| **Windows** (recomendado) | `LaComunitat-X.Y.Z-installador.exe`. No pide permisos de administrador; crea el acceso en el menú Inicio y, si quieres, en el escritorio. |
-| **Windows** portable | `LaComunitat-X.Y.Z-windows-portable.zip`. Descomprímelo donde quieras (también en una memoria USB) y abre `LaComunitat.exe`. |
-| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y.Z_all.deb`. Doble clic para instalarlo, o `sudo apt install ./comunitat-del-anell_X.Y.Z_all.deb`. |
-| **Otros Linux** | `LaComunitat-X.Y.Z-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana propia, GTK y WebKitGTK. |
-| **Android** | `LaComunitat-X.Y.Z-android.apk`. Ábrelo desde el móvil y permite «Instalar aplicaciones desconocidas» si te lo pide. |
+| **Windows** (recomendado) | `LaComunitat-installador.exe`. No pide permisos de administrador; crea el acceso en el menú Inicio y, si quieres, en el escritorio. |
+| **Windows** portable | `LaComunitat-windows-portable.zip`. Descomprímelo donde quieras (también en una memoria USB) y abre `LaComunitat.exe`. |
+| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell.deb`. Doble clic para instalarlo, o `sudo apt install ./comunitat-del-anell.deb`. |
+| **Otros Linux** | `LaComunitat-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana propia, GTK y WebKitGTK. |
+| **Android** | `LaComunitat-android.apk`. Ábrelo desde el móvil y permite «Instalar aplicaciones desconocidas» si te lo pide. |
 | **Sin instalar nada** | La [app web](https://jossanmar9.github.io/comunitat-del-anell/app/): desde el menú del navegador la puedes añadir a la pantalla de inicio, y funciona sin conexión. También en el iPhone y el iPad. |
 
 El programa de Windows no está firmado digitalmente: SmartScreen puede avisar. Pulsa **Más información → Ejecutar de todas formas**.

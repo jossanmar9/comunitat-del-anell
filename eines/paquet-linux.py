@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fa els paquets de Linux de La Comunitat, sense dependències:
 
-  dist/comunitat-del-anell_<versió>_all.deb     per a Debian, Ubuntu, Linux Mint…
-  dist/LaComunitat-<versió>-linux.tar.gz     per a la resta (es descomprimeix i s'obri)
+  dist/comunitat-del-anell.deb     per a Debian, Ubuntu, Linux Mint…
+  dist/LaComunitat-linux.tar.gz     per a la resta (es descomprimeix i s'obri)
 
 Ús:  python3 build.py
      python3 eines/paquet-linux.py [--versio 2.0] [--pdf CARPETA_AMB_ELS_MANUALS]
@@ -120,7 +120,7 @@ Description: Ajudant lliure per al joc de taula «El Destino de la Comunidad»
     md5 = "".join(f"{hashlib.md5(d).hexdigest()}  {n[2:]}\n" for n, (d, _) in fitxers.items()).encode()
     control_tar = targz({"./control": (control, 0o644), "./md5sums": (md5, 0o644)}, ["./"])
     data_tar = targz(fitxers, carpetes)
-    desti = eixida / f"{NOM}_{versio}_all.deb"
+    desti = eixida / f"{NOM}.deb"   # sense versió, perquè la web hi puga enllaçar directament
     desti.write_bytes(ar([("debian-binary", b"2.0\n"), ("control.tar.gz", control_tar), ("data.tar.gz", data_tar)]))
     return desti
 
@@ -143,7 +143,7 @@ License: GPL-3.0-or-later
 
 
 def tar_gz(versio, pdf_dir, eixida):
-    carpeta = f"LaComunitat-{versio}-linux"
+    carpeta = "LaComunitat-linux"
     fitxers = {
         f"{carpeta}/comunitat.py": ((ROOT / "comunitat.py").read_bytes(), 0o755),
         f"{carpeta}/comunitat-del-anell.sh": ((LINUX / "comunitat-del-anell.sh").read_bytes(), 0o755),

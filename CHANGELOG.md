@@ -4,6 +4,21 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions publicades com `vX.Y.Z`.
 
+## [3.0.1] - 2026-11-02
+
+### Afegit
+- Pàgina de privacitat a la web, en valencià i castellà: l'app no recull cap dada.
+- Botó «Navegador» a la web, que obri l'app web. És el que es destaca a l'iPhone, l'iPad, el Mac i els Chromebook.
+
+### Canviat
+- Els botons de Windows, Linux i Android de la web baixen directament el fitxer de l'última versió.
+- Els fitxers de cada versió ja no porten el número al nom: `LaComunitat-installador.exe`, `LaComunitat-windows-portable.zip`, `comunitat-del-anell.deb`, `LaComunitat-linux.tar.gz` i `LaComunitat-android.apk`.
+- Sense cap partida oberta, la capçalera ja no mostra el camp buit del nom.
+
+### Corregit
+- Al mòbil, el menú de la web es tallava i no es veien l'idioma ni el tema.
+- Dos enllaços de l'índex del README no portaven enlloc.
+
 ## [3.0.0] - 2026-10-30
 
 Una sola persona porta la partida, i ara també des del mòbil: La Comunitat funciona igual a Windows, a Linux, a Android i al navegador.
@@ -13,7 +28,6 @@ Una sola persona porta la partida, i ara també des del mòbil: La Comunitat fun
 - **App web instal·lable** a la web del projecte (`/app/`): funciona sense connexió i es pot afegir a la pantalla d'inici. Les partides es guarden al navegador.
 - **Canviar el mapa** des de l'app: tria una imatge i es guarda per a totes les partides (abans calia copiar `mapa.jpg` a la carpeta de dades).
 - Botó «Fer una còpia ara» a les còpies de seguretat.
-- Pàgina de privacitat a la web, en valencià i castellà: l'app no recull cap dada.
 - A l'ordinador, les partides exportades es guarden a Baixades sense sobreescriure res.
 - Proves de l'app en un navegador de veritat (versió d'escriptori i web), del magatzem i del pas de la v2 a la v3.
 

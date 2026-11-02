@@ -328,7 +328,8 @@ function shadowCardFlow(){
 
 /* ================= render ================= */
 function renderHeader(){
-  const n=$('#camp-name');n.readOnly=!S.camp;if(document.activeElement!==n)n.value=CAMP?.name||'';
+  // Sense partida oberta, no es mostra el camp del nom (només «La Comunitat»)
+  const n=$('#camp-name');n.readOnly=!S.camp;n.style.display=S.camp?'':'none';if(document.activeElement!==n)n.value=CAMP?.name||'';
   $$('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===st.tab));
   $('#who').innerHTML=langSwitch()+themeBtn();
 }
