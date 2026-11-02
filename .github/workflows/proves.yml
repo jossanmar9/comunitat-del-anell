@@ -50,7 +50,7 @@ jobs:
           python-version: "3.13"
       - name: Prepara el navegador
         run: |
-          python -m pip install playwright
+          python -m pip install playwright pillow
           python -m playwright install --with-deps chromium
       - name: Prova l'app (escriptori i web)
         run: |
