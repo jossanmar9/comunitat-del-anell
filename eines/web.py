@@ -78,7 +78,7 @@ T = {
         "passos": [
             ("Tria on", "A l'ordinador, baixa l'instal·lador de Windows (o el <code>.zip</code> portable), el "
                         "<code>.deb</code> d'Ubuntu i Debian o el <code>.tar.gz</code> per a la resta de Linux. "
-                        "A Android, l'<code>.apk</code>. O, sense instal·lar res, obri <a href=\"app/\">l'app web</a> "
+                        "A Android, el fitxer <code>.apk</code>. O, sense instal·lar res, obri <a href=\"app/\">l'app web</a> "
                         "i afig-la a la pantalla d'inici."),
             ("Crea una partida", "Posa-li un nom, tria la dificultat, els participants i els objectius. L'app et diu "
                                  "com preparar el tauler."),
@@ -296,6 +296,7 @@ def privacitat(t, l, base, v):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#17251d">
 <title>{e(p['titol'])} · {e(t['nom'])}</title>
 <meta name="description" content="{e(p['titol'])}: {e(t['nom'])} no recull dades personals.">
 <link rel="icon" href="{base}img/icona.png">
@@ -370,6 +371,7 @@ def pagina(t, l, base, v):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#17251d">
 <title>{e(t['titol'])}</title>
 <meta name="description" content="{e(t['descripcio'])}">
 <meta property="og:title" content="{e(t['titol'])}">

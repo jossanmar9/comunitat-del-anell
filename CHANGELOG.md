@@ -13,6 +13,7 @@ Una sola persona porta la partida, i ara també des del mòbil: La Comunitat fun
 - **App web instal·lable** a la web del projecte (`/app/`): funciona sense connexió i es pot afegir a la pantalla d'inici. Les partides es guarden al navegador.
 - **Canviar el mapa** des de l'app: tria una imatge i es guarda per a totes les partides (abans calia copiar `mapa.jpg` a la carpeta de dades).
 - Botó «Fer una còpia ara» a les còpies de seguretat.
+- Pàgina de privacitat a la web, en valencià i castellà: l'app no recull cap dada.
 - A l'ordinador, les partides exportades es guarden a Baixades sense sobreescriure res.
 - Proves de l'app en un navegador de veritat (versió d'escriptori i web), del magatzem i del pas de la v2 a la v3.
 

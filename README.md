@@ -31,8 +31,8 @@
 - [Documentació](#documentació)
 - [Per a desenvolupar](#per-a-desenvolupar)
 - [Publicar una versió](#publicar-una-versió)
-- [Col·laborar](#col·laborar)
-- [Ús d'intel·ligència artificial](#ús-dintel·ligència-artificial)
+- [Col·laborar](#collaborar)
+- [Ús d'intel·ligència artificial](#ús-dintelligència-artificial)
 - [Llicència](#llicència)
 
 ## Què fa

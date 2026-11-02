@@ -27,7 +27,7 @@ L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sau
 |---|---|---|
 | **Windows 10 o 11** | Instal·lador o versió portable, en una finestra pròpia | A la carpeta de dades de l'ordinador |
 | **Linux** | Paquet `.deb` o `.tar.gz`, en una finestra pròpia | A la carpeta de dades de l'ordinador |
-| **Android** | L'`.apk` | Dins de l'app |
+| **Android** | El fitxer `.apk` | Dins de l'app |
 | **Qualsevol navegador** | L'app web, sense instal·lar res, també sense connexió | Dins del navegador |
 
 Les partides **no es passen soles** d'un aparell a un altre: per a continuar-ne una en un altre lloc, exporta-la i importa-la (vegeu [Partides i historial](#partides-i-historial)).
