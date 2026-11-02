@@ -1,14 +1,14 @@
 # Guia d'instal·lació
 
-Com instal·lar La Comunitat a l'ordinador que farà de servidor, a Windows o a Linux. Els jugadors no han d'instal·lar res: només necessiten un navegador i la mateixa wifi.
+Com instal·lar La Comunitat a Windows, a Linux o a Android, o com fer-la servir al navegador sense instal·lar res. Una persona porta la partida: només cal instal·lar-la a l'aparell que faràs servir.
 
-Tot es baixa de la pàgina de [descàrregues](https://github.com/jossanmar9/comunitat-del-anell/releases/latest).
+Tot es baixa de la pàgina de [descàrregues](https://github.com/jossanmar9/comunitat-del-anell/releases/latest). L'app web és a <https://jossanmar9.github.io/comunitat-del-anell/app/>.
 
 ## Què cal
 
-- **Windows 10 o 11** de 64 bits, o **Linux** amb escriptori (Ubuntu, Debian, Linux Mint, Fedora, Arch…).
+- **Windows 10 o 11** de 64 bits, **Linux** amb escriptori (Ubuntu, Debian, Linux Mint, Fedora, Arch…), **Android 5.1** o més nou, o un navegador actual (Chrome, Edge, Firefox, Safari).
 - Uns 50 MB de disc.
-- L'ordinador i els dispositius dels jugadors, a la **mateixa wifi**. No cal Internet.
+- No cal Internet per a jugar.
 - El joc de taula «El Señor de los Anillos: El Destino de la Comunidad». L'app només porta els comptes.
 
 ## Windows
@@ -29,8 +29,6 @@ La Comunitat s'obri en una finestra pròpia gràcies a **WebView2**, el componen
 2. Obri `LaComunitat.exe` de dins de la carpeta.
 
 En la versió portable, les partides es guarden dins de la mateixa carpeta, així que pots portar-te-la amb totes les dades.
-
-**La primera vegada**, Windows demana si el programa pot fer servir la xarxa. Marca **Xarxes privades** i prem **Permet l'accés**. Si no ho fas, els jugadors no podran entrar. Comprova també que la wifi de casa està configurada com a xarxa privada.
 
 **Actualitzar:** amb La Comunitat tancada, executa l'instal·lador de la versió nova. Les partides es conserven.
 
@@ -55,7 +53,7 @@ El paquet instal·la també el que necessita (Python 3, GTK i WebKitGTK, per a l
 
 ### Altres distribucions: el .tar.gz
 
-1. Comprova que tens Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. Quasi totes les distribucions porten Python. Sense WebKitGTK, La Comunitat s'obri al navegador amb una finestreta per al QR (que necessita Tk); i sense cap de les dues, funciona al terminal.
+1. Comprova que tens Python 3 i, per a la finestra pròpia, GTK i WebKitGTK. Quasi totes les distribucions porten Python. Sense WebKitGTK, La Comunitat s'obri al navegador amb una finestreta per a tancar-la (que necessita Tk); i sense cap de les dues, s'atura des del terminal.
 
 | Distribució | Ordre per a la finestra pròpia | Ordre per a Tk |
 |---|---|---|
@@ -76,11 +74,29 @@ cd LaComunitat-X.Y-linux
 
 Com en la versió portable de Windows, les partides es guarden dins d'eixa carpeta.
 
-**Tallafoc:** si en tens (per exemple `ufw`), obri el port perquè entren els jugadors: `sudo ufw allow 8766/tcp`.
+## Android
+
+**L'APK:** `LaComunitat-X.Y.Z-android.apk`
+
+1. Baixa'l des del mòbil o la tauleta (o passa-l'hi des de l'ordinador).
+2. Obri'l. Android avisa que és una app de fora de Google Play: permet que el navegador o el gestor de fitxers instal·len apps («Instal·lar apps desconegudes») i torna-ho a provar.
+3. Prem **Instal·la** i obri **La Comunitat**.
+
+Les partides es guarden dins de l'app. **Actualitzar:** instal·la l'APK de la versió nova damunt de l'antiga; les partides es conserven. Si desinstal·les l'app, s'esborren: exporta abans les que vulgues guardar.
+
+> Google vol que, a partir del 2027, les apps d'Android que s'instal·len de fora de Google Play siguen d'un desenvolupador verificat. Si arriba el moment i el teu mòbil no deixa instal·lar l'APK, fes servir l'app web: és la mateixa.
+
+## Al navegador (també al mòbil, a l'iPhone i a l'iPad)
+
+Obri <https://jossanmar9.github.io/comunitat-del-anell/app/>. No cal instal·lar res i, després de la primera vegada, funciona també sense connexió.
+
+Per a tindre-la com una app més, afig-la a la pantalla d'inici: a Chrome i Edge, menú **⋮ → Instal·lar l'aplicació** o **Afegir a la pantalla d'inici**; a Safari, **Compartir → Afegir a la pantalla d'inici**.
+
+Les partides es guarden en aquest navegador i en aquest aparell. Si esborres les dades del navegador (o en mode privat, en tancar-lo), es perden: exporta les que vulgues guardar.
 
 ## Mac i altres sistemes
 
-No hi ha paquet per a Mac, però funciona amb Python 3.8 o més nou. Baixa `comunitat.py` del [repositori](https://github.com/jossanmar9/comunitat-del-anell) i, al terminal:
+A més de l'app web, en un Mac funciona el programa d'escriptori amb Python 3.8 o més nou. Baixa `comunitat.py` del [repositori](https://github.com/jossanmar9/comunitat-del-anell) i, al terminal:
 
 ```
 python3 comunitat.py
@@ -94,9 +110,13 @@ python3 comunitat.py
 | Linux, amb el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La mateixa carpeta del programa |
 
-Dins hi ha la carpeta `partides` (una partida en cada fitxer), la carpeta `copies` (les còpies de seguretat automàtiques), el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Ací també va el teu mapa, si en poses un (`mapa.jpg`). El botó **Obrir la carpeta de dades** de la pestanya Partides l'obri directament.
+Dins hi ha la carpeta `partides` (una partida en cada fitxer), la carpeta `copies` (les còpies de seguretat automàtiques), `historial.json` (les partides acabades), `comunitat.json` (quina partida estava oberta) i `mapa.json` (el teu mapa, si en poses un). El botó **Obrir la carpeta de dades** de la pestanya Partides l'obri directament.
 
-Per a fer una còpia de seguretat, copia eixa carpeta sencera. Si vols guardar les dades en un altre lloc (per exemple, una carpeta sincronitzada amb el núvol), arranca amb `--dades CARPETA`.
+Per a fer una còpia de seguretat, tanca La Comunitat i copia eixa carpeta sencera. Si vols guardar les dades en un altre lloc (per exemple, una carpeta sincronitzada amb el núvol), arranca amb `--dades CARPETA`.
+
+### Actualitzar des de la versió 2
+
+La versió 3 llig les mateixes carpetes i fitxers. La primera vegada que s'obri, si la 2.7 havia deixat canvis a `comunitat.sqlite3`, els passa als fitxers de sempre i guarda la base de dades a `copies/v2/`. Els jugadors, els PIN i les sessions de la sala ja no es fan servir.
 
 ### Passar les partides de la versió 1.x
 
@@ -114,23 +134,24 @@ La Comunitat accepta aquestes opcions en arrancar-la des del terminal (`comunita
 
 | Opció | Què fa |
 |---|---|
-| `--port 9001` | Fa servir un altre port (el normal és el 8766). |
-| `--partida "Divendres"` | Obri eixa partida en arrancar (la crea si no existeix). |
-| `--dades CARPETA` | Guarda les dades en eixa carpeta. |
-| `--navegador` | Obri l'app al navegador, amb la finestreta de l'adreça i el QR, en compte de la finestra pròpia. |
-| `--sense-finestra` | No obri cap finestra: tot va al terminal, amb el QR. Útil en un ordinador sense pantalla. |
+| `--dades CARPETA` | Guarda les dades en eixa carpeta (per exemple, una carpeta sincronitzada amb el núvol). |
+| `--navegador` | Obri l'app al navegador, amb una finestreta per a tancar-la, en compte de la finestra pròpia. |
+| `--sense-finestra` | No obri cap finestra: l'adreça ix al terminal i s'atura amb Ctrl+C. |
 | `--sense-navegador` | Amb `--navegador`, no obri el navegador en arrancar. |
-| `--sense-qr` | No mostra el QR al terminal. |
+| `--port 9001` | Fa servir un altre port local (el normal és el 8766; si està ocupat, se'n tria un altre). |
 | `--idioma es` | Els avisos de les finestres en castellà. Per defecte, en valencià (`ca`). |
+
+La Comunitat només accepta connexions del mateix ordinador: des d'altres aparells no s'hi pot entrar.
 
 ## Si alguna cosa no va
 
 | Què passa | Què fer |
 |---|---|
 | Windows no deixa obrir el programa | És l'avís de SmartScreen: **Més informació → Executa igualment**. |
-| Els altres no hi poden entrar | Mateixa wifi, xarxa privada i el programa permés al tallafoc (vegeu més amunt). |
+| Android no deixa instal·lar l'APK | Permet «Instal·lar apps desconegudes» a l'app des d'on l'obris (el navegador o Fitxers). Si tot i així no es pot, fes servir l'app web. |
+| Android diu que l'app no s'ha instal·lat en actualitzar | L'APK nou s'ha de signar amb la mateixa clau que l'antic. Si l'has baixat d'un altre lloc, baixa'l de la pàgina de descàrregues. |
 | S'obri el navegador en compte de la finestra pròpia | A Windows, falta WebView2 (vegeu més amunt). A Linux, falten GTK i WebKitGTK: instal·la'ls amb l'ordre de la teua distribució. |
-| A Linux no s'obri cap finestra | Falten WebKitGTK i Tk: instal·la'n almenys un. Mentrestant, la informació ix al terminal. |
-| «El port ja està en ús» | Ja hi ha una altra Comunitat oberta. Tanca-la o arranca amb `--port 9001`. |
+| A Linux no s'obri cap finestra | Falten WebKitGTK i Tk: instal·la'n almenys un. Mentrestant, l'adreça ix al terminal. |
+| «La Comunitat ja està oberta» | Ja hi ha una altra Comunitat oberta amb la mateixa carpeta de dades: busca-la a la barra de tasques. |
 
 Per a tot el que es pot fer amb l'app, consulta el [manual d'usuari](manual-usuari.md).

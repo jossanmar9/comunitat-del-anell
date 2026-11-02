@@ -4,41 +4,9 @@ Guia d'ús de La Comunitat, l'ajudant lliure per a portar les partides d'«El Se
 
 Per a instal·lar-la, consulta la [guia d'instal·lació](guia-installacio.md).
 
-## Guardats i recuperació — v2.7.0
-
-La partida activa, les identitats, els hash de PIN, les sessions i l’historial es confirmen conjuntament en **`comunitat.sqlite3`**, amb transaccions SQLite. Els JSON existents continuen com a còpies compatibles per a les partides guardades, la configuració i l’historial. Les partides inactives i les còpies de partida continuen en JSON; esta versió reforça el guardat conjunt de l’estat actiu.
-
-En actualitzar, la primera lectura importa la configuració i l’historial existents sense eliminar-los. Quan hi ha una base SQLite, és la font de l’últim estat confirmat: no edites a mà els seus JSON de configuració, historial o partida activa; usa les opcions d’importar i restaurar. Si falla la projecció JSON, la jugada confirmada continua en SQLite i es recupera en el pròxim inici. Si falla la transacció, l’app no confirma la jugada. Les dades corruptes no se substitueixen silenciosament per dades buides.
-
-Abans de recuperar un inici, es guarda una còpia coherent de SQLite en **`copies/estat/comunitat.sqlite3`**. Per a una còpia completa, tanca l’app i copia **tota la carpeta de dades**, incloent la base, els JSON, les partides i les còpies. La còpia de l’estat conté credencials i sessions: conserva-la en privat. Per a tornar a una versió anterior, tanca l’app i treballa sobre una còpia de la carpeta; els JSON han d’estar actualitzats. No es permeten dos servidors en la mateixa carpeta de dades, encara que usen ports distints.
-
-Si una base queda danyada, tanca l’app, conserva tota la carpeta i restaura una còpia coherent de `comunitat.sqlite3`; després l’app recuperarà els seus JSON. La còpia d’estat correspon a l’anterior inici correcte, no necessàriament a l’última jugada. Les còpies de partida i l’exportació JSON continuen disponibles.
-
-
-## Sala de partida — v2.6.0
-
-**Àlies masculins i femenins:** en escriure un nom, l’app proposa un tipus d’àlies amb una llista local de noms habituals; no fa consultes a Internet. Pots corregir-lo amb **Tipus d’àlies → Masculí / Femení / Neutre**. Els noms desconeguts o ambigus es proposen com a neutres. És una ajuda lingüística per a l’àlies, no una determinació del gènere de la persona. Cada raça té noms inventats diferenciats. La preferència manual es conserva; canviar-la des de **Sala de partida → Editar** genera un altre àlies sense canviar el PIN ni tancar la sessió. Els jugadors antics conserven l’àlies existent fins que el màster el canvie.
-
-L’aplicació arranca sense cap partida carregada. Tria **Crear partida**, escriu el nom de la partida i els noms i les races dels participants, i prepara-la. En confirmar, els jugadors s’incorporen automàticament a **Sala de partida**, amb àlies i PIN. Els PIN nous es mostren una sola vegada al màster. Si un nom ja correspon a un jugador registrat, es reutilitza la seua identitat i el PIN existent. Els noms dels participants d’una mateixa partida no es poden repetir, ignorant accents, majúscules i espais sobrants.
-
-**Obrir partida guardada** recupera la partida i incorpora els seus jugadors a la sala sense duplicar-los. Les partides noves guarden UID, nom, raça i àlies, però no el PIN ni el seu hash dins del fitxer de partida. Els PIN i sessions continuen en la configuració local. Si importes una partida a un altre ordinador o recuperes jugadors eliminats, el màster haurà de generar-los PIN nous. Les partides antigues recuperen els jugadors pel nom. No s’obri l’última partida en reiniciar; l’opció explícita de terminal `--partida` continua disponible.
-
-El màster obri l’app en el PC amb `http://localhost:8766` (o el port triat). El botó **Sala de partida** permet crear jugadors amb nom i raça, editar-los, generar un altre àlies, eliminar-los, regenerar el PIN i desvincular sessions. Les accions destructives demanen una segona pulsació. Els àlies són inventats; no són personatges del joc.
-
-En crear o regenerar un PIN de quatre dígits, anota’l i comunica’l al jugador: només es mostra una vegada i després apareix com **••••**. Es guarda amb salt aleatori i PBKDF2-HMAC-SHA256 (200.000 iteracions), sense PIN en clar. Regenerar-lo revoca la sessió anterior.
-
-El jugador escaneja el QR comú de la taula, tria **Qui eres? → jugador → PIN → Entrar**. Només apareixen jugadors amb PIN i sense vinculació. Un jugador té una sessió autoritzada; el navegador la recorda i reconnecta després de recarregar, d’un tall de wifi o de reiniciar el servidor. **Eixir** revoca la sessió; tancar una pestanya no la desvincula. Si es perd el dispositiu o les dades del navegador, el màster ha de prémer **Desvincular**. La possessió del token autoritza la sessió: no el compartisques.
-
-**Bloquejar noves connexions** impedeix noves vinculacions; les sessions autoritzades poden continuar i reconnectar. El panell mostra connexió SSE, vinculació i última petició autenticada. Sense partida preparada, el jugador espera. Les jugades continuen sent cooperatives; l’administració de jugadors, partides i historial correspon al màster local. En mode de sondeig, un dispositiu pot aparéixer desconnectat encara que continue autoritzat; consulta també l’última connexió.
-
-En actualitzar des de v2.5 o anteriors es conserven partides, configuració i UID. Els noms duplicats reben un sufix, els àlies antics se substitueixen prudentment i es revoquen les sessions sense autenticació. El màster ha de generar PIN per als jugadors migrats. Fes una còpia de la carpeta de dades abans d’actualitzar. La sala de jugadors és comuna a les partides guardades, com en la v2.5.
-
-Funciona en una LAN de confiança amb HTTP; el PIN i els tokens viatgen sense xifrat de transport. No exposes el port a Internet. Després de cinc intents de PIN fallits per IP en un minut, cal esperar. El màster només s’autoritza des de loopback amb Host local i es rebutgen escriptures entre orígens.
-
-
 ## Què és i què necessites
 
-La Comunitat és una pàgina web que funciona a casa, sense Internet. Un ordinador fa de servidor i la resta de la taula hi entra des del navegador del mòbil, la tauleta o el portàtil. Tots veuen el mateix al moment: si algú perd esperança o passa el torn, els altres ho veuen de seguida.
+La Comunitat porta els comptes d'una partida d'«El Destino de la Comunidad». **Una persona la porta** des de l'ordinador, la tauleta o el mòbil, i la resta jugueu al tauler, com sempre. No cal Internet ni crear cap compte.
 
 L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sauron continuen al tauler de cartó. L'app s'encarrega dels comptes que s'oblidaven o feien perdre temps:
 
@@ -51,46 +19,36 @@ L'app no substitueix el joc. Les cartes, les tropes, els natzguls i l'Ull de Sau
 |---|---|
 | **Partida** | Les pistes, les eines de tirades, el mapa i el torn pas a pas. |
 | **Comunitat** | La preparació del tauler, qui porta cada personatge i el resum. |
-| **Partides** | Les partides guardades i l'historial de les acabades. |
+| **Partides** | Les partides guardades, les còpies de seguretat i l'historial de les acabades. |
 
-**Què cal:**
+**On funciona:** és la mateixa app a tot arreu. Tria la que et vaja millor (la [guia d'instal·lació](guia-installacio.md) explica cada una):
 
-- **L'ordinador servidor:** Windows 10 o 11, o Linux. Vegeu la [guia d'instal·lació](guia-installacio.md).
-- **Els jugadors:** qualsevol dispositiu amb navegador, connectat a la mateixa wifi que el servidor. No han d'instal·lar res.
+| On | Com | On es guarden les partides |
+|---|---|---|
+| **Windows 10 o 11** | Instal·lador o versió portable, en una finestra pròpia | A la carpeta de dades de l'ordinador |
+| **Linux** | Paquet `.deb` o `.tar.gz`, en una finestra pròpia | A la carpeta de dades de l'ordinador |
+| **Android** | L'`.apk` | Dins de l'app |
+| **Qualsevol navegador** | L'app web, sense instal·lar res, també sense connexió | Dins del navegador |
 
-## Arrancar La Comunitat
+Les partides **no es passen soles** d'un aparell a un altre: per a continuar-ne una en un altre lloc, exporta-la i importa-la (vegeu [Partides i historial](#partides-i-historial)).
 
-Obri **La Comunitat** des del menú Inici (Windows) o des del menú d'aplicacions (Linux). L'app s'obri en **una finestra pròpia**, sense navegador: aquest ordinador és el «principal», el que fa de servidor, i des d'ací es pot jugar igual que des d'un mòbil.
+## Obrir La Comunitat
 
-- Mentre la finestra estiga oberta, La Comunitat funciona. Quan la tanques, et pregunta si vols tancar-la, ho guarda tot i els jugadors es desconnecten.
-- El botó **Convida**, dalt a la dreta, mostra l'adreça per als altres, per exemple `http://192.168.1.40:8766`, i el **codi QR** que la porta dins.
-- A la pestanya **Partides**, l'apartat **En aquest ordinador** diu on es guarda tot i té el botó **Obrir la carpeta de dades**.
+- **Windows i Linux:** obri **La Comunitat** des del menú Inici o des del menú d'aplicacions. S'obri en **una finestra pròpia**, sense navegador. Quan la tanques, et pregunta si vols tancar-la; la partida ja està guardada.
+- **Android:** toca la icona de **La Comunitat**. El botó «enrere» d'Android tanca la finestra oberta, torna a la pestanya Partida i, si ja hi eres, ix de l'app.
+- **Navegador:** obri l'adreça de l'app web. Des del menú del navegador, **Afegir a la pantalla d'inici** (o **Instal·lar**) la deixa com una app més, que funciona també sense connexió.
 
-> Si en aquest ordinador no es pot obrir la finestra pròpia (vegeu [Si alguna cosa no va](#si-alguna-cosa-no-va)), s'obri una finestreta amb l'adreça, el QR i la partida oberta, i l'app al navegador. També la pots triar a propòsit amb l'opció `--navegador`. I en un ordinador sense pantalla, la mateixa informació, amb el QR, ix al terminal. Vegeu les opcions a la [guia d'instal·lació](guia-installacio.md).
+La primera vegada no hi ha cap partida: prem **Crear partida**. Si ja en tens alguna, s'obri l'última que vas fer servir.
 
-## Entrar des dels dispositius
+![En obrir-la per primera vegada.](imatges/ca/00-inici.jpg)
 
-1. Amb la càmera del mòbil, escaneja el QR del botó **Convida** de l'ordinador principal. També pots escriure al navegador l'adreça per als altres, per exemple `http://192.168.1.40:8766`.
-2. Selecciona el jugador creat pel màster, escriu el seu PIN i prem **Entrar**.
-3. El navegador recorda qui eres. La pròxima vegada entraràs directament.
-
-El màster pot canviar el teu nom des de **Sala de partida**.
-
-Si arriba algú amb la partida començada, prem el botó del QR de dalt a la dreta (a l'ordinador principal, **Convida**): mostra el codi en gran perquè l'escanege.
-
-![Entrada amb jugador i PIN.](imatges/ca/01-entrada-v260.png)
-
-![Sala de partida del màster.](imatges/ca/01-sala-v260.png)
-
-![El botó del QR, per a convidar.](imatges/ca/02-qr.jpg)
-
-> **Truc:** al mòbil, afig la pàgina a la pantalla d'inici des del menú del navegador. Així s'obri com si fóra una aplicació.
+> A l'ordinador, si no es pot obrir la finestra pròpia (vegeu [Si alguna cosa no va](#si-alguna-cosa-no-va)), s'obri l'app al navegador i una finestreta per a tancar-la. També la pots triar a propòsit amb l'opció `--navegador`.
 
 ## Preparar una partida
 
-La primera vegada, l'app mostra el formulari de preparació. Ompli'l i prem **Començar la partida**.
+Posa-li un nom a la partida (per exemple, «Divendres amb la colla»), ompli el formulari i prem **Començar la partida**. Per a tornar a preparar la partida oberta des de zero, a la pestanya Comunitat hi ha el botó **Preparar una partida nova**.
 
-![Dificultat, participants, personatges i objectius.](imatges/ca/03-preparacio-v270.png)
+![Dificultat, participants, personatges i objectius.](imatges/ca/03-preparacio.jpg)
 
 ### Dificultat
 
@@ -106,7 +64,7 @@ Els objectius inclouen sempre «Destruir l'Anell Únic», que s'afegeix sol.
 
 ### Participants i personatges
 
-Cada participant porta 2 personatges, i al costat de cada desplegable es veu el retrat del triat. Algú ha de portar Frodo i Sam. Les propostes que hi ha per defecte són les que suggereix el manual del joc per a la primera partida. En solitari portes Frodo i Sam i 4 personatges més.
+Escriu el nom de cada participant (l'app recorda els últims que has posat). Cada participant porta 2 personatges, i al costat de cada desplegable es veu el retrat del triat. Algú ha de portar Frodo i Sam. Les propostes que hi ha per defecte són les que suggereix el manual del joc per a la primera partida. En solitari portes Frodo i Sam i 4 personatges més.
 
 ### Objectius
 
@@ -236,9 +194,9 @@ Marca'ls quan els completeu. L'app no aplica sola el text «En completar-lo» de
 
 ### Desfer i registre
 
-Tot el que passa queda al registre, amb l'hora i qui ho ha fet. Les pèrdues d'esperança surten en roig i els guanys, en verd.
+Tot el que passa queda al registre, amb l'hora. Les pèrdues d'esperança surten en roig i els guanys, en verd.
 
-Si algú s'equivoca, **Desfer** torna enrere l'últim canvi, siga de qui siga. Es pot prémer diverses vegades.
+Si t'equivoques, **Desfer** torna enrere l'últim canvi. Es pot prémer diverses vegades.
 
 > **Compte:** Desfer només canvia l'app. Si ja havíeu mogut peces al tauler, torneu-les a posar com estaven.
 
@@ -246,7 +204,7 @@ Si algú s'equivoca, **Desfer** torna enrere l'últim canvi, siga de qui siga. E
 
 ### En acabar: el resum
 
-Quan guanyeu o perdeu, l'app mostra a tothom el resum de la partida:
+Quan guanyeu o perdeu, l'app mostra el resum de la partida:
 
 - rondes jugades i quant de temps ha durat;
 - l'esperança final i on s'ha perdut o guanyat;
@@ -261,28 +219,26 @@ Es pot tornar a obrir amb el botó **Veure el resum** de la franja de dalt, i ta
 
 A la pestanya **Partides** pots tindre totes les que vulgues guardades:
 
-- **Crear** i obrir una de nova.
-- **Obrir** una altra. Tots els que estan connectats hi passen sols.
+- **Crear i obrir** una de nova.
+- **Obrir** una altra.
 - **Duplicar**, per a provar alguna cosa sense tocar l'original.
 - **Còpies**: les còpies de seguretat de la partida, per a tornar a una d'abans (vegeu més avall).
-- **Exportar**: guarda la partida en un fitxer `.json`, per a passar-la a un altre ordinador o guardar-la a part.
-- **Esborrar.** No es perd: va a la carpeta `partides/esborrades/` de la carpeta de dades i es pot recuperar movent el fitxer a `partides/`.
+- **Exportar**: guarda la partida en un fitxer `.json`, per a passar-la a un altre aparell o guardar-la a part. A l'ordinador, va a la carpeta **Baixades**; a Android, s'obri el menú **Compartir** per a guardar-la a Fitxers, a Drive, enviar-la…; al navegador, es baixa.
+- **Esborrar**: va a la **Paperera**, d'on la pots recuperar. La partida oberta no es pot esborrar: obri'n una altra primer.
 
-Amb **Importar → Triar el fitxer…** s'afig una partida exportada, d'aquest o d'un altre ordinador. Es crea com a partida nova: no en substitueix cap.
+Amb **Importar → Triar el fitxer…** s'afig una partida exportada, d'aquest o d'un altre aparell. Es crea com a partida nova: no en substitueix cap. També es poden importar els fitxers de les carpetes `partides` i `copies` de la carpeta de dades.
 
 El nom de la partida es canvia escrivint directament al títol de dalt.
 
-### Guardat i canvis simultanis
+![Les partides guardades.](imatges/ca/19-partides.jpg)
 
-L'avís **Guardant…** passa a **Guardat** quan el servidor ha escrit la jugada en disc. Cada jugada guarda alhora els comptadors, el registre i els passos per a desfer. Durant el guardat, espera que acabe abans de fer una altra acció.
+### Guardat
 
-Si dos jugadors actuen sobre la mateixa versió de la partida, s'accepta el primer canvi i l'altre dispositiu carrega la partida actualitzada. Revisa-la i repeteix l'acció si encara cal. Si apareix **Canvis pendents**, mantín la pàgina oberta, comprova la connexió i prem **Tornar a provar**; el reintent no duplica una jugada que ja s'haja guardat.
+Cada canvi es guarda tot sol al moment: els comptadors, el registre i els passos per a desfer. Pots tancar l'app quan vulgues i continuar un altre dia. Si alguna vegada no es pot guardar (per exemple, si el disc està ple), dalt apareix un avís amb el botó **Tornar a provar**.
 
 ### Paperera
 
-Les partides esborrades apareixen a **Partides → Paperera**. Prem **Recuperar** per a tornar-les a les partides guardades. Recuperar no canvia la partida oberta i, si el nom del fitxer ja existeix, es crea un fitxer diferent.
-
-![Les partides guardades.](imatges/ca/19-partides.jpg)
+Les partides esborrades apareixen a **Partides → Paperera**. Prem **Recuperar** per a tornar-les a les partides guardades.
 
 ### Historial
 
@@ -298,13 +254,17 @@ La Comunitat fa còpies de cada partida tota sola: una cada vegada que s'obri i,
 
 El botó **Còpies** de cada partida les mostra amb la data i l'hora. **Restaurar** torna la partida a eixe moment (abans es fa una còpia del que hi havia, per si de cas), i **Fer una còpia ara** en fa una a mà, per exemple abans de provar alguna cosa.
 
-Tot es guarda a la **carpeta de dades**, que s'obri amb el botó **Obrir la carpeta de dades** de la pestanya Partides, a l'ordinador principal. Dins hi ha la carpeta `partides`, la carpeta `copies`, el fitxer `comunitat.json` (els jugadors) i `historial.json` (les partides acabades). Per a guardar-ho tot a part, o per a passar-ho tot a un altre ordinador, copia eixa carpeta sencera. La [guia d'instal·lació](guia-installacio.md) diu on és en cada sistema.
+![Les còpies de seguretat d'una partida.](imatges/ca/22-copies.jpg)
+
+**A l'ordinador**, tot es guarda a la **carpeta de dades**, que s'obri amb el botó **Obrir la carpeta de dades** de la pestanya Partides. Dins hi ha la carpeta `partides`, la carpeta `copies`, `historial.json` (les partides acabades) i `comunitat.json` (quina partida estava oberta). Per a guardar-ho tot a part, o per a passar-ho tot a un altre ordinador, tanca La Comunitat i copia eixa carpeta sencera. La [guia d'instal·lació](guia-installacio.md) diu on és en cada sistema.
+
+**A Android i al navegador**, les partides es guarden dins de l'app. Si desinstal·les l'app o esborres les dades del navegador, es perden: exporta les que vulgues conservar.
 
 ## Mòbil, mapa, idioma i tema
 
 ### Al mòbil
 
-En vertical, l'app es posa en una sola columna: dalt les pistes, després el torn i, si baixes, el mapa i les eines. Així, qui té el torn el pot portar des del mòbil.
+En vertical, l'app es posa en una sola columna: dalt les pistes i, si baixes, el mapa, les eines i el torn.
 
 Les finestres de tirades i cartes ocupen gairebé tota l'amplada, amb botons fàcils de tocar.
 
@@ -312,33 +272,31 @@ Les finestres de tirades i cartes ocupen gairebé tota l'amplada, amb botons fà
 
 ### Canviar el mapa
 
-Al principi es veu el mapa d'exemple. Per a posar el teu, copia la imatge a la carpeta de dades amb el nom `mapa.jpg` (també val `mapa.png`) i recarrega la pàgina. No cal tancar La Comunitat.
+Al principi es veu el mapa d'exemple. Per a posar el teu, prem **Canviar el mapa**, davall del mapa, i tria una imatge. Es fa servir en totes les partides d'aquest aparell. **Tornar al mapa d'exemple** el lleva.
 
-Si tens el mapa en dos idiomes, anomena'ls `mapa-val.jpg` i `mapa-es.jpg`: cadascú veurà el del seu idioma.
+A l'ordinador també val la manera de les versions anteriors: copiar la imatge a la carpeta de dades amb el nom `mapa.jpg` (o `mapa-val.jpg` i `mapa-es.jpg`, un per idioma).
 
 Fes servir imatges que pugues usar: si comparteixes el programa, no hi poses mapes d'altres persones sense permís.
 
 ### Idioma
 
-L'app està en valencià i en castellà. Els botons **VAL** i **CAS**, dalt a la dreta, canvien l'idioma només en el teu dispositiu; cada jugador pot tindre el seu. El registre, els objectius i el mapa també canvien.
+L'app està en valencià i en castellà. Els botons **VAL** i **CAS**, dalt a la dreta, canvien l'idioma. El registre, els objectius i el mapa d'exemple també canvien.
 
-Els avisos de la finestra (per exemple, en tancar-la) ixen en valencià. Per a tindre'ls en castellà, arranca amb l'opció `--idioma es`.
+A l'ordinador, els avisos de la finestra (per exemple, en tancar-la) ixen en valencià. Per a tindre'ls en castellà, arranca amb l'opció `--idioma es`.
 
 ### Mode fosc
 
-El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del sistema), clar i fosc. Com l'idioma, es recorda en cada dispositiu.
+El botó de la lluna (◐ ☀ ☾) canvia entre el tema automàtic (el del sistema), clar i fosc.
 
 ## Si alguna cosa no va
 
 | Què passa | Què fer |
 |---|---|
-| No s'obri la finestra pròpia, sinó la finestreta del QR i el navegador | A Windows, falta el component **WebView2** de Microsoft, que porten Windows 11 i Windows 10 actualitzat: instal·la «Microsoft Edge WebView2 Runtime» des de la web de Microsoft. A Linux, falten GTK i WebKitGTK: la [guia d'instal·lació](guia-installacio.md) diu com instal·lar-los. Mentrestant, La Comunitat funciona igual al navegador. |
-| Els altres no hi poden entrar | Han d'estar a la mateixa wifi que el servidor. Revisa el tallafoc: a Windows, permet La Comunitat a «Xarxes privades» i comprova que la wifi està configurada com a privada. A Linux, `sudo ufw allow 8766/tcp`. Algunes xarxes de convidats no deixen que els dispositius es vegen entre ells. |
-| «El port ja està en ús» | Ja hi ha una altra Comunitat oberta. Tanca-la, o arranca en un altre port: `--port 9001`. |
-| Apareix «S'ha perdut la connexió amb el servidor» | La Comunitat s'ha tancat o l'ordinador s'ha adormit. Quan tornes a obrir-la, la pàgina es reconnecta sola i no es perd res. |
-| Apareix «Mode de prova» | S'ha obert la pàgina sense el programa (per exemple, la prova de la web). Res no es guarda: entra amb l'adreça de la finestra. |
+| A l'ordinador no s'obri la finestra pròpia, sinó el navegador | A Windows, falta el component **WebView2** de Microsoft, que porten Windows 11 i Windows 10 actualitzat: instal·la «Microsoft Edge WebView2 Runtime» des de la web de Microsoft. A Linux, falten GTK i WebKitGTK: la [guia d'instal·lació](guia-installacio.md) diu com instal·lar-los. Mentrestant, La Comunitat funciona igual al navegador. |
+| «La Comunitat ja està oberta» | Ja hi ha una altra Comunitat oberta en aquest ordinador: busca-la a la barra de tasques. |
+| Apareix «No es pot contactar amb el programa» | A l'ordinador, La Comunitat s'ha tancat mentre la pàgina estava oberta al navegador. Torna a obrir-la. |
+| Al mòbil no trobe una partida que tenia a l'ordinador | Cada aparell té les seues partides. Exporta-la a l'ordinador i importa-la al mòbil. |
 | M'he equivocat en algun número | Prem **Desfer**, o corregeix-lo amb els botons − i + de la barra de dalt. |
-| Un jugador vol entrar amb un altre nom | Demana al màster que edite el jugador. |
 
 > **Recorda:** l'app només porta els comptes. Si l'app i el tauler no coincideixen, mana el tauler: corregiu l'app perquè quede igual.
 

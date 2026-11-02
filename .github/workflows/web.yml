@@ -1,4 +1,4 @@
-# Publica la web de presentació (GitHub Pages) cada vegada que es pugen canvis a main.
+# Publica la web de presentació i l'app web (GitHub Pages) cada vegada que es pugen canvis a main.
 # Cal tindre Settings → Pages → Source en «GitHub Actions».
 name: Web
 
@@ -21,8 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Genera la web
-        run: python3 eines/web.py _site
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Genera la web i l'app web (app/)
+        run: |
+          python -m pip install --quiet pillow
+          python eines/web.py _site
       - name: Fa els manuals en PDF
         run: sh eines/manuals-pdf.sh _site/pdf
       - uses: actions/configure-pages@v5

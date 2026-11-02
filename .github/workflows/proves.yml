@@ -1,5 +1,6 @@
 # Comprova cada canvi que es puja a main: que comunitat.py es genera, que no falta cap traducció
-# i que passen les proves del servidor (partides, historial, còpies, exportar i importar…).
+# i que passen les proves del programa, del magatzem (partides, historial, còpies, exportar i importar)
+# i de l'app en un navegador, tant la versió d'escriptori com la web/Android.
 name: Proves
 
 on:
@@ -31,10 +32,14 @@ jobs:
         run: python build.py
       - name: Comprova les traduccions
         run: python eines/comprova-traduccions.py
-      - name: Proves del servidor
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Proves del programa
         run: |
           python tests/prova_servidor.py
           python tests/prova_persistencia.py
+          python tests/prova_magatzem.py
 
   navegador:
     runs-on: ubuntu-latest
@@ -47,7 +52,7 @@ jobs:
         run: |
           python -m pip install playwright
           python -m playwright install --with-deps chromium
-      - name: Genera i prova dues sessions
+      - name: Prova l'app (escriptori i web)
         run: |
           python build.py
-          python tests/prova_navegador.py
+          python tests/prova_app.py

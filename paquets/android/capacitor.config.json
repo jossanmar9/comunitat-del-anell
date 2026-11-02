@@ -1,0 +1,11 @@
+{
+  "appId": "io.github.jossanmar9.comunitat",
+  "appName": "La Comunitat",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#E9DCBC",
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

@@ -110,9 +110,9 @@ Homepage: {WEB}
 Description: Ajudant lliure per al joc de taula «El Destino de la Comunidad»
  Porta els comptes de les partides del joc cooperatiu «El Señor de los Anillos:
  El Destino de la Comunidad»: esperança, amenaça, torns, tirades de cerca i de
- batalla, objectius i historial. Un ordinador fa de servidor i la resta de la
- taula hi entra des del navegador, mòbils inclosos, sense Internet. En valencià
- i castellà. Projecte de fans no oficial; cal tindre el joc.
+ batalla, objectius i historial, en una finestra pròpia i sense Internet. Hi ha
+ també versió per a Android i app web. En valencià i castellà. Projecte de fans
+ no oficial; cal tindre el joc.
  .
  Ayudante libre para el juego de mesa «El Destino de la Comunidad», en castellano
  y valenciano.

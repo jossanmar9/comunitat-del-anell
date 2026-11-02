@@ -1,0 +1,5 @@
+# Tot això ho genera GitHub Actions (vegeu README.md d'aquesta carpeta)
+node_modules/
+package-lock.json
+www/
+android/

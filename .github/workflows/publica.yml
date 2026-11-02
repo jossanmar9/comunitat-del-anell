@@ -1,4 +1,4 @@
-# Construeix La Comunitat per a Windows i Linux, fa els manuals en PDF i ho publica tot
+# Construeix La Comunitat per a Windows, Linux i Android, fa els manuals en PDF i ho publica tot
 # com a «release» quan es puja una etiqueta v* (per exemple v2.0).
 # També es pot llançar a mà des de la pestanya Actions («Run workflow»): fa els paquets de prova,
 # que es poden baixar des del resum de l'execució, però no publica res.
@@ -45,17 +45,18 @@ jobs:
           python eines/comprova-traduccions.py
           python tests/prova_servidor.py
           python tests/prova_persistencia.py
+          python tests/prova_magatzem.py
 
       - name: Prova que arranca
         run: |
-          python comunitat.py --sense-finestra --sense-navegador --sense-qr --dades "$RUNNER_TEMP/dades" --port 8799 & PID=$!
+          python comunitat.py --sense-finestra --sense-navegador --dades "$RUNNER_TEMP/dades" --port 8799 & PID=$!
           sleep 3
-          curl -fsS http://127.0.0.1:8799/api/hello
+          curl -fsS http://127.0.0.1:8799/api/hola
           curl -fsS -o /dev/null "http://127.0.0.1:8799/mapa?lang=es"
           curl -fsS --compressed http://127.0.0.1:8799/ | grep "La Comunitat" > /dev/null
           kill $PID
           sleep 1
-          test -f "$RUNNER_TEMP/dades/comunitat.json"
+          test -f "$RUNNER_TEMP/dades/comunitat.lock"
 
   manuals:
     needs: proves
@@ -98,7 +99,7 @@ jobs:
         run: |
           $p = Start-Process dist\LaComunitat\LaComunitat.exe -ArgumentList "--sense-finestra","--sense-navegador","--dades","$env:RUNNER_TEMP\dades","--port","8799" -PassThru
           Start-Sleep -Seconds 8
-          $r = Invoke-WebRequest http://127.0.0.1:8799/api/hello -UseBasicParsing
+          $r = Invoke-WebRequest http://127.0.0.1:8799/api/hola -UseBasicParsing
           if ($r.StatusCode -ne 200) { throw "El servidor no respon" }
           $m = Invoke-WebRequest "http://127.0.0.1:8799/mapa?lang=es" -UseBasicParsing
           if ($m.StatusCode -ne 200) { throw "No troba el mapa d'exemple" }
@@ -115,7 +116,7 @@ jobs:
           Write-Host "Resultat: $r"
           if (-not $r.StartsWith("ok ") -or $r -notmatch "Comunitat") { throw "La finestra no mostra La Comunitat: $r" }
           if (-not $p.WaitForExit(30000)) { Stop-Process -Id $p.Id; throw "En tancar la finestra, el programa no s'atura" }
-          if (-not (Test-Path "$env:RUNNER_TEMP\dades-finestra\comunitat.json")) { throw "No s'han guardat les dades" }
+          if (-not (Test-Path "$env:RUNNER_TEMP\dades-finestra\comunitat.lock")) { throw "No ha fet servir la carpeta de dades" }
 
       - name: Prepara la versió portable i la de l'instal·lador
         shell: pwsh
@@ -178,12 +179,12 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q ./dist/comunitat-del-anell_${VERSIO}_all.deb
-          comunitat-del-anell --sense-finestra --sense-navegador --sense-qr --port 8799 & PID=$!
+          comunitat-del-anell --sense-finestra --sense-navegador --port 8799 & PID=$!
           sleep 3
-          curl -fsS http://127.0.0.1:8799/api/hello
+          curl -fsS http://127.0.0.1:8799/api/hola
           kill $PID
           sleep 1
-          test -f "$HOME/.local/share/comunitat-del-anell/comunitat.json"
+          test -f "$HOME/.local/share/comunitat-del-anell/comunitat.lock"
           desktop-file-validate /usr/share/applications/comunitat-del-anell.desktop || true
 
       - name: Prova la finestra pròpia (WebKitGTK)
@@ -193,18 +194,18 @@ jobs:
           timeout 120 xvfb-run -a comunitat-del-anell --sense-navegador --port 8797 --dades "$RUNNER_TEMP/dades-finestra" < /dev/null || true
           echo "Resultat: $(cat "$COMUNITAT_PROVA_FINESTRA")"
           grep -q '^ok .*Comunitat' "$COMUNITAT_PROVA_FINESTRA"
-          test -f "$RUNNER_TEMP/dades-finestra/comunitat.json"
+          test -f "$RUNNER_TEMP/dades-finestra/comunitat.lock"
 
       - name: Prova el .tar.gz
         run: |
           mkdir prova && tar xzf dist/LaComunitat-${VERSIO}-linux.tar.gz -C prova
           cd prova/LaComunitat-${VERSIO}-linux
-          ./comunitat-del-anell.sh --sense-finestra --sense-navegador --sense-qr --port 8798 & PID=$!
+          ./comunitat-del-anell.sh --sense-finestra --sense-navegador --port 8798 & PID=$!
           sleep 3
-          curl -fsS http://127.0.0.1:8798/api/hello
+          curl -fsS http://127.0.0.1:8798/api/hola
           kill $PID
           sleep 1
-          test -f comunitat.json
+          test -f comunitat.lock
 
       - uses: actions/upload-artifact@v6
         with:
@@ -213,9 +214,70 @@ jobs:
             dist/*.deb
             dist/*.tar.gz
 
+  android:
+    needs: proves
+    runs-on: ubuntu-latest
+    env:
+      VERSIO: ${{ needs.proves.outputs.versio }}
+      ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    defaults:
+      run:
+        working-directory: paquets/android
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Genera el projecte d'Android (Capacitor)
+        run: |
+          python -m pip install --quiet pillow
+          npm install --no-audit --no-fund
+          python ../../build.py --web www
+          npx cap add android
+          python ../../eines/android.py --versio "$VERSIO" android
+          npx cap sync android
+
+      - name: Fa l'APK
+        run: |
+          cd android
+          chmod +x gradlew
+          if [ -n "$ANDROID_KEYSTORE" ]; then
+            ./gradlew --no-daemon assembleRelease
+            BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+            echo "$ANDROID_KEYSTORE" | base64 -d > "$RUNNER_TEMP/clau.p12"
+            "$BT/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/alineat.apk"
+            "$BT/apksigner" sign --ks "$RUNNER_TEMP/clau.p12" --ks-type PKCS12 --ks-key-alias comunitat \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --out "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android.apk" "$RUNNER_TEMP/alineat.apk"
+            rm -f "$RUNNER_TEMP/clau.p12"
+            "$BT/apksigner" verify --print-certs "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android.apk"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "::error::Falten els secrets ANDROID_KEYSTORE i ANDROID_KEYSTORE_PASSWORD (vegeu paquets/android/README.md)."
+            exit 1
+          else
+            echo "::warning::Sense la clau de signatura: es fa un APK de prova (debug) que no serveix per a actualitzar el de veritat."
+            ./gradlew --no-daemon assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/LaComunitat-$VERSIO-android-prova.apk"
+          fi
+          ls -l "$GITHUB_WORKSPACE"/*.apk
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: android
+          path: "*.apk"
+
   publica:
     if: github.ref_type == 'tag'
-    needs: [proves, manuals, windows, linux]
+    needs: [proves, manuals, windows, linux, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v7
@@ -237,8 +299,9 @@ jobs:
             | Windows portable | `LaComunitat-${{ needs.proves.outputs.versio }}-windows-portable.zip` — descomprimeix-lo i obri `LaComunitat.exe` |
             | Ubuntu, Debian, Linux Mint… | `comunitat-del-anell_${{ needs.proves.outputs.versio }}_all.deb` |
             | Altres Linux | `LaComunitat-${{ needs.proves.outputs.versio }}-linux.tar.gz` — descomprimeix-lo i obri `comunitat-del-anell.sh` |
+            | Android 5.1 o més nou | `LaComunitat-${{ needs.proves.outputs.versio }}-android.apk` — o, sense instal·lar res, l'app web: https://jossanmar9.github.io/comunitat-del-anell/app/ |
 
             Manuals en PDF (valencià i castellà) adjunts i dins de cada paquet. Instruccions: `guia-installacio.pdf` / `guia-instalacion.pdf`.
 
-            *Ayudante libre para el juego de mesa «El Destino de la Comunidad», para Windows y Linux. Guía de instalación en castellano: `guia-instalacion.pdf`.*
+            *Ayudante libre para el juego de mesa «El Destino de la Comunidad», para Windows, Linux y Android. Guía de instalación en castellano: `guia-instalacion.pdf`.*
           generate_release_notes: true

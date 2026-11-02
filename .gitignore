@@ -1,9 +1,13 @@
-# Dades de les partides (es creen en engegar el servidor)
+# Dades de les partides (si el programa es fa servir des d'aquesta carpeta)
 partides/
+copies/
 comunitat.json
 historial.json
+comunitat.lock
+*.danyat
 
-# El mapa propi de cadascú
+# El mapa propi de cadascú (mapa.json des de la v3; els altres, de versions anteriors)
+mapa.json
 mapa.jpg
 mapa.jpeg
 mapa.png
@@ -26,7 +30,5 @@ manuals/
 # Dependències locals per a les proves de navegador
 .test-tools/
 
-# Guardats transaccionals locals
+# La base de dades de la v2 (la v3 la guarda a copies/v2/)
 comunitat.sqlite3*
-comunitat.lock
-copies/estat/

@@ -4,6 +4,29 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions publicades com `vX.Y.Z`.
 
+## [3.0.0] - 2026-10-30
+
+Una sola persona porta la partida, i ara també des del mòbil: La Comunitat funciona igual a Windows, a Linux, a Android i al navegador.
+
+### Afegit
+- **App per a Android** (`.apk` a cada versió publicada), feta amb Capacitor a partir de la mateixa app. Exportar una partida obri el menú «Compartir» d'Android; el botó «enrere» tanca les finestres.
+- **App web instal·lable** a la web del projecte (`/app/`): funciona sense connexió i es pot afegir a la pantalla d'inici. Les partides es guarden al navegador.
+- **Canviar el mapa** des de l'app: tria una imatge i es guarda per a totes les partides (abans calia copiar `mapa.jpg` a la carpeta de dades).
+- Botó «Fer una còpia ara» a les còpies de seguretat.
+- A l'ordinador, les partides exportades es guarden a Baixades sense sobreescriure res.
+- Proves de l'app en un navegador de veritat (versió d'escriptori i web), del magatzem i del pas de la v2 a la v3.
+
+### Canviat
+- La partida, l'historial i les còpies es porten des de l'app mateixa (`src/web/magatzem.js`); el programa d'escriptori només guarda els fitxers. Els fitxers continuen sent els mateixos (`partides/`, `copies/`, `historial.json`).
+- El programa d'escriptori només accepta connexions del mateix ordinador.
+- Al mòbil, les pistes van en dues columnes.
+- Les compilacions donen sempre el mateix `comunitat.py`.
+
+### Llevat
+- **El mode de taula connectada**: la sala, els jugadors amb PIN, les sessions, el QR i l'entrada des d'altres mòbils. Ara una persona porta la partida i la resta juga al tauler.
+- Les races i els àlies dels jugadors.
+- La base de dades SQLite de la v2.7: en obrir la v3 per primera vegada, si tenia canvis sense passar als fitxers JSON s'hi passen, i es guarda a `copies/v2/`.
+
 ## [2.7.0] - 2026-10-27
 
 - Guardat transaccional conjunt de l’estat actiu (partida, jugadors, sessions i historial) en SQLite, mantenint JSON compatibles.

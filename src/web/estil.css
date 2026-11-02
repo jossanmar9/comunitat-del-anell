@@ -170,12 +170,9 @@ svg .dim{opacity:.12}
 /* Logo */
 .brand .logo{flex:none;width:56px;height:56px;display:block;filter:drop-shadow(0 2px 3px rgba(40,20,5,.35))}
 
-/* --- 1.4: icones de capçalera, QR, resum i historial --- */
+/* --- 1.4: icones de capçalera, resum i historial --- */
 .chip.ico{padding:6px 9px;font-size:18px;line-height:1;min-width:34px;justify-content:center}
 .chip.ico svg{display:block}
-.qr-box{align-self:center;background:#fff;padding:10px;border-radius:6px;border:1px solid var(--line-2);line-height:0}
-.qr-box svg{width:min(260px,62vw);height:auto;display:block}
-.qr-url{margin:0;text-align:center;font:600 21px/1.2 var(--f-body);letter-spacing:.01em;word-break:break-all;user-select:all}
 .banner.endstate{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
 .sum{display:flex;flex-direction:column;gap:10px}
 .sum h3{margin:6px 0 0}
@@ -333,4 +330,20 @@ body{background:radial-gradient(circle at 18% -10%,rgba(180,138,60,.18),transpar
   .who{grid-row:2;justify-self:stretch!important;max-width:none!important;justify-content:flex-start!important}
   .tabs{grid-row:3!important;grid-column:1/-1!important;width:100%}
   .tracks{grid-template-columns:minmax(0,1fr)!important}
+}
+/* v3: eines del mapa i marges de les pantalles amb osca (Android) */
+.map-tools{justify-content:center;margin-top:8px;gap:8px}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+/* v3: al mòbil (i a l'app d'Android), les pistes en dues columnes i la capçalera en dues files */
+@media (max-width:700px){
+  .tracks{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .tracks>.trk:nth-child(-n+2),.tracks>#undo{grid-column:1/-1}
+  .trk{padding:5px 9px}
+}
+@media (max-width:430px){
+  .top{grid-template-columns:minmax(0,1fr) auto!important}
+  .who{grid-row:auto!important;justify-self:end!important;max-width:none!important}
+  .who .lang button,.who .seg button{padding-inline:8px}
+  .tabs{grid-row:2!important}
+  #camp-name{font-size:19px}
 }

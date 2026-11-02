@@ -4,41 +4,9 @@ Guía de uso de La Comunidad, el ayudante libre para llevar las partidas de «El
 
 Para instalarla, consulta la [guía de instalación](guia-instalacion.md).
 
-## Guardados y recuperación — v2.7.0
-
-La partida activa, identidades, hashes de PIN, sesiones e historial se confirman juntos en **`comunitat.sqlite3`**, mediante transacciones SQLite. Los JSON existentes siguen como copias compatibles de partidas, configuración e historial. Las partidas inactivas y sus copias siguen en JSON; esta versión refuerza el guardado conjunto del estado activo.
-
-La primera lectura importa configuración e historial existentes sin eliminarlos. Cuando existe SQLite, es la fuente del último estado confirmado: no edites manualmente sus JSON de configuración, historial o partida activa; utiliza importar y restaurar. Si falla la proyección JSON, la jugada confirmada sigue en SQLite y se recupera al iniciar. Si falla la transacción, la app no confirma la jugada. Los datos corruptos no se sustituyen silenciosamente por datos vacíos.
-
-Antes de recuperar un inicio, se guarda una copia coherente de SQLite en **`copies/estat/comunitat.sqlite3`**. Para una copia completa, cierra la app y copia **toda la carpeta de datos**, incluyendo base, JSON, partidas y copias. La copia de estado contiene credenciales y sesiones: consérvala en privado. Para volver a una versión anterior, cierra la app y trabaja sobre una copia de la carpeta; los JSON deben estar actualizados. No se permiten dos servidores en la misma carpeta de datos, aunque utilicen puertos distintos.
-
-Si una base queda dañada, cierra la app, conserva toda la carpeta y restaura una copia coherente de `comunitat.sqlite3`; después la app recuperará sus JSON. La copia de estado corresponde al anterior inicio correcto, no necesariamente a la última jugada. Las copias de partida y la exportación JSON siguen disponibles.
-
-
-## Sala de partida — v2.6.0
-
-**Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
-
-La aplicación arranca sin ninguna partida cargada. Elige **Crear partida**, escribe el nombre de la partida y los nombres y razas de los participantes, y prepárala. Al confirmar, los jugadores se incorporan automáticamente a **Sala de partida**, con alias y PIN. Los PIN nuevos se muestran una sola vez al máster. Si un nombre ya corresponde a un jugador registrado, se reutilizan su identidad y PIN existente. Los nombres de los participantes de una misma partida no pueden repetirse, ignorando acentos, mayúsculas y espacios sobrantes.
-
-**Abrir partida guardada** recupera la partida e incorpora sus jugadores a la sala sin duplicarlos. Las partidas nuevas guardan UID, nombre, raza y alias, pero no el PIN ni su hash dentro del archivo de partida. Los PIN y sesiones siguen en la configuración local. Si importas una partida en otro ordenador o recuperas jugadores eliminados, el máster debe generarles PIN nuevos. Las partidas antiguas recuperan los jugadores por el nombre. No se abre la última partida al reiniciar; la opción explícita de terminal `--partida` sigue disponible.
-
-El máster abre la app en el PC mediante `http://localhost:8766` (o el puerto elegido). **Sala de partida** permite crear jugadores con nombre y raza, editarlos, generar otro alias, eliminarlos, regenerar el PIN y desvincular sesiones. Las acciones destructivas requieren una segunda pulsación. Los alias son inventados; no son personajes del juego.
-
-Al crear o regenerar un PIN de cuatro dígitos, anótalo y comunícalo al jugador: solo se muestra una vez y después aparece como **••••**. Se guarda con sal aleatoria y PBKDF2-HMAC-SHA256 (200.000 iteraciones), sin PIN en claro. Regenerarlo revoca la sesión anterior.
-
-El jugador escanea el QR común, sigue **¿Quién eres? → jugador → PIN → Entrar**. Solo aparecen jugadores con PIN y sin vinculación. El navegador recuerda la sesión y reconecta después de recargar, de un corte de wifi o de reiniciar el servidor. **Salir** revoca la sesión; cerrar una pestaña no la desvincula. Si se pierde el dispositivo o los datos del navegador, el máster debe pulsar **Desvincular**. La posesión del token autoriza la sesión: no lo compartas.
-
-**Bloquear nuevas conexiones** impide nuevas vinculaciones; las sesiones autorizadas pueden continuar y reconectar. El panel muestra conexión SSE, vinculación y última petición autenticada. Sin partida preparada, el jugador espera. Las jugadas siguen siendo cooperativas; el máster local administra jugadores, partidas e historial. Con sondeo, un dispositivo puede aparecer desconectado aunque siga autorizado; consulta también la última conexión.
-
-Al actualizar desde v2.5 o anteriores se conservan partidas, configuración y UID. Los nombres duplicados reciben un sufijo, se sustituyen prudentemente los alias antiguos y se revocan las sesiones sin autenticación. El máster debe generar PIN para los jugadores migrados. Haz una copia de la carpeta de datos antes de actualizar. La sala es común a las partidas guardadas, como en la v2.5.
-
-Funciona en una LAN de confianza con HTTP; el PIN y los tokens viajan sin cifrado de transporte. No expongas el puerto a Internet. Tras cinco intentos de PIN fallidos por IP en un minuto hay que esperar. El máster solo se autoriza desde loopback con Host local y se rechazan escrituras entre orígenes.
-
-
 ## Qué es y qué necesitas
 
-La Comunidad es una página web que funciona en casa, sin Internet. Un ordenador hace de servidor y el resto de la mesa entra desde el navegador del móvil, la tableta o el portátil. Todos ven lo mismo al momento: si alguien pierde Esperanza o pasa el turno, los demás lo ven enseguida.
+La Comunidad lleva las cuentas de una partida de «El Destino de la Comunidad». **Una persona la lleva** desde el ordenador, la tableta o el móvil, y el resto jugáis en el tablero, como siempre. No hace falta Internet ni crear ninguna cuenta.
 
 La app no sustituye al juego. Las cartas, las Tropas, los Nazgûl y el Ojo de Sauron siguen en el tablero de cartón. La app se encarga de las cuentas que se olvidaban o hacían perder tiempo:
 
@@ -51,46 +19,36 @@ La app no sustituye al juego. Las cartas, las Tropas, los Nazgûl y el Ojo de Sa
 |---|---|
 | **Partida** | Los marcadores, las herramientas de tiradas, el mapa y el turno paso a paso. |
 | **Comunidad** | La preparación del tablero, quién lleva cada personaje y el resumen. |
-| **Partidas** | Las partidas guardadas y el historial de las terminadas. |
+| **Partidas** | Las partidas guardadas, las copias de seguridad y el historial de las terminadas. |
 
-**Qué hace falta:**
+**Dónde funciona:** es la misma app en todas partes. Elige la que mejor te vaya (la [guía de instalación](guia-instalacion.md) explica cada una):
 
-- **El ordenador servidor:** Windows 10 u 11, o Linux. Consulta la [guía de instalación](guia-instalacion.md).
-- **Los jugadores:** cualquier dispositivo con navegador, conectado a la misma wifi que el servidor. No tienen que instalar nada.
+| Dónde | Cómo | Dónde se guardan las partidas |
+|---|---|---|
+| **Windows 10 u 11** | Instalador o versión portable, en una ventana propia | En la carpeta de datos del ordenador |
+| **Linux** | Paquete `.deb` o `.tar.gz`, en una ventana propia | En la carpeta de datos del ordenador |
+| **Android** | El `.apk` | Dentro de la app |
+| **Cualquier navegador** | La app web, sin instalar nada, también sin conexión | Dentro del navegador |
 
-## Arrancar La Comunidad
+Las partidas **no pasan solas** de un dispositivo a otro: para seguir una en otro sitio, expórtala e impórtala (ver [Partidas e historial](#partidas-e-historial)).
 
-Abre **La Comunidad** desde el menú Inicio (Windows) o desde el menú de aplicaciones (Linux). La app se abre en **una ventana propia**, sin navegador: este ordenador es el «principal», el que hace de servidor, y desde aquí se puede jugar igual que desde un móvil.
+## Abrir La Comunidad
 
-- Mientras la ventana esté abierta, La Comunidad funciona. Cuando la cierras, te pregunta si quieres cerrarla, lo guarda todo y los jugadores se desconectan.
-- El botón **Invitar**, arriba a la derecha, muestra la dirección para los demás, por ejemplo `http://192.168.1.40:8766`, y el **código QR** que la lleva dentro.
-- En la pestaña **Partidas**, el apartado **En este ordenador** dice dónde se guarda todo y tiene el botón **Abrir la carpeta de datos**.
+- **Windows y Linux:** abre **La Comunidad** desde el menú Inicio o desde el menú de aplicaciones. Se abre en **una ventana propia**, sin navegador. Al cerrarla, te pregunta si quieres cerrarla; la partida ya está guardada.
+- **Android:** toca el icono de **La Comunidad**. El botón «atrás» de Android cierra la ventana abierta, vuelve a la pestaña Partida y, si ya estabas en ella, sale de la app.
+- **Navegador:** abre la dirección de la app web. Desde el menú del navegador, **Añadir a pantalla de inicio** (o **Instalar**) la deja como una app más, que funciona también sin conexión.
 
-> Si en este ordenador no se puede abrir la ventana propia (consulta [Si algo no funciona](#si-algo-no-funciona)), se abre una ventanita con la dirección, el QR y la partida abierta, y la app en el navegador. También la puedes elegir a propósito con la opción `--navegador`. Y en un ordenador sin pantalla, la misma información, con el QR, sale en el terminal (en valenciano). Consulta las opciones en la [guía de instalación](guia-instalacion.md).
+La primera vez no hay ninguna partida: pulsa **Crear partida**. Si ya tienes alguna, se abre la última que usaste.
 
-## Entrar desde los dispositivos
+![Al abrirla por primera vez.](imatges/es/00-inici.jpg)
 
-1. Con la cámara del móvil, escanea el QR del botón **Invitar** del ordenador principal. También puedes escribir en el navegador la dirección para los demás, por ejemplo `http://192.168.1.40:8766`.
-2. Selecciona el jugador creado por el máster, escribe su PIN y pulsa **Entrar**.
-3. El navegador recuerda quién eres. La próxima vez entrarás directamente.
-
-El máster puede cambiar tu nombre desde **Sala de partida**.
-
-Si llega alguien con la partida empezada, pulsa el botón del QR de arriba a la derecha (en el ordenador principal, **Invitar**): muestra el código en grande para que lo escanee.
-
-![Entrada con jugador y PIN.](imatges/es/01-entrada-v260.png)
-
-![Sala de partida del máster.](imatges/es/01-sala-v260.png)
-
-![El botón del QR, para invitar.](imatges/es/02-qr.jpg)
-
-> **Truco:** en el móvil, añade la página a la pantalla de inicio desde el menú del navegador. Así se abre como si fuera una aplicación.
+> En el ordenador, si no se puede abrir la ventana propia (ver [Si algo no funciona](#si-algo-no-funciona)), se abre la app en el navegador y una ventanita para cerrarla. También la puedes elegir a propósito con la opción `--navegador`.
 
 ## Preparar una partida
 
-La primera vez, la app muestra el formulario de preparación. Rellénalo y pulsa **Empezar la partida**.
+Ponle un nombre a la partida (por ejemplo, «Viernes con la cuadrilla»), rellena el formulario y pulsa **Empezar la partida**. Para volver a preparar la partida abierta desde cero, en la pestaña Comunidad está el botón **Preparar una partida nueva**.
 
-![Dificultad, participantes, personajes y objetivos.](imatges/es/03-preparacio-v270.png)
+![Dificultad, participantes, personajes y objetivos.](imatges/es/03-preparacio.jpg)
 
 ### Dificultad
 
@@ -106,7 +64,7 @@ Los objetivos incluyen siempre «Destruir el Anillo Único», que se añade solo
 
 ### Participantes y personajes
 
-Cada participante lleva 2 personajes, y junto a cada desplegable se ve el retrato del elegido. Alguien tiene que llevar a Frodo y Sam. Las propuestas que hay por defecto son las que sugiere el reglamento para la primera partida. En solitario llevas a Frodo y Sam y 4 personajes más.
+Escribe el nombre de cada participante (la app recuerda los últimos que has puesto). Cada participante lleva 2 personajes, y junto a cada desplegable se ve el retrato del elegido. Alguien tiene que llevar a Frodo y Sam. Las propuestas que hay por defecto son las que sugiere el reglamento para la primera partida. En solitario llevas a Frodo y Sam y 4 personajes más.
 
 ### Objetivos
 
@@ -236,9 +194,9 @@ Márcalos cuando los completéis. La app no aplica sola el texto «Al completarl
 
 ### Deshacer y registro
 
-Todo lo que pasa queda en el registro, con la hora y quién lo ha hecho. Las pérdidas de Esperanza salen en rojo y las ganancias, en verde.
+Todo lo que pasa queda en el registro, con la hora. Las pérdidas de Esperanza salen en rojo y las ganancias, en verde.
 
-Si alguien se equivoca, **Deshacer** vuelve atrás el último cambio, sea de quien sea. Se puede pulsar varias veces.
+Si te equivocas, **Deshacer** vuelve atrás el último cambio. Se puede pulsar varias veces.
 
 > **Cuidado:** Deshacer solo cambia la app. Si ya habíais movido piezas en el tablero, volved a ponerlas como estaban.
 
@@ -246,7 +204,7 @@ Si alguien se equivoca, **Deshacer** vuelve atrás el último cambio, sea de qui
 
 ### Al terminar: el resumen
 
-Cuando ganáis o perdéis, la app muestra a todos el resumen de la partida:
+Cuando ganáis o perdéis, la app muestra el resumen de la partida:
 
 - rondas jugadas y cuánto ha durado;
 - la Esperanza final y dónde se ha perdido o ganado;
@@ -259,30 +217,28 @@ Se puede volver a abrir con el botón **Ver el resumen** de la franja de arriba,
 
 ## Partidas e historial
 
-En la pestaña **Partidas** puedes tener guardadas todas las que quieras:
+En la pestaña **Partidas** puedes tener todas las que quieras guardadas:
 
-- **Crear** y abrir una nueva.
-- **Abrir** otra. Todos los que están conectados pasan a ella solos.
+- **Crear y abrir** una nueva.
+- **Abrir** otra.
 - **Duplicar**, para probar algo sin tocar la original.
-- **Copias**: las copias de seguridad de la partida, para volver a una anterior (más abajo).
-- **Exportar**: guarda la partida en un archivo `.json`, para pasarla a otro ordenador o guardarla aparte.
-- **Borrar.** No se pierde: va a la carpeta `partides/esborrades/` de la carpeta de datos y se puede recuperar moviendo el archivo a `partides/`.
+- **Copias**: las copias de seguridad de la partida, para volver a una anterior (ver más abajo).
+- **Exportar**: guarda la partida en un archivo `.json`, para pasarla a otro dispositivo o guardarla aparte. En el ordenador, va a la carpeta **Descargas**; en Android, se abre el menú **Compartir** para guardarla en Archivos, en Drive, enviarla…; en el navegador, se descarga.
+- **Borrar**: va a la **Papelera**, de donde la puedes recuperar. La partida abierta no se puede borrar: abre otra primero.
 
-Con **Importar → Elegir el archivo…** se añade una partida exportada, de este o de otro ordenador. Se crea como partida nueva: no sustituye a ninguna.
+Con **Importar → Elegir el archivo…** se añade una partida exportada, de este o de otro dispositivo. Se crea como partida nueva: no sustituye a ninguna. También se pueden importar los archivos de las carpetas `partides` y `copies` de la carpeta de datos.
 
 El nombre de la partida se cambia escribiendo directamente en el título de arriba.
 
 ![Las partidas guardadas.](imatges/es/19-partides.jpg)
 
-### Guardado y cambios simultáneos
+### Guardado
 
-El aviso **Guardando…** pasa a **Guardado** cuando el servidor ha escrito la jugada en disco. Cada jugada guarda a la vez los contadores, el registro y los pasos para deshacer. Durante el guardado, espera a que termine antes de realizar otra acción.
-
-Si dos jugadores actúan sobre la misma versión de la partida, se acepta el primer cambio y el otro dispositivo carga la partida actualizada. Revísala y repite la acción si aún hace falta. Si aparece **Cambios pendientes**, mantén la página abierta, comprueba la conexión y pulsa **Volver a intentar**; el reintento no duplica una jugada que ya se haya guardado.
+Cada cambio se guarda solo al momento: los contadores, el registro y los pasos para deshacer. Puedes cerrar la app cuando quieras y seguir otro día. Si alguna vez no se puede guardar (por ejemplo, si el disco está lleno), arriba aparece un aviso con el botón **Volver a intentar**.
 
 ### Papelera
 
-Las partidas borradas aparecen en **Partidas → Papelera**. Pulsa **Recuperar** para devolverlas a las partidas guardadas. Recuperar no cambia la partida abierta y, si el nombre del archivo ya existe, se crea uno diferente.
+Las partidas borradas aparecen en **Partidas → Papelera**. Pulsa **Recuperar** para devolverlas a las partidas guardadas.
 
 ### Historial
 
@@ -298,13 +254,17 @@ La Comunidad hace copias de cada partida ella sola: una cada vez que se abre y, 
 
 El botón **Copias** de cada partida las muestra con la fecha y la hora. **Restaurar** devuelve la partida a ese momento (antes se hace una copia de lo que había, por si acaso), y **Hacer una copia ahora** hace una a mano, por ejemplo antes de probar algo.
 
-Todo se guarda en la **carpeta de datos**, que se abre con el botón **Abrir la carpeta de datos** de la pestaña Partidas, en el ordenador principal. Dentro están la carpeta `partides`, la carpeta `copies`, el archivo `comunitat.json` (los jugadores) e `historial.json` (las partidas terminadas). Para guardarlo todo aparte, o para pasarlo todo a otro ordenador, copia esa carpeta entera. La [guía de instalación](guia-instalacion.md) dice dónde está en cada sistema.
+![Las copias de seguridad de una partida.](imatges/es/22-copies.jpg)
+
+**En el ordenador**, todo se guarda en la **carpeta de datos**, que se abre con el botón **Abrir la carpeta de datos** de la pestaña Partidas. Dentro están la carpeta `partides`, la carpeta `copies`, `historial.json` (las partidas terminadas) y `comunitat.json` (qué partida estaba abierta). Para guardarlo todo aparte, o para pasarlo todo a otro ordenador, cierra La Comunidad y copia esa carpeta entera. La [guía de instalación](guia-instalacion.md) dice dónde está en cada sistema.
+
+**En Android y en el navegador**, las partidas se guardan dentro de la app. Si desinstalas la app o borras los datos del navegador, se pierden: exporta las que quieras conservar.
 
 ## Móvil, mapa, idioma y tema
 
 ### En el móvil
 
-En vertical, la app se pone en una sola columna: arriba los marcadores, después el turno y, si bajas, el mapa y las herramientas. Así, quien tiene el turno lo puede llevar desde el móvil.
+En vertical, la app se pone en una sola columna: arriba los marcadores y, si bajas, el mapa, las herramientas y el turno.
 
 Las ventanas de tiradas y cartas ocupan casi todo el ancho, con botones fáciles de pulsar.
 
@@ -312,33 +272,31 @@ Las ventanas de tiradas y cartas ocupan casi todo el ancho, con botones fáciles
 
 ### Cambiar el mapa
 
-Al principio se ve el mapa de ejemplo. Para poner el tuyo, copia la imagen en la carpeta de datos con el nombre `mapa.jpg` (también vale `mapa.png`) y recarga la página. No hace falta cerrar La Comunidad.
+Al principio se ve el mapa de ejemplo. Para poner el tuyo, pulsa **Cambiar el mapa**, debajo del mapa, y elige una imagen. Se usa en todas las partidas de este dispositivo. **Volver al mapa de ejemplo** lo quita.
 
-Si tienes el mapa en dos idiomas, llámalos `mapa-es.jpg` y `mapa-val.jpg`: cada uno verá el de su idioma.
+En el ordenador también vale la manera de las versiones anteriores: copiar la imagen en la carpeta de datos con el nombre `mapa.jpg` (o `mapa-es.jpg` y `mapa-val.jpg`, uno por idioma).
 
 Usa imágenes que puedas usar: si compartes el programa, no pongas mapas de otras personas sin permiso.
 
 ### Idioma
 
-La app está en castellano y en valenciano. Los botones **CAS** y **VAL**, arriba a la derecha, cambian el idioma solo en tu dispositivo; cada jugador puede tener el suyo. El registro, los objetivos y el mapa también cambian.
+La app está en castellano y en valenciano. Los botones **CAS** y **VAL**, arriba a la derecha, cambian el idioma. El registro, los objetivos y el mapa de ejemplo también cambian.
 
-Los avisos de la ventana (por ejemplo, al cerrarla) salen en valenciano. Para tenerlos en castellano, arranca con la opción `--idioma es`.
+En el ordenador, los avisos de la ventana (por ejemplo, al cerrarla) salen en valenciano. Para tenerlos en castellano, arranca con la opción `--idioma es`.
 
 ### Modo oscuro
 
-El botón de la luna (◐ ☀ ☾) cambia entre el tema automático (el del sistema), claro y oscuro. Como el idioma, se recuerda en cada dispositivo.
+El botón de la luna (◐ ☀ ☾) cambia entre el tema automático (el del sistema), claro y oscuro.
 
 ## Si algo no funciona
 
 | Qué pasa | Qué hacer |
 |---|---|
-| No se abre la ventana propia, sino la ventanita del QR y el navegador | En Windows, falta el componente **WebView2** de Microsoft, que traen Windows 11 y Windows 10 actualizado: instala «Microsoft Edge WebView2 Runtime» desde la web de Microsoft. En Linux, faltan GTK y WebKitGTK: la [guía de instalación](guia-instalacion.md) explica cómo instalarlos. Mientras tanto, La Comunidad funciona igual en el navegador. |
-| Los demás no pueden entrar | Tienen que estar en la misma wifi que el servidor. Revisa el cortafuegos: en Windows, permite La Comunidad en «Redes privadas» y comprueba que la wifi está configurada como privada. En Linux, `sudo ufw allow 8766/tcp`. Algunas redes de invitados no dejan que los dispositivos se vean entre ellos. |
-| «El puerto ya está en uso» | Ya hay otra Comunidad abierta. Ciérrala, o arranca en otro puerto: `--port 9001`. |
-| Aparece «Se ha perdido la conexión con el servidor» | La Comunidad se ha cerrado o el ordenador se ha dormido. Cuando la vuelvas a abrir, la página se reconecta sola y no se pierde nada. |
-| Aparece «Modo de prueba» | Se ha abierto la página sin el programa (por ejemplo, la prueba de la web). No se guarda nada: entra con la dirección de la ventana. |
+| En el ordenador no se abre la ventana propia, sino el navegador | En Windows, falta el componente **WebView2** de Microsoft, que llevan Windows 11 y Windows 10 actualizado: instala «Microsoft Edge WebView2 Runtime» desde la web de Microsoft. En Linux, faltan GTK y WebKitGTK: la [guía de instalación](guia-instalacion.md) dice cómo instalarlos. Mientras tanto, La Comunidad funciona igual en el navegador. |
+| «La Comunidad ya está abierta» | Ya hay otra Comunidad abierta en este ordenador: búscala en la barra de tareas. |
+| Aparece «No se puede contactar con el programa» | En el ordenador, La Comunidad se ha cerrado mientras la página estaba abierta en el navegador. Vuelve a abrirla. |
+| En el móvil no encuentro una partida que tenía en el ordenador | Cada dispositivo tiene sus partidas. Expórtala en el ordenador e impórtala en el móvil. |
 | Me he equivocado en algún número | Pulsa **Deshacer**, o corrígelo con los botones − y + de la barra de arriba. |
-| Un jugador quiere entrar con otro nombre | Pide al máster que edite el jugador. |
 
 > **Recuerda:** la app solo lleva las cuentas. Si la app y el tablero no coinciden, manda el tablero: corregid la app para que quede igual.
 

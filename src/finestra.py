@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------- finestres (Windows i Linux)
-# A l'ordinador principal, La Comunitat s'obri en una finestra pròpia, sense navegador:
+# La Comunitat s'obri en una finestra pròpia, sense navegador:
 #   - a Windows, amb WebView2 (el motor d'Edge que porta Windows), a través de pywebview;
 #   - a Linux, amb WebKitGTK (el motor web de GNOME).
-# Si no es pot, s'obri la finestreta amb l'adreça i el QR (Tk) i l'app al navegador; i si tampoc hi ha
-# Tk o pantalla, tot va al terminal. Quan es tanca la finestra, es guarda tot i el servidor s'atura.
+# Si no es pot, s'obri al navegador amb una finestreta (Tk) per a aturar-la; i si tampoc hi ha Tk o
+# pantalla, tot va al terminal. Quan es tanca la finestra, el programa s'atura.
 #
 # COMUNITAT_PROVA_FINESTRA=fitxer: en carregar l'app, escriu «ok <títol>» al fitxer i tanca la finestra
 # (per a les proves automàtiques de GitHub).
@@ -11,53 +11,37 @@
 FINESTRA_TEXTOS = {
     "ca": {
         "titol": "La Comunitat",
-        "en_marxa": "En marxa · versió {v}",
-        "entrar": "Per a entrar des d'un altre dispositiu",
-        "escaneja": "Escaneja el codi amb la càmera del mòbil, o escriu l'adreça al navegador. "
-                    "Cal estar a la mateixa wifi que aquest ordinador.",
-        "sense_xarxa": "No s'ha trobat cap xarxa. Connecta aquest ordinador a la wifi i torna a obrir el programa.",
-        "altres": "També: {u}",
-        "partida": "Partida oberta",
-        "copiar": "Copiar", "copiat": "Copiat",
-        "navegador": "Obrir al navegador",
-        "carpeta": "Carpeta de dades",
-        "aturar": "Aturar",
-        "peu": "Mentre aquesta finestra estiga oberta, La Comunitat funciona.",
         "tancar_t": "Tancar La Comunitat",
-        "tancar_q": "Es guardarà tot i els jugadors es desconnectaran. Vols tancar La Comunitat?",
+        "tancar_q": "Vols tancar La Comunitat? La partida ja està guardada.",
         "tancar": "Tancar", "cancel": "Cancel·lar", "d_acord": "D'acord",
         "guardar": "Guardar el fitxer",
         "guardat": "S'ha guardat el fitxer",
         "obri_carpeta": "Obrir la carpeta",
         "no_guardat": "No s'ha pogut guardar el fitxer.",
-        "port_t": "El port ja està en ús",
-        "port_q": "El port {p} ja l'està fent servir un altre programa (potser La Comunitat ja està oberta).\n\n"
-                  "Tanca'l, o arranca La Comunitat amb un altre port: --port 9001",
+        "oberta_t": "La Comunitat ja està oberta",
+        "oberta_q": "La Comunitat ja està oberta en aquest ordinador. Busca-la a la barra de tasques.",
+        "error_t": "No s'ha pogut obrir La Comunitat",
+        "reserva": "La Comunitat està oberta al navegador.",
+        "reserva_peu": "Mentre aquesta finestra estiga oberta, La Comunitat funciona. Tanca-la quan acabeu.",
+        "navegador": "Tornar a obrir al navegador",
+        "aturar": "Aturar",
     },
     "es": {
         "titol": "La Comunidad",
-        "en_marxa": "En marcha · versión {v}",
-        "entrar": "Para entrar desde otro dispositivo",
-        "escaneja": "Escanea el código con la cámara del móvil, o escribe la dirección en el navegador. "
-                    "Hay que estar en la misma wifi que este ordenador.",
-        "sense_xarxa": "No se ha encontrado ninguna red. Conecta este ordenador a la wifi y vuelve a abrir el programa.",
-        "altres": "También: {u}",
-        "partida": "Partida abierta",
-        "copiar": "Copiar", "copiat": "Copiado",
-        "navegador": "Abrir en el navegador",
-        "carpeta": "Carpeta de datos",
-        "aturar": "Detener",
-        "peu": "Mientras esta ventana esté abierta, La Comunidad funciona.",
         "tancar_t": "Cerrar La Comunidad",
-        "tancar_q": "Se guardará todo y los jugadores se desconectarán. ¿Quieres cerrar La Comunidad?",
+        "tancar_q": "¿Quieres cerrar La Comunidad? La partida ya está guardada.",
         "tancar": "Cerrar", "cancel": "Cancelar", "d_acord": "Aceptar",
         "guardar": "Guardar el archivo",
         "guardat": "Se ha guardado el archivo",
         "obri_carpeta": "Abrir la carpeta",
         "no_guardat": "No se ha podido guardar el archivo.",
-        "port_t": "El puerto ya está en uso",
-        "port_q": "El puerto {p} ya lo está usando otro programa (quizá La Comunidad ya está abierta).\n\n"
-                  "Ciérralo, o arranca La Comunidad con otro puerto: --port 9001",
+        "oberta_t": "La Comunidad ya está abierta",
+        "oberta_q": "La Comunidad ya está abierta en este ordenador. Búscala en la barra de tareas.",
+        "error_t": "No se ha podido abrir La Comunidad",
+        "reserva": "La Comunidad está abierta en el navegador.",
+        "reserva_peu": "Mientras esta ventana esté abierta, La Comunidad funciona. Ciérrala cuando terminéis.",
+        "navegador": "Volver a abrir en el navegador",
+        "aturar": "Detener",
     },
 }
 
@@ -123,10 +107,9 @@ def prova_feta(titol):
 
 
 # ---------------------------------------------------------------- la finestra pròpia
-def finestra_app(port, idioma):
+def finestra_app(url, idioma):
     """Obri l'app en una finestra pròpia i espera fins que es tanca.
     Torna False, sense haver obert res, si en aquest ordinador no es pot."""
-    url = f"http://localhost:{port}/"
     if not hi_ha_pantalla():
         return False
     if os.name == "nt" or sys.platform == "darwin":
@@ -348,17 +331,11 @@ def _finestra_gtk(url, idioma):
 
 
 # ---------------------------------------------------------------- la finestreta de reserva (Tk)
-def finestra_adreca(port, idioma, obrir_navegador):
-    """La finestreta amb l'adreça, el QR i la partida oberta, per a quan no es pot obrir la finestra pròpia.
-    L'app s'obri al navegador."""
+def finestra_reserva(url, idioma):
+    """Quan l'app s'obri al navegador: una finestreta per a saber que funciona i per a aturar-la."""
     import tkinter as tk
-    import tkinter.font as tkfont
-    from tkinter import messagebox
 
     T = FINESTRA_TEXTOS[idioma]
-    local = f"http://localhost:{port}"
-    urls = lan_urls()
-
     root = tk.Tk(className="comunitat-del-anell")   # a Linux, lliga la finestra amb l'accés del menú
     root.title(T["titol"])
     root.resizable(False, False)
@@ -366,34 +343,10 @@ def finestra_adreca(port, idioma, obrir_navegador):
         root.iconphoto(True, tk.PhotoImage(data=ICONA_PNG))
     except Exception:  # noqa: BLE001
         pass
-
-    # Colors i lletres del pergamí de l'app
-    paper, carta, tinta, suau, linia, roig, or_, verd = ("#E9DCBC", "#F4EAD2", "#2A1C10", "#6F5A40",
-                                                          "#C4AB80", "#8C2A1C", "#A27419", "#3E6A36")
-    fams = set(tkfont.families(root))
-    serif = next((f for f in ("Georgia", "Alegreya", "DejaVu Serif", "Liberation Serif", "Noto Serif",
-                              "Times New Roman") if f in fams), "serif")
-    F = lambda mida, gruix="normal": (serif, mida, gruix)  # noqa: E731
+    paper, carta, tinta, suau, linia, roig = "#E9DCBC", "#F4EAD2", "#2A1C10", "#6F5A40", "#C4AB80", "#8C2A1C"
     root.configure(bg=paper)
-
-    def boto(pare, text, ordre, principal=False):
-        return tk.Button(pare, text=text, command=ordre, font=F(11, "bold" if principal else "normal"),
-                         bg=roig if principal else carta, fg="#FBEFDA" if principal else tinta,
-                         activebackground="#A33A2A" if principal else paper,
-                         activeforeground="#FBEFDA" if principal else tinta,
-                         relief="flat", bd=0, highlightthickness=1, highlightbackground=roig if principal else linia,
-                         padx=14, pady=7, cursor="hand2")
-
-    def copiar(text, b):
-        root.clipboard_clear()
-        root.clipboard_append(text)
-        b.configure(text=T["copiat"])
-        root.after(1500, lambda: b.configure(text=T["copiar"]))
-
     cos = tk.Frame(root, bg=paper, padx=22, pady=18)
     cos.pack(fill="both")
-
-    # Capçalera
     cap = tk.Frame(cos, bg=paper)
     cap.pack(fill="x")
     try:
@@ -402,72 +355,24 @@ def finestra_adreca(port, idioma, obrir_navegador):
         cap.logo = logo
     except Exception:  # noqa: BLE001
         pass
-    tit = tk.Frame(cap, bg=paper)
-    tit.pack(side="left", fill="x")
-    tk.Label(tit, text=T["titol"], font=F(19), fg=tinta, bg=paper).pack(anchor="w")
-    estat = tk.Frame(tit, bg=paper)
-    estat.pack(anchor="w")
-    tk.Label(estat, text="●", font=F(11), fg=verd, bg=paper).pack(side="left")
-    tk.Label(estat, text=" " + T["en_marxa"].format(v=VERSION), font=F(11), fg=suau, bg=paper).pack(side="left")
-
-    # Targeta amb l'adreça i el QR
-    carta_f = tk.Frame(cos, bg=carta, highlightthickness=1, highlightbackground=linia, padx=16, pady=14)
-    carta_f.pack(fill="x", pady=(16, 10))
-    tk.Label(carta_f, text=T["entrar"].upper(), font=F(9, "bold"), fg=or_, bg=carta).pack(anchor="w")
-    if urls:
-        fila = tk.Frame(carta_f, bg=carta)
-        fila.pack(fill="x", pady=(6, 8))
-        tk.Label(fila, text=urls[0], font=F(15, "bold"), fg=tinta, bg=carta).pack(side="left")
-        bc = boto(fila, T["copiar"], lambda: copiar(urls[0], bc))
-        bc.configure(padx=10, pady=3, font=F(10))
-        bc.pack(side="right")
-        m = qr_matrix(urls[0])
-        n = len(m) + 8
-        cel = max(3, 196 // n)
-        qr = tk.Canvas(carta_f, width=n * cel, height=n * cel, bg="#FFFFFF", highlightthickness=0)
-        for y, row in enumerate(m):
-            for x, v in enumerate(row):
-                if v:
-                    qr.create_rectangle((x + 4) * cel, (y + 4) * cel, (x + 5) * cel, (y + 5) * cel, fill="#000000", width=0)
-        qr.pack(pady=(2, 8))
-        tk.Label(carta_f, text=T["escaneja"], font=F(10), fg=suau, bg=carta, wraplength=380, justify="left").pack(anchor="w")
-        if len(urls) > 1:
-            tk.Label(carta_f, text=T["altres"].format(u=", ".join(urls[1:])), font=F(9), fg=suau, bg=carta,
-                     wraplength=380, justify="left").pack(anchor="w", pady=(4, 0))
-    else:
-        tk.Label(carta_f, text=T["sense_xarxa"], font=F(11), fg=roig, bg=carta, wraplength=380,
-                 justify="left").pack(anchor="w", pady=(6, 0))
-
-    # Partida oberta
-    partida = tk.StringVar(value=camp_name(state["docs"], state["active"]))
-    f = tk.Frame(cos, bg=paper)
-    f.pack(fill="x", pady=3)
-    tk.Label(f, text=T["partida"], font=F(11), fg=suau, bg=paper).pack(side="left")
-    tk.Label(f, textvariable=partida, font=F(12, "bold"), fg=tinta, bg=paper).pack(side="right")
-
-    # Botons
+    text = tk.Frame(cap, bg=paper)
+    text.pack(side="left")
+    tk.Label(text, text=T["titol"], font=("Georgia", 19), fg=tinta, bg=paper).pack(anchor="w")
+    tk.Label(text, text=T["reserva"], font=("Georgia", 11), fg=suau, bg=paper).pack(anchor="w")
+    tk.Label(cos, text=T["reserva_peu"], font=("Georgia", 10), fg=suau, bg=paper, wraplength=380,
+             justify="left").pack(anchor="w", pady=(14, 10))
     botons = tk.Frame(cos, bg=paper)
-    botons.pack(fill="x", pady=(14, 6))
+    botons.pack(fill="x")
 
-    def aturar():
-        if not messagebox.askokcancel(T["tancar_t"], T["tancar_q"], parent=root):
-            return
-        root.destroy()
+    def boto(text_, ordre, principal=False):
+        return tk.Button(botons, text=text_, command=ordre, font=("Georgia", 11, "bold" if principal else "normal"),
+                         bg=roig if principal else carta, fg="#FBEFDA" if principal else tinta, relief="flat", bd=0,
+                         highlightthickness=1, highlightbackground=roig if principal else linia, padx=14, pady=7,
+                         cursor="hand2")
 
-    boto(botons, T["navegador"], lambda: webbrowser.open(local), principal=True).pack(side="left")
-    boto(botons, T["carpeta"], lambda: obrir_carpeta(DATA_DIR)).pack(side="left", padx=8)
-    boto(botons, T["aturar"], aturar).pack(side="right")
-    tk.Label(cos, text=T["peu"], font=F(9), fg=suau, bg=paper).pack(anchor="w", pady=(8, 0))
-
-    def refresca():
-        with lock:
-            partida.set(camp_name(state["docs"], state["active"]))
-        root.after(2000, refresca)
-
-    root.protocol("WM_DELETE_WINDOW", aturar)
-    root.after(2000, refresca)
-    if obrir_navegador:
-        root.after(800, lambda: webbrowser.open(local))
+    boto(T["navegador"], lambda: webbrowser.open(url), principal=True).pack(side="left")
+    boto(T["aturar"], root.destroy).pack(side="right")
+    root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.update_idletasks()
     w, h = root.winfo_reqwidth(), root.winfo_reqheight()
     root.geometry(f"+{max(0, (root.winfo_screenwidth() - w) // 2)}+{max(0, (root.winfo_screenheight() - h) // 3)}")

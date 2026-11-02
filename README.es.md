@@ -5,6 +5,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-GPL--3.0--or--later-2A1C10" alt="Licencia GPL-3.0-or-later"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-A27419" alt="Windows 10 y 11">
   <img src="https://img.shields.io/badge/Linux-.deb%20%7C%20.tar.gz-A27419" alt="Linux">
+  <img src="https://img.shields.io/badge/Android-.apk%20%7C%20web-A27419" alt="Android">
   <a href="../../actions/workflows/proves.yml"><img src="https://github.com/jossanmar9/comunitat-del-anell/actions/workflows/proves.yml/badge.svg" alt="Pruebas"></a>
 </p>
 
@@ -12,44 +13,13 @@
 
 # La Comunidad
 
-**Ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad».** El tablero y las piezas los tenéis en la mesa; la app lleva las cuentas: la Esperanza, la Amenaza, el turno paso a paso, cuántos dados tirar en cada tirada y qué se pierde con el resultado. Un ordenador hace de servidor y el resto de la mesa entra desde el navegador, móviles incluidos. En castellano y valenciano, y sin Internet.
+**Ayudante libre para llevar las partidas de «El Señor de los Anillos: El Destino de la Comunidad».** El tablero y las piezas los tenéis en la mesa; la app lleva las cuentas: la Esperanza, la Amenaza, el turno paso a paso, cuántos dados tirar en cada tirada y qué se pierde con el resultado. Una persona la lleva y el resto jugáis en el tablero. En castellano y valenciano, y sin Internet.
 
-Funciona en **Windows y Linux**. Se instala como cualquier otro programa y, en el ordenador principal, se abre en **una ventana propia**, sin navegador. Las partidas se quedan en el ordenador de casa y no se conecta a ningún servidor de fuera.
+Es **la misma app en Windows, en Linux, en Android y en el navegador**. En el ordenador se abre en una ventana propia; en Android, como cualquier otra app; y en el navegador funciona también sin conexión. Las partidas se quedan en el dispositivo y no se conecta a ningún servidor de fuera.
 
-🌐 **Web:** [jossanmar9.github.io/comunitat-del-anell](https://jossanmar9.github.io/comunitat-del-anell/es/) · 🎲 **Pruébala:** [en el navegador](https://jossanmar9.github.io/comunitat-del-anell/prova/) · ⬇️ **Descarga:** [última versión](../../releases/latest) · 📖 **Manual:** [en línea](docs/manual-usuario.md) y en PDF en cada versión
+🌐 **Web:** [jossanmar9.github.io/comunitat-del-anell](https://jossanmar9.github.io/comunitat-del-anell/es/) · 📱 **Úsala:** [en el navegador](https://jossanmar9.github.io/comunitat-del-anell/app/) · ⬇️ **Descarga:** [última versión](../../releases/latest) · 📖 **Manual:** [en línea](docs/manual-usuario.md) y en PDF en cada versión
 
 ![La pantalla de juego: las herramientas, el mapa y el turno paso a paso](docs/imatges/es/05-partida.jpg)
-
-## Guardados y recuperación — v2.7.0
-
-La partida activa, identidades, hashes de PIN, sesiones e historial se confirman juntos en **`comunitat.sqlite3`**, mediante transacciones SQLite. Los JSON existentes siguen como copias compatibles de partidas, configuración e historial. Las partidas inactivas y sus copias siguen en JSON; esta versión refuerza el guardado conjunto del estado activo.
-
-La primera lectura importa configuración e historial existentes sin eliminarlos. Cuando existe SQLite, es la fuente del último estado confirmado: no edites manualmente sus JSON de configuración, historial o partida activa; utiliza importar y restaurar. Si falla la proyección JSON, la jugada confirmada sigue en SQLite y se recupera al iniciar. Si falla la transacción, la app no confirma la jugada. Los datos corruptos no se sustituyen silenciosamente por datos vacíos.
-
-Antes de recuperar un inicio, se guarda una copia coherente de SQLite en **`copies/estat/comunitat.sqlite3`**. Para una copia completa, cierra la app y copia **toda la carpeta de datos**, incluyendo base, JSON, partidas y copias. La copia de estado contiene credenciales y sesiones: consérvala en privado. Para volver a una versión anterior, cierra la app y trabaja sobre una copia de la carpeta; los JSON deben estar actualizados. No se permiten dos servidores en la misma carpeta de datos, aunque utilicen puertos distintos.
-
-Si una base queda dañada, cierra la app, conserva toda la carpeta y restaura una copia coherente de `comunitat.sqlite3`; después la app recuperará sus JSON. La copia de estado corresponde al anterior inicio correcto, no necesariamente a la última jugada. Las copias de partida y la exportación JSON siguen disponibles.
-
-
-## Sala de partida — v2.6.0
-
-**Alias masculinos y femeninos:** al escribir un nombre, la app propone un tipo de alias mediante una lista local de nombres habituales; no consulta Internet. Puedes corregirlo con **Tipo de alias → Masculino / Femenino / Neutro**. Los nombres desconocidos o ambiguos se proponen como neutros. Es una ayuda lingüística para el alias, no una determinación del género de la persona. Cada raza tiene nombres inventados diferenciados. La preferencia manual se conserva; cambiarla desde **Sala de partida → Editar** genera otro alias sin cambiar el PIN ni cerrar la sesión. Los jugadores antiguos conservan su alias hasta que el máster lo cambie.
-
-La aplicación arranca sin ninguna partida cargada. Elige **Crear partida**, escribe el nombre de la partida y los nombres y razas de los participantes, y prepárala. Al confirmar, los jugadores se incorporan automáticamente a **Sala de partida**, con alias y PIN. Los PIN nuevos se muestran una sola vez al máster. Si un nombre ya corresponde a un jugador registrado, se reutilizan su identidad y PIN existente. Los nombres de los participantes de una misma partida no pueden repetirse, ignorando acentos, mayúsculas y espacios sobrantes.
-
-**Abrir partida guardada** recupera la partida e incorpora sus jugadores a la sala sin duplicarlos. Las partidas nuevas guardan UID, nombre, raza y alias, pero no el PIN ni su hash dentro del archivo de partida. Los PIN y sesiones siguen en la configuración local. Si importas una partida en otro ordenador o recuperas jugadores eliminados, el máster debe generarles PIN nuevos. Las partidas antiguas recuperan los jugadores por el nombre. No se abre la última partida al reiniciar; la opción explícita de terminal `--partida` sigue disponible.
-
-El máster abre la app en el PC mediante `http://localhost:8766` (o el puerto elegido). **Sala de partida** permite crear jugadores con nombre y raza, editarlos, generar otro alias, eliminarlos, regenerar el PIN y desvincular sesiones. Las acciones destructivas requieren una segunda pulsación. Los alias son inventados; no son personajes del juego.
-
-Al crear o regenerar un PIN de cuatro dígitos, anótalo y comunícalo al jugador: solo se muestra una vez y después aparece como **••••**. Se guarda con sal aleatoria y PBKDF2-HMAC-SHA256 (200.000 iteraciones), sin PIN en claro. Regenerarlo revoca la sesión anterior.
-
-El jugador escanea el QR común, sigue **¿Quién eres? → jugador → PIN → Entrar**. Solo aparecen jugadores con PIN y sin vinculación. El navegador recuerda la sesión y reconecta después de recargar, de un corte de wifi o de reiniciar el servidor. **Salir** revoca la sesión; cerrar una pestaña no la desvincula. Si se pierde el dispositivo o los datos del navegador, el máster debe pulsar **Desvincular**. La posesión del token autoriza la sesión: no lo compartas.
-
-**Bloquear nuevas conexiones** impide nuevas vinculaciones; las sesiones autorizadas pueden continuar y reconectar. El panel muestra conexión SSE, vinculación y última petición autenticada. Sin partida preparada, el jugador espera. Las jugadas siguen siendo cooperativas; el máster local administra jugadores, partidas e historial. Con sondeo, un dispositivo puede aparecer desconectado aunque siga autorizado; consulta también la última conexión.
-
-Al actualizar desde v2.5 o anteriores se conservan partidas, configuración y UID. Los nombres duplicados reciben un sufijo, se sustituyen prudentemente los alias antiguos y se revocan las sesiones sin autenticación. El máster debe generar PIN para los jugadores migrados. Haz una copia de la carpeta de datos antes de actualizar. La sala es común a las partidas guardadas, como en la v2.5.
-
-Funciona en una LAN de confianza con HTTP; el PIN y los tokens viajan sin cifrado de transporte. No expongas el puerto a Internet. Tras cinco intentos de PIN fallidos por IP en un minuto hay que esperar. El máster solo se autoriza desde loopback con Host local y se rechazan escrituras entre orígenes.
 
 ## Contenido
 
@@ -76,9 +46,9 @@ Funciona en una LAN de confianza con HTTP; el PIN y los tokens viajan sin cifrad
 | **Cartas especiales** | *El cielo se oscurece* con sus cuatro pasos («¡Te veo!» incluido), la carta de Sombra y destruir el Anillo Único. |
 | **Preparación** | Cinco niveles de dificultad, escenarios sugeridos, los 24 objetivos, los 13 personajes con retrato y la lista de preparación del tablero, paso a paso. |
 | **Resumen e historial** | Al terminar, dónde se ha perdido la Esperanza, rondas, duración y tiradas. El historial guarda todas las partidas terminadas, con victorias y derrotas por dificultad. |
-| **Partidas y copias** | Varias partidas guardadas, que se pueden duplicar, exportar, importar en otro ordenador y borrar (sin perderlas). **Copias de seguridad automáticas** de cada partida, para volver a un momento anterior. |
+| **Partidas y copias** | Varias partidas guardadas, que se pueden duplicar, exportar, importar en otro dispositivo y borrar (van a la papelera). **Copias de seguridad automáticas** de cada partida, para volver a un momento anterior. |
 
-Además: un **registro** de todo lo que pasa, entrada con **QR**, **modo oscuro**, adaptada al **móvil** y un **mapa** de la Tierra Media que se puede cambiar por el tuyo. Todo el programa está en **castellano y valenciano**, y cada jugador elige su idioma.
+Además: un **registro** de todo lo que pasa, **modo oscuro**, adaptada al **móvil** y un **mapa** de la Tierra Media que puedes cambiar por el tuyo desde la misma app. Todo el programa está en **castellano y valenciano**.
 
 ## Capturas
 
@@ -87,7 +57,7 @@ Además: un **registro** de todo lo que pasa, entrada con **QR**, **modo oscuro*
 | ![Preparación](docs/imatges/es/03-preparacio.jpg) | ![Tirada de búsqueda](docs/imatges/es/11-cerca-daus.jpg) |
 | La preparación: dificultad, participantes, personajes y objetivos. | Una tirada de búsqueda: la app dice cuántos dados tirar y aplica el resultado. |
 | ![Resumen de la partida](docs/imatges/es/18-resum.jpg) | ![La app en un móvil](docs/imatges/es/21-mobil.jpg) |
-| El resumen al terminar la partida. | En el móvil, en una sola columna. |
+| El resumen al terminar la partida. | En el móvil o en la app de Android, en una sola columna. |
 
 <p align="center"><img src="docs/imatges/personatges.webp" alt="Los retratos de los personajes" width="640"></p>
 
@@ -95,121 +65,132 @@ Hay más capturas, paso a paso, en el [manual de usuario](docs/manual-usuario.md
 
 ## Instalación
 
-**Requisitos:** Windows 10 u 11 de 64 bits, o Linux con escritorio, y unos 50 MB de disco. Los jugadores solo necesitan un navegador y estar en la misma wifi. No hace falta Internet. Y el juego de mesa, claro: la app no incluye ningún componente del juego.
+**Requisitos:** Windows 10 u 11 de 64 bits, Linux con escritorio, Android 5.1 o posterior, o un navegador actual. No hace falta Internet para jugar. Y el juego de mesa, claro: la app no incluye ningún componente del juego.
 
 Descarga la [última versión](../../releases/latest):
 
 | Sistema | Archivo |
 |---|---|
-| **Windows** (recomendado) | `LaComunitat-X.Y-installador.exe`. No pide permisos de administrador; crea el acceso en el menú Inicio y, si quieres, en el escritorio. |
-| **Windows** portable | `LaComunitat-X.Y-windows-portable.zip`. Descomprímelo donde quieras (también en un pendrive) y abre `LaComunitat.exe`. |
-| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y_all.deb`. Doble clic para instalarlo, o `sudo apt install ./comunitat-del-anell_X.Y_all.deb`. |
-| **Otros Linux** | `LaComunitat-X.Y-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana propia, GTK y WebKitGTK. |
+| **Windows** (recomendado) | `LaComunitat-X.Y.Z-installador.exe`. No pide permisos de administrador; crea el acceso en el menú Inicio y, si quieres, en el escritorio. |
+| **Windows** portable | `LaComunitat-X.Y.Z-windows-portable.zip`. Descomprímelo donde quieras (también en una memoria USB) y abre `LaComunitat.exe`. |
+| **Ubuntu, Debian, Linux Mint…** | `comunitat-del-anell_X.Y.Z_all.deb`. Doble clic para instalarlo, o `sudo apt install ./comunitat-del-anell_X.Y.Z_all.deb`. |
+| **Otros Linux** | `LaComunitat-X.Y.Z-linux.tar.gz`. Descomprímelo y abre `comunitat-del-anell.sh`; `./installa.sh` lo añade al menú. Hace falta Python 3 y, para la ventana propia, GTK y WebKitGTK. |
+| **Android** | `LaComunitat-X.Y.Z-android.apk`. Ábrelo desde el móvil y permite «Instalar aplicaciones desconocidas» si te lo pide. |
+| **Sin instalar nada** | La [app web](https://jossanmar9.github.io/comunitat-del-anell/app/): desde el menú del navegador la puedes añadir a la pantalla de inicio, y funciona sin conexión. También en el iPhone y el iPad. |
 
-El programa no está firmado digitalmente: en Windows, SmartScreen puede avisar. Pulsa **Más información → Ejecutar de todas formas**. La primera vez, permítele el acceso a las **redes privadas** para que puedan entrar los jugadores.
+El programa de Windows no está firmado digitalmente: SmartScreen puede avisar. Pulsa **Más información → Ejecutar de todas formas**.
 
-Más detalles, el cortafuegos de Linux y cómo pasar las partidas de las versiones 1.x, en la [guía de instalación](docs/guia-instalacion.md).
+Más detalles y cómo pasar las partidas de versiones anteriores, en la [guía de instalación](docs/guia-instalacion.md).
 
-**Sin instalar nada** (Linux, Mac o Windows con Python 3.8 o más nuevo): descarga [`comunitat.py`](comunitat.py) y ejecuta `python3 comunitat.py`. Para tenerla en una ventana propia, en Windows y Mac hace falta [pywebview](https://pywebview.flowrl.com/) (`pip install pywebview`) y en Linux, GTK y WebKitGTK; si no, se abre en el navegador.
+**Con Python** (Linux, Mac o Windows con Python 3.8 o más nuevo): descarga [`comunitat.py`](comunitat.py) y ejecuta `python3 comunitat.py`. Para tenerla en una ventana propia, en Windows y Mac hace falta [pywebview](https://pywebview.flowrl.com/) (`pip install pywebview`) y en Linux, GTK y WebKitGTK; si no, se abre en el navegador.
 
 ## Primeros pasos
 
-1. Abre **La Comunidad**. La app se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK). Mientras la ventana esté abierta, La Comunidad funciona; al cerrarla, lo guarda todo y se detiene.
-2. El botón **Invitar** muestra la dirección para los demás y un **código QR**. El máster escribe los participantes al crear la partida; aparecen automáticamente en **Sala de partida**. Cada jugador escanea el QR, selecciona su jugador y entra con el PIN.
-3. Rellenad el formulario de preparación, preparad el tablero con la lista de la pestaña **Comunidad** y a jugar.
+1. Abre **La Comunidad**. En el ordenador se abre en una ventana propia, sin navegador (en Windows con WebView2, en Linux con WebKitGTK); al cerrarla, ya está todo guardado.
+2. Pulsa **Crear partida**, ponle un nombre y rellena la preparación: dificultad, participantes, personajes y objetivos.
+3. Preparad el tablero con la lista de la pestaña **Comunidad** y a jugar. Cada cambio se guarda solo.
 
-Opciones para el terminal (los nombres de las opciones están en valenciano):
+Opciones para el terminal (programa de escritorio):
 
 ```bash
-comunitat-del-anell --port 9001             # otro puerto (el normal es el 8766)
-comunitat-del-anell --partida "Viernes"     # abre (o crea) esa partida
 comunitat-del-anell --dades ~/Partidas      # guarda los datos en otra carpeta
-comunitat-del-anell --navegador            # la app en el navegador, con la ventanita de la dirección y el QR
-comunitat-del-anell --sense-finestra        # sin ventanas: todo en el terminal, con el QR
+comunitat-del-anell --navegador             # la app en el navegador, en lugar de la ventana propia
+comunitat-del-anell --sense-finestra        # sin ventanas: la dirección sale en el terminal
+comunitat-del-anell --port 9001             # otro puerto local (el normal es el 8766)
 comunitat-del-anell --idioma es             # los avisos de las ventanas en castellano (por defecto, en valenciano)
 ```
 
-(En Windows, `LaComunitat.exe`; con el `.tar.gz`, `./comunitat-del-anell.sh`; sin instalar, `python3 comunitat.py`.)
+(En Windows, `LaComunitat.exe`; con el `.tar.gz`, `./comunitat-del-anell.sh`; con Python, `python3 comunitat.py`.) El programa solo acepta conexiones del mismo ordenador.
 
 ## Datos y copias de seguridad
 
-| Cómo está instalada | Dónde se guardan los datos |
+| Dónde | Dónde se guardan los datos |
 |---|---|
 | Windows, con el instalador | `%APPDATA%\LaComunitat` |
 | Linux, con el `.deb` | `~/.local/share/comunitat-del-anell` |
 | Windows portable, `.tar.gz` o `python3 comunitat.py` | La carpeta del programa |
+| Android y app web | Dentro de la app o del navegador |
 
-Cada partida se guarda en `partides/<nombre>.json`, sus copias de seguridad en `copies/<nombre>/`, los jugadores en `comunitat.json` y las partidas terminadas en `historial.json`. La Comunidad hace una copia de cada partida al abrirla y cada media hora mientras se juega, y guarda las 15 últimas; se restauran desde la pestaña **Partidas → Copias**. Para guardarlo todo aparte, copia la carpeta entera; el botón **Abrir la carpeta de datos** de la pestaña Partidas la abre directamente. Al desinstalar, las partidas no se borran.
+En el ordenador, cada partida se guarda en `partides/<nombre>.json`, sus copias de seguridad en `copies/<nombre>/`, las partidas terminadas en `historial.json` y el mapa propio en `mapa.json`. El botón **Abrir la carpeta de datos** de la pestaña Partidas la abre directamente; para guardarlo todo aparte, cierra la app y copia la carpeta entera. Al desinstalar, las partidas no se borran.
 
-**El mapa:** para poner el tuyo en lugar del de ejemplo, copia la imagen en esa carpeta con el nombre `mapa.jpg` (o `mapa.png`). Si lo tienes en los dos idiomas, llámalos `mapa-es.jpg` y `mapa-val.jpg`.
+En Android y en el navegador, la app guarda los mismos archivos dentro de ella. Si desinstalas la app o borras los datos del navegador, se pierden: **exporta** las partidas que quieras conservar. Exportar e importar es también la manera de pasar una partida de un dispositivo a otro.
+
+La Comunidad hace una copia de cada partida al abrirla y cada media hora mientras se juega, y guarda las 15 últimas; se restauran desde **Partidas → Copias**.
 
 ## Documentación
 
-- [Registro de cambios](CHANGELOG.md)
+- [Registro de cambios](CHANGELOG.md) (en valenciano)
+
 | Documento | Valencià | Castellano |
 |---|---|---|
 | Manual de usuario | [manual-usuari.md](docs/manual-usuari.md) | [manual-usuario.md](docs/manual-usuario.md) |
 | Guía de instalación | [guia-installacio.md](docs/guia-installacio.md) | [guia-instalacion.md](docs/guia-instalacion.md) |
+| Arquitectura y pruebas | [arquitectura.md](docs/arquitectura.md) | |
 
 Los PDF se generan solos a partir de estos archivos y van adjuntos a cada [versión](../../releases/latest), dentro de los paquetes y en la [web](https://jossanmar9.github.io/comunitat-del-anell/es/).
 
 ## Para desarrollar
 
-Solo hace falta **Python 3.8 o más nuevo**, sin dependencias. `comunitat.py` se genera a partir de `src/`:
+Para el programa de escritorio solo hace falta **Python 3.8 o más nuevo**, sin dependencias. `comunitat.py` y la app web se generan a partir de `src/`:
 
 | Archivo | Qué hay |
 |---|---|
-| `src/servidor.py` | HTTP, permisos, revisiones y coordinación de la partida |
-| `src/identitats.py` | Identidades, alias, PIN y sesiones |
-| `src/persistencia.py` | SQLite, proyecciones JSON, copias y bloqueo de datos |
-| `src/finestra.py` | La ventanita con la dirección y el QR (Tk) |
-| `src/qr.py` | El generador de códigos QR |
-| `src/mapes/` | Los mapas de ejemplo, en valenciano y castellano, que van dentro del programa |
-| `src/web/app.js` | La lógica de la página: marcadores, turno, tiradas, preparación, resumen y partidas |
+| `src/web/app.js` | La app: marcadores, turno, tiradas, preparación, resumen y partidas |
+| `src/web/magatzem.js` | Dónde se guarda todo: partidas, historial, copias, exportar e importar. En el ordenador, a través del programa; en Android y en el navegador, en IndexedDB |
 | `src/web/dades.js` | Personajes, objetivos, escenarios y preparación del tablero |
-| `src/web/personatges/` | Los retratos de los personajes (WebP de 200 px) |
-| `src/web/i18n.js` | Las traducciones al castellano (para añadir un idioma, copia el bloque `es`) |
+| `src/web/i18n.js` | Las traducciones al castellano |
 | `src/web/cos.html`, `estil-base.css`, `estil.css` | La estructura y el estilo de la página |
-| `src/web/fonts/` | Las tipografías (Alegreya e IM Fell English, licencia OFL), que van dentro del programa |
-| `tests/prova_servidor.py` | Las pruebas automáticas del servidor |
+| `src/web/personatges/`, `src/web/fonts/` | Los retratos (WebP de 200 px) y las tipografías (Alegreya e IM Fell English, OFL) |
+| `src/servidor.py` | El programa de escritorio: un servidor solo para este ordenador que lee y escribe los archivos de datos |
+| `src/persistencia.py` | Escritura segura, bloqueo de la carpeta de datos y paso de los datos de la v2 |
+| `src/finestra.py` | La ventana propia (pywebview en Windows, WebKitGTK en Linux) y la de reserva (Tk) |
+| `src/mapes/` | Los mapas de ejemplo, en valenciano y castellano |
+| `tests/` | Las pruebas: programa, persistencia, almacén y la app en un navegador |
 | `docs/` | Los manuales en Markdown y las capturas |
-| `paquets/` | El instalador de Windows (Inno Setup) y los archivos del menú de Linux |
-| `eines/` | Comprobar traducciones, hacer los manuales en PDF, los paquetes de Linux y la web |
+| `paquets/` | El instalador de Windows (Inno Setup), los archivos de Linux y el proyecto de Android (Capacitor) |
+| `eines/` | Comprobar traducciones, manuales en PDF, paquetes de Linux, Android, capturas y la web |
 
 Después de cambiar algo:
 
 ```bash
 python3 build.py                          # vuelve a generar comunitat.py
 python3 eines/comprova-traduccions.py     # comprueba que no falta ninguna traducción
-python3 tests/prova_servidor.py           # pasa las pruebas del servidor
-python3 tests/prova_persistencia.py       # fallos y recuperación de los guardados
+python3 tests/prova_servidor.py           # el programa de escritorio
+python3 tests/prova_persistencia.py       # escritura segura y datos de la v2
+python3 tests/prova_magatzem.py           # partidas, historial y copias (hace falta Node.js)
+python3 tests/prova_app.py                # la app en Chromium, escritorio y web (hace falta Playwright)
 python3 comunitat.py                      # pruébalo
 ```
 
 Otras herramientas:
 
 ```bash
+python3 build.py --web dist/web           # la app web (hace falta Pillow para los iconos)
 python3 eines/paquet-linux.py             # hace el .deb y el .tar.gz en dist/
 sh eines/manuals-pdf.sh dist/manuals      # hace los manuales en PDF (hace falta Chrome o Chromium)
-python3 eines/web.py _site                # genera la web, con la prueba en el navegador
+python3 eines/web.py _site                # genera la web, con la app web en app/
 python3 eines/captures.py                 # vuelve a hacer las capturas de los manuales (hace falta Playwright)
 ```
 
+El APK de Android se hace en GitHub Actions; para hacerlo a mano, ver [paquets/android/README.md](paquets/android/README.md).
+
 ## Publicar una versión
 
-Cada vez que se suben cambios a `main`, [`.github/workflows/proves.yml`](.github/workflows/proves.yml) genera el programa y pasa las pruebas en Windows y Linux. Para publicar, GitHub lo hace todo solo con [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prueba el programa (también la ventana propia), hace el instalador y el portable de Windows, el `.deb` y el `.tar.gz` de Linux y los manuales en PDF, y lo publica en [Releases](../../releases).
+Cada vez que se suben cambios a `main`, [`.github/workflows/proves.yml`](.github/workflows/proves.yml) genera el programa y pasa las pruebas en Windows y Linux. Para publicar, GitHub lo hace todo solo con [`.github/workflows/publica.yml`](.github/workflows/publica.yml): prueba el programa (también la ventana propia), hace el instalador y el portable de Windows, el `.deb` y el `.tar.gz` de Linux, el APK de Android y los manuales en PDF, y lo publica en [Releases](../../releases).
 
-1. Cambia `VERSION` en `src/servidor.py` (por ejemplo, `"2.1"`) y vuelve a generar `comunitat.py` con `python3 build.py`.
+1. Cambia `VERSION` en `src/servidor.py` (por ejemplo, `"3.0.1"`) y vuelve a generar `comunitat.py` con `python3 build.py`.
 2. Sube los cambios y una etiqueta en minúscula con el mismo número:
 
 ```bash
-git tag v2.1
-git push origin main v2.1
+git tag v3.0.1
+git push origin main v3.0.1
 ```
 
 Al cabo de unos minutos, la versión nueva aparece en [Releases](../../releases). Si la etiqueta y `VERSION` no coinciden, la publicación se detiene y lo avisa.
 
-La [web](https://jossanmar9.github.io/comunitat-del-anell/es/) se publica sola con [`.github/workflows/web.yml`](.github/workflows/web.yml) cada vez que se suben cambios a `main` (hace falta **Settings → Pages → Source: GitHub Actions**).
+El APK se firma con una clave guardada en dos secretos del repositorio, `ANDROID_KEYSTORE` y `ANDROID_KEYSTORE_PASSWORD` ([paquets/android/README.md](paquets/android/README.md)). Tiene que ser siempre la misma: si no, Android no deja actualizar la app.
+
+La [web](https://jossanmar9.github.io/comunitat-del-anell/es/) y la app web se publican solas con [`.github/workflows/web.yml`](.github/workflows/web.yml) cada vez que se suben cambios a `main` (hace falta **Settings → Pages → Source: GitHub Actions**).
 
 ## Colaborar
 
@@ -218,15 +199,15 @@ Las propuestas de mejora y las correcciones son bienvenidas. Si has encontrado u
 ## Uso de inteligencia artificial
 
 Este proyecto se ha hecho con ayuda de IA:
-- **Imágenes:** el mapa de ejemplo (en castellano y en valenciano), el logo y los retratos de los personajes se han generado con IA. Los retratos parten de las descripciones de los libros, con un estilo propio, y no reproducen a ningún actor ni las ilustraciones oficiales del juego.
-- **Código y documentación:** el programa, las traducciones, los README, los manuales, los paquetes y la web se han escrito con un asistente de IA (Claude, de Anthropic) y se han revisado a mano.
+- **Imágenes:** el mapa de ejemplo (en valenciano y en castellano), el logo y los retratos de los personajes se han generado con IA. Los retratos parten de las descripciones de los libros, con un estilo propio, y no reproducen a ningún actor ni las ilustraciones oficiales del juego.
+- **Código y documentación:** el programa, la app de Android, las traducciones, los README, los manuales, los paquetes y la web se han escrito con un asistente de IA (Claude, de Anthropic) y se han revisado a mano.
 
 ## Licencia
 
 [GPL-3.0](LICENSE) o posterior. Lo podéis usar, copiar, modificar y compartir libremente. Si publicáis una versión modificada, también tiene que ser libre y con el código abierto.
 
-Las tipografías [Alegreya](https://github.com/huertatipografica/Alegreya) e [IM Fell English](https://iginomarini.com/fell/) son libres, con la licencia SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). En Windows, la ventana usa [pywebview](https://pywebview.flowrl.com/) (licencia BSD).
+Las tipografías [Alegreya](https://github.com/huertatipografica/Alegreya) e [IM Fell English](https://iginomarini.com/fell/) son libres, con la licencia SIL Open Font License ([`src/web/fonts/`](src/web/fonts/)). En Windows, la ventana usa [pywebview](https://pywebview.flowrl.com/) (licencia BSD). La app de Android se hace con [Capacitor](https://capacitorjs.com/) (licencia MIT).
 
 **Aviso:** proyecto de fans **no oficial**, sin relación con Z-Man Games, Asmodee ni Middle-earth Enterprises. «El Señor de los Anillos» y los nombres relacionados son marcas de sus propietarios. Este programa no incluye ningún componente del juego: para jugar hay que tenerlo.
 
-Consulta también [NOTICE.md](NOTICE.md) para los avisos sobre marcas y materiales de terceros.
+Ver también [NOTICE.md](NOTICE.md) para los avisos sobre marcas y materiales de terceros.

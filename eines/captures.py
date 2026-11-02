@@ -26,49 +26,27 @@ TEXTOS = {
 
 
 def port_lliure():
-    """El port de sempre (8766), perquè l'adreça de la captura del QR siga la normal; si no, un de lliure."""
-    with socket.socket() as s:
-        try:
-            s.bind(("0.0.0.0", 8766))
-        except OSError:
-            s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+    with socket.socket() as so:
+        so.bind(("127.0.0.1", 0))
+        return so.getsockname()[1]
 
 
 def servidor(dades, port):
     p = subprocess.Popen([sys.executable, str(ROOT / "comunitat.py"), "--sense-finestra", "--sense-navegador",
-                          "--sense-qr", "--port", str(port), "--dades", str(dades)],
+                          "--port", str(port), "--dades", str(dades)],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1.5)
     return p
 
 
-def pagina(navegador, lang, mida, port):
+def pagina(navegador, lang, mida, url):
     ctx = navegador.new_context(viewport=mida, device_scale_factor=2, locale="es-ES" if lang == "es" else "ca-ES")
     ctx.add_init_script(f"try{{localStorage.setItem('cm-lang','{lang}');localStorage.setItem('cm-theme','light')}}catch(e){{}}")
     pg = ctx.new_page()
-    pg.goto(f"http://localhost:{port}/")
-    pg.wait_for_selector("#invite")
+    pg.goto(url)
+    pg.wait_for_selector("#main .panel, .play")
+    pg.wait_for_timeout(500)
     return pg
-
-
-def entra(pg, nom):
-    # Alta pel màster local, sense alta lliure des de la pantalla mòbil.
-    joined = pg.evaluate("""async name => {
-      const m = await (await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({master:true})})).json();
-      let p = await (await fetch('api/players',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':m.token},body:JSON.stringify({action:'create',name,race:'home'})})).json();
-      if(!p.uid){
-        const list=await (await fetch('api/players',{headers:{'X-Taula-Token':m.token}})).json();
-        const u=list.list.find(u=>u.name===name);
-        p=await (await fetch('api/players',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':m.token},body:JSON.stringify({action:'pin',uid:u.uid})})).json();
-      }
-      return await (await fetch('api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:p.uid,pin:p.pin})})).json();
-    }""", nom)
-    if nom != "Jugador1":
-        pg.evaluate("token => localStorage.setItem('cm-token', token)", joined["token"])
-        pg.reload()
-    pg.wait_for_selector("#invite")
-    pg.wait_for_timeout(600)
 
 
 def clic(pg, sel, n=1):
@@ -88,29 +66,9 @@ def captures(lang, carpeta, navegador):
     srv = servidor(dades, port)
     try:
         foto = lambda loc, nom: loc.screenshot(path=str(carpeta / f"{nom}.png"))  # noqa: E731
-        pg = pagina(navegador, lang, GRAN, port)
-        foto(pg, "00-inici-v270")
-        entra(pg, "Jugador1")
-        pg.click("#profile")
-        foto(pg.locator(".modal"), "01-sala-v260")
-        pg.keyboard.press("Escape")
-        # El mòbil entra amb jugador i PIN; el Host alternatiu no rep permisos de màster.
-        preview = pg.evaluate("""async () => {
-          const token=localStorage.getItem('cm-token');
-          return await (await fetch('api/players',{method:'POST',headers:{'Content-Type':'application/json','X-Taula-Token':token},body:JSON.stringify({action:'create',name:'Visita',race:'elf'})})).json();
-        }""")
-        entry = navegador.new_page(viewport=MOBIL, locale="es-ES" if lang == "es" else "ca-ES")
-        entry.add_init_script(f"localStorage.setItem('cm-lang','{lang}');localStorage.setItem('cm-theme','light')")
-        entry.goto(f"http://127.0.0.2:{port}/")
-        entry.select_option("#j-player", preview["uid"])
-        entry.fill("#j-pin", preview["pin"])
-        foto(entry, "01-entrada-v260")
-        entry.close()
-        pg.click("#invite")
-        pg.wait_for_selector("#qr-box svg")
-        foto(pg.locator(".modal"), "02-qr")
-        pg.keyboard.press("Escape")
-
+        url = f"http://127.0.0.1:{port}/"
+        pg = pagina(navegador, lang, GRAN, url)
+        foto(pg, "00-inici")
         pg.click("#welcome-create")
         pg.fill("#sf-name", T["partida"])
 
@@ -121,11 +79,9 @@ def captures(lang, carpeta, navegador):
         pg.fill("#sp-name-1", "Jugador2")
         pg.select_option("#sf-scen", index=1)
         pg.wait_for_timeout(300)
-        foto(pg.locator("#setup-form"), "03-preparacio-v270")
+        foto(pg.locator("#setup-form"), "03-preparacio")
         pg.click(f"text={T['comencar']}")
         pg.wait_for_timeout(800)
-        if pg.locator("#pins-done").count():
-            pg.keyboard.press("Escape")
         caselles = pg.locator("#main input[type=checkbox]")
         for i in range(min(4, caselles.count())):
             caselles.nth(i).check()
@@ -205,8 +161,7 @@ def captures(lang, carpeta, navegador):
         pg.set_viewport_size(GRAN)
 
         # Al mòbil, un altre jugador
-        mob = pagina(navegador, lang, MOBIL, port)
-        entra(mob, "Jugador2")
+        mob = pagina(navegador, lang, MOBIL, url)
         mob.click(".tab[data-tab=partida]")
         mob.wait_for_timeout(600)
         mob.screenshot(path=str(carpeta / "21-mobil.png"))
@@ -220,6 +175,17 @@ def captures(lang, carpeta, navegador):
         foto(pg.locator(".modal"), "18-resum")
         pg.keyboard.press("Escape")
 
+        # Les còpies de seguretat de la partida
+        pg.click(".tab[data-tab=partides]")
+        pg.click("[data-cbak]")
+        pg.wait_for_selector("#bak-box")
+        n = pg.locator("[data-brest]").count()
+        pg.click("#bak-now")
+        pg.wait_for_function(f"document.querySelectorAll('[data-brest]').length > {n}")
+        pg.wait_for_timeout(1800)
+        foto(pg.locator(".modal"), "22-copies")
+        pg.keyboard.press("Escape")
+
         # Una partida nova i la pestanya Partides
         pg.click(".tab[data-tab=partides]")
         pg.wait_for_selector("#cn-name")
@@ -229,6 +195,8 @@ def captures(lang, carpeta, navegador):
         pg.click(".tab[data-tab=partides]")
         pg.wait_for_selector(".camp-card")
         pg.wait_for_selector(".hist-card")
+        # La carpeta de dades de veritat és temporal: es mostra la de Linux d'un usuari d'exemple
+        pg.evaluate("document.querySelector('.here .path').textContent='/home/jugador1/.local/share/comunitat-del-anell'")
         pg.mouse.move(0, 0)
         pg.wait_for_timeout(300)
         main = pg.locator("#main")
@@ -253,9 +221,10 @@ def captures(lang, carpeta, navegador):
 def jpeg(carpeta):
     """Passa les captures a JPEG, a 1600 px d'amplada com a màxim."""
     from PIL import Image
+    for vella in ("00-inici-v270.png", "01-entrada-v260.png", "01-sala-v260.png", "03-preparacio-v270.png",
+                  "01-entrada.jpg", "02-qr.jpg"):
+        (carpeta / vella).unlink(missing_ok=True)   # de la taula connectada, que ja no hi és
     for png in sorted(carpeta.glob("*.png")):
-        if png.stem.endswith(("-v260", "-v270")):
-            continue  # Els manuals v2.6 enllacen estes captures en PNG.
         im = Image.open(png).convert("RGB")
         if im.width > 1600:
             im = im.resize((1600, round(im.height * 1600 / im.width)), Image.LANCZOS)

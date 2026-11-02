@@ -4,7 +4,7 @@
 Ús:  python3 eines/web.py [carpeta-eixida]        (per defecte, _site)
 
 Agafa la versió de src/servidor.py, unes quantes captures de docs/imatges i el logotip, i fa la
-prova en línia (prova/): la mateixa app, sense servidor, en mode de prova.
+app web (app/): la mateixa app, que es pot instal·lar i funciona sense connexió (build.py --web).
 Els manuals en PDF els afig el workflow (.github/workflows/web.yml) a la carpeta pdf/.
 Sense dependències. Llicència GPL-3.0-or-later.
 """
@@ -20,8 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/jossanmar9/comunitat-del-anell"
 WEB = "https://jossanmar9.github.io/comunitat-del-anell/"
 
-CAPTURES = ["05-partida", "00-inici-v270", "03-preparacio-v270", "01-sala-v260", "01-entrada-v260", "04-comunitat", "07-torn", "11-cerca-daus", "13-batalla-daus",
-            "09-cel", "18-resum", "20-historial", "21-mobil"]
+CAPTURES = ["05-partida", "00-inici", "03-preparacio", "04-comunitat", "07-torn", "11-cerca-daus", "13-batalla-daus",
+            "09-cel", "18-resum", "19-partides", "22-copies", "20-historial", "21-mobil"]
 
 def capture_filename(name):
     return name + (".png" if (ROOT / "docs/imatges/ca" / (name + ".png")).exists() else ".jpg")
@@ -34,15 +34,15 @@ T = {
         "titol": "La Comunitat: ajudant lliure per a «El Destino de la Comunidad»",
         "descripcio": "Programa lliure i gratuït per a portar les partides del joc de taula «El Señor de los Anillos: "
                       "El Destino de la Comunidad», en valencià i castellà: esperança, amenaça, torns, tirades i objectius. "
-                      "Per a Windows i Linux.",
+                      "Per a Windows, Linux i Android, i també al navegador.",
         "lema": "Ajudant lliure per al joc de taula",
-        "hero": "El tauler a la taula. Els comptes, al mòbil.",
-        "hero_text": "Per a «El Señor de los Anillos: El Destino de la Comunidad». Un ordinador fa de servidor i tota la "
-                     "taula hi entra des del mòbil: l'esperança, l'amenaça, el torn pas a pas i els daus de cada tirada, "
-                     "sempre al dia. Sense Internet, sense quotes i en valencià i castellà.",
-        "baixa_win": "Baixa per a Windows", "baixa_linux": "Baixa per a Linux",
-        "versio": "Versió {v} · Windows 10 i 11 · Ubuntu, Debian, Fedora, Arch… · Gratuït i lliure",
-        "manual": "Llig el manual", "prova": "Prova-la al navegador",
+        "hero": "El tauler a la taula. Els comptes, a l'app.",
+        "hero_text": "Per a «El Señor de los Anillos: El Destino de la Comunidad». Una persona porta la partida des de "
+                     "l'ordinador, la tauleta o el mòbil: l'esperança, l'amenaça, el torn pas a pas i els daus de cada "
+                     "tirada, sempre al dia. Sense Internet, sense comptes ni quotes, en valencià i castellà.",
+        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android",
+        "versio": "Versió {v} · Windows 10 i 11 · Ubuntu, Debian, Fedora, Arch… · Android 5.1 o més nou · Gratuït i lliure",
+        "manual": "Llig el manual", "prova": "Usa-la al navegador",
         "nav_que": "Què fa", "nav_veure": "Captures", "nav_com": "Com començar", "nav_codi": "Codi",
         "que_titol": "Què porta La Comunitat",
         "que_intro": "Les cartes, les tropes i els natzguls continuen al tauler. L'app s'encarrega dels comptes que s'obliden.",
@@ -54,17 +54,14 @@ T = {
             ("El cel s'enfosqueix", "Els quatre passos de la carta, «Et veig!» inclòs, i també posar-se l'Anell i destruir-lo."),
             ("Preparació", "Cinc nivells de dificultat, escenaris suggerits, els 24 objectius i la llista del tauler pas a pas."),
             ("Resum, historial i còpies", "En acabar, on s'ha perdut l'esperança i quantes tirades hi ha hagut. L'historial de totes les partides, còpies automàtiques i exportar."),
-            ("Tota la taula", "Una finestra pròpia a l'ordinador principal i, per a la resta, el mòbil amb un QR. Retrats dels 13 personatges, mode fosc i dos idiomes."),
+            ("On vulgues", "Finestra pròpia a Windows i Linux, app per a Android i app web que funciona sense connexió. El mapa, el que tu vulgues. Mode fosc i dos idiomes."),
         ],
         "veure_titol": "Així es veu",
-        "veure_intro": "Captures reals: inici, participants, sala, entrada mòbil i partida. Usa les fletxes o les miniatures.",
+        "veure_intro": "Captures reals de l'app. Usa les fletxes o les miniatures.",
         "anterior": "Captura anterior", "seguent": "Captura següent", "canvis": "Historial de canvis",
         "captures": {
-            "00-inici-v270": "Inici sense partida: crear-ne una o obrir un guardat.",
-            "03-preparacio-v270": "Participants, races i tipus d’àlies amb detecció i correcció manual.",
-            "01-sala-v260": "Sala de partida: jugadors, connexions, PIN i sessions controlats pel màster.",
-            "01-entrada-v260": "Entrada mòbil: seleccionar jugador i escriure el PIN.",
             "05-partida": "La pantalla de joc: les eines, el mapa i el torn pas a pas.",
+            "00-inici": "En obrir-la per primera vegada: crear una partida o obrir-ne una de guardada.",
             "03-preparacio": "La preparació: dificultat, participants, personatges i objectius.",
             "04-comunitat": "La pestanya Comunitat: la llista de preparació del tauler i qui porta cada personatge.",
             "07-torn": "Els passos del torn, en l'ordre del manual.",
@@ -72,33 +69,36 @@ T = {
             "13-batalla-daus": "Una batalla: els resultats dels daus i el valor gastat.",
             "09-cel": "El cel s'enfosqueix, amb els quatre passos de la carta.",
             "18-resum": "El resum en acabar: on s'ha perdut l'esperança i quantes tirades hi ha hagut.",
+            "19-partides": "Les partides guardades: obrir, duplicar, exportar i importar.",
+            "22-copies": "Les còpies de seguretat de cada partida.",
             "20-historial": "L'historial de totes les partides acabades.",
-            "21-mobil": "Al mòbil, en una sola columna.",
+            "21-mobil": "Al mòbil o a l'app d'Android, en una sola columna.",
         },
         "com_titol": "Com començar",
         "passos": [
-            ("Baixa-la", "Des de la pàgina de descàrregues. A Windows, <code>LaComunitat-…-installador.exe</code> "
-                         "(o el <code>.zip</code> portable). A Linux, el <code>.deb</code> per a Ubuntu i Debian, "
-                         "o el <code>.tar.gz</code> per a la resta."),
-            ("Obri-la", "S'obri en una finestra pròpia, sense navegador. El botó <b>Convida</b> mostra el codi QR "
-                        "per als mòbils. Mentre la finestra estiga oberta, La Comunitat funciona."),
-            ("Convida la taula", "L’app arranca sense partida. En crear-ne una, els participants passen automàticament a la sala; escanegen el QR i entren amb jugador i PIN. Prepareu la partida "
-                                 "i comenceu: el tauler mana, l'app porta els comptes."),
+            ("Tria on", "A l'ordinador, baixa l'instal·lador de Windows (o el <code>.zip</code> portable), el "
+                        "<code>.deb</code> d'Ubuntu i Debian o el <code>.tar.gz</code> per a la resta de Linux. "
+                        "A Android, l'<code>.apk</code>. O, sense instal·lar res, obri <a href=\"app/\">l'app web</a> "
+                        "i afig-la a la pantalla d'inici."),
+            ("Crea una partida", "Posa-li un nom, tria la dificultat, els participants i els objectius. L'app et diu "
+                                 "com preparar el tauler."),
+            ("Juga", "El tauler mana; l'app porta els comptes i et guia pas a pas en cada torn. Tot es guarda tot "
+                     "sol: pots tancar-la i continuar un altre dia."),
         ],
         "dades_titol": "Tot es queda a casa",
         "dades": [
-            "La Comunitat funciona a la wifi de casa i no envia res a Internet.",
-            "Els jugadors no han d'instal·lar res: només cal un navegador.",
-            "Cada partida és un fitxer, amb còpies de seguretat automàtiques. Les pots exportar i obrir en un altre ordinador.",
-            "No es connecta a cap servidor de fora, ni tan sols per a les lletres: tot va dins del programa.",
+            "No cal Internet ni crear cap compte. L'app no envia res enlloc.",
+            "Les partides es guarden a l'aparell, amb còpies de seguretat automàtiques.",
+            "Les pots exportar en un fitxer i obrir-les en un altre ordinador o mòbil.",
+            "Les lletres i les imatges van dins de l'app: no es connecta a cap servidor de fora.",
         ],
         "req_titol": "Què cal",
         "req": ["El joc de taula «El Señor de los Anillos: El Destino de la Comunidad»",
-                "Un ordinador amb Windows 10 o 11 de 64 bits, o amb Linux",
-                "Una wifi on estiguen l'ordinador i els dispositius dels jugadors (no cal Internet)"],
+                "Un ordinador amb Windows 10 o 11 de 64 bits o amb Linux, un mòbil o tauleta Android, "
+                "o qualsevol navegador actual"],
         "docs_titol": "Manuals",
         "docs": [("manual-usuari.pdf", "Manual d'usuari, pas a pas amb captures"),
-                 ("guia-installacio.pdf", "Guia d'instal·lació per a Windows i Linux")],
+                 ("guia-installacio.pdf", "Guia d'instal·lació per a Windows, Linux i Android")],
         "lliure_titol": "Programari lliure",
         "lliure": "La Comunitat es distribueix sota la llicència GPL-3.0 o posterior: la pots utilitzar, "
                   "estudiar, modificar i compartir. El codi és públic a GitHub.",
@@ -116,15 +116,15 @@ T = {
         "titol": "La Comunidad: ayudante libre para «El Destino de la Comunidad»",
         "descripcio": "Programa libre y gratuito para llevar las partidas del juego de mesa «El Señor de los Anillos: "
                       "El Destino de la Comunidad», en castellano y valenciano: Esperanza, Amenaza, turnos, tiradas y "
-                      "objetivos. Para Windows y Linux.",
+                      "objetivos. Para Windows, Linux y Android, y también en el navegador.",
         "lema": "Ayudante libre para el juego de mesa",
-        "hero": "El tablero en la mesa. Las cuentas, en el móvil.",
-        "hero_text": "Para «El Señor de los Anillos: El Destino de la Comunidad». Un ordenador hace de servidor y toda la "
-                     "mesa entra desde el móvil: la Esperanza, la Amenaza, el turno paso a paso y los dados de cada "
-                     "tirada, siempre al día. Sin Internet, sin cuotas y en castellano y valenciano.",
-        "baixa_win": "Descargar para Windows", "baixa_linux": "Descargar para Linux",
-        "versio": "Versión {v} · Windows 10 y 11 · Ubuntu, Debian, Fedora, Arch… · Gratuito y libre",
-        "manual": "Leer el manual", "prova": "Pruébala en el navegador",
+        "hero": "El tablero en la mesa. Las cuentas, en la app.",
+        "hero_text": "Para «El Señor de los Anillos: El Destino de la Comunidad». Una persona lleva la partida desde el "
+                     "ordenador, la tableta o el móvil: la Esperanza, la Amenaza, el turno paso a paso y los dados de "
+                     "cada tirada, siempre al día. Sin Internet, sin cuentas ni cuotas, en castellano y valenciano.",
+        "baixa_win": "Windows", "baixa_linux": "Linux", "baixa_android": "Android",
+        "versio": "Versión {v} · Windows 10 y 11 · Ubuntu, Debian, Fedora, Arch… · Android 5.1 o posterior · Gratuito y libre",
+        "manual": "Leer el manual", "prova": "Úsala en el navegador",
         "nav_que": "Qué hace", "nav_veure": "Capturas", "nav_com": "Cómo empezar", "nav_codi": "Código",
         "que_titol": "Qué lleva La Comunidad",
         "que_intro": "Las cartas, las Tropas y los Nazgûl siguen en el tablero. La app se encarga de las cuentas que se olvidan.",
@@ -136,17 +136,14 @@ T = {
             ("El cielo se oscurece", "Los cuatro pasos de la carta, «¡Te veo!» incluido, y también ponerse el Anillo y destruirlo."),
             ("Preparación", "Cinco niveles de dificultad, escenarios sugeridos, los 24 objetivos y la lista del tablero paso a paso."),
             ("Resumen, historial y copias", "Al terminar, dónde se ha perdido la Esperanza y cuántas tiradas ha habido. El historial de todas las partidas, copias automáticas y exportar."),
-            ("Toda la mesa", "Una ventana propia en el ordenador principal y, para el resto, el móvil con un QR. Retratos de los 13 personajes, modo oscuro y dos idiomas."),
+            ("Donde quieras", "Ventana propia en Windows y Linux, app para Android y app web que funciona sin conexión. El mapa, el que tú quieras. Modo oscuro y dos idiomas."),
         ],
         "veure_titol": "Así se ve",
-        "veure_intro": "Capturas reales: inicio, participantes, sala, entrada móvil y partida. Usa las flechas o las miniaturas.",
+        "veure_intro": "Capturas reales de la app. Usa las flechas o las miniaturas.",
         "anterior": "Captura anterior", "seguent": "Captura siguiente", "canvis": "Historial de cambios",
         "captures": {
-            "00-inici-v270": "Inicio sin partida: crear una o abrir una guardada.",
-            "03-preparacio-v270": "Participantes, razas y tipo de alias con detección y corrección manual.",
-            "01-sala-v260": "Sala de partida: jugadores, conexiones, PIN y sesiones controlados por el máster.",
-            "01-entrada-v260": "Entrada móvil: seleccionar jugador y escribir el PIN.",
             "05-partida": "La pantalla de juego: las herramientas, el mapa y el turno paso a paso.",
+            "00-inici": "Al abrirla por primera vez: crear una partida o abrir una guardada.",
             "03-preparacio": "La preparación: dificultad, participantes, personajes y objetivos.",
             "04-comunitat": "La pestaña Comunidad: la lista de preparación del tablero y quién lleva cada personaje.",
             "07-torn": "Los pasos del turno, en el orden del reglamento.",
@@ -154,33 +151,36 @@ T = {
             "13-batalla-daus": "Una batalla: los resultados de los dados y la Heroicidad gastada.",
             "09-cel": "El cielo se oscurece, con los cuatro pasos de la carta.",
             "18-resum": "El resumen al terminar: dónde se ha perdido la Esperanza y cuántas tiradas ha habido.",
+            "19-partides": "Las partidas guardadas: abrir, duplicar, exportar e importar.",
+            "22-copies": "Las copias de seguridad de cada partida.",
             "20-historial": "El historial de todas las partidas terminadas.",
-            "21-mobil": "En el móvil, en una sola columna.",
+            "21-mobil": "En el móvil o en la app de Android, en una sola columna.",
         },
         "com_titol": "Cómo empezar",
         "passos": [
-            ("Descárgala", "Desde la página de descargas. En Windows, <code>LaComunitat-…-installador.exe</code> "
-                           "(o el <code>.zip</code> portable). En Linux, el <code>.deb</code> para Ubuntu y Debian, "
-                           "o el <code>.tar.gz</code> para el resto."),
-            ("Ábrela", "Se abre en una ventana propia, sin navegador. El botón <b>Invitar</b> muestra el código QR "
-                       "para los móviles. Mientras la ventana esté abierta, La Comunidad funciona."),
-            ("Invita a la mesa", "La app arranca sin partida. Al crear una, los participantes pasan automáticamente a la sala; escanean el QR y entran con jugador y PIN. Preparad la partida "
-                                 "y empezad: el tablero manda, la app lleva las cuentas."),
+            ("Elige dónde", "En el ordenador, descarga el instalador de Windows (o el <code>.zip</code> portable), el "
+                            "<code>.deb</code> de Ubuntu y Debian o el <code>.tar.gz</code> para el resto de Linux. "
+                            "En Android, el <code>.apk</code>. O, sin instalar nada, abre <a href=\"../app/\">la app web</a> "
+                            "y añádela a la pantalla de inicio."),
+            ("Crea una partida", "Ponle un nombre, elige la dificultad, los participantes y los objetivos. La app te "
+                                 "dice cómo preparar el tablero."),
+            ("Juega", "El tablero manda; la app lleva las cuentas y te guía paso a paso en cada turno. Todo se guarda "
+                      "solo: puedes cerrarla y seguir otro día."),
         ],
         "dades_titol": "Todo se queda en casa",
         "dades": [
-            "La Comunidad funciona en la wifi de casa y no envía nada a Internet.",
-            "Los jugadores no tienen que instalar nada: solo hace falta un navegador.",
-            "Cada partida es un archivo, con copias de seguridad automáticas. Las puedes exportar y abrir en otro ordenador.",
-            "No se conecta a ningún servidor de fuera, ni siquiera para las letras: todo va dentro del programa.",
+            "No hace falta Internet ni crear ninguna cuenta. La app no envía nada a ningún sitio.",
+            "Las partidas se guardan en el dispositivo, con copias de seguridad automáticas.",
+            "Las puedes exportar en un archivo y abrirlas en otro ordenador o móvil.",
+            "Las letras y las imágenes van dentro de la app: no se conecta a ningún servidor de fuera.",
         ],
         "req_titol": "Qué hace falta",
         "req": ["El juego de mesa «El Señor de los Anillos: El Destino de la Comunidad»",
-                "Un ordenador con Windows 10 u 11 de 64 bits, o con Linux",
-                "Una wifi en la que estén el ordenador y los dispositivos de los jugadores (no hace falta Internet)"],
+                "Un ordenador con Windows 10 u 11 de 64 bits o con Linux, un móvil o tableta Android, "
+                "o cualquier navegador actual"],
         "docs_titol": "Manuales",
         "docs": [("manual-usuario.pdf", "Manual de usuario, paso a paso con capturas"),
-                 ("guia-instalacion.pdf", "Guía de instalación para Windows y Linux")],
+                 ("guia-instalacion.pdf", "Guía de instalación para Windows, Linux y Android")],
         "lliure_titol": "Software libre",
         "lliure": "La Comunidad se distribuye bajo la licencia GPL-3.0 o posterior: la puedes usar, "
                   "estudiar, modificar y compartir. El código es público en GitHub.",
@@ -195,6 +195,10 @@ T = {
 }
 
 ICONA_WIN = ('<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10 4.5v7H3zm8-1.2L21 3v8.5H11zM3 12.5h7v7L3 18.5zm8 0h10V21l-10-1.4z"/></svg>')
+ICONA_ANDROID = ('<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" '
+                 'stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V11a7 7 0 0 1 14 0v6z"/>'
+                 '<path d="M8 4.5 9.3 6.6M16 4.5l-1.3 2.1"/><circle cx="9.5" cy="10.5" r=".6" fill="currentColor"/>'
+                 '<circle cx="14.5" cy="10.5" r=".6" fill="currentColor"/><path d="M8 17v3M16 17v3"/></svg>')
 ICONA_LINUX = ('<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" '
                'stroke-linejoin="round"><path d="M12 3c-2.2 0-3.4 1.8-3.4 4.2 0 1.6-.4 2.7-1.4 4.1C5.8 13.2 5 15 5 16.8 '
                '5 19.3 7.6 21 12 21s7-1.7 7-4.2c0-1.8-.8-3.6-2.2-5.5-1-1.4-1.4-2.5-1.4-4.1C15.4 4.8 14.2 3 12 3z"/>'
@@ -267,8 +271,9 @@ def pagina(t, l, base, v):
     <div class="accions">
       <a class="boto" data-so="win" href="{descarrega}">{ICONA_WIN}{t['baixa_win']}</a>
       <a class="boto" data-so="linux" href="{descarrega}">{ICONA_LINUX}{t['baixa_linux']}</a>
+      <a class="boto" data-so="android" href="{descarrega}">{ICONA_ANDROID}{t['baixa_android']}</a>
     </div>
-    <p class="versio">{t['versio'].format(v=v)} · <a href="{base}prova/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a> · <a href="{REPO}/blob/main/CHANGELOG.md">{t['canvis']}</a></p>
+    <p class="versio">{t['versio'].format(v=v)} · <a href="{base}app/">{t['prova']}</a> · <a href="{base}pdf/{t['docs'][0][0]}">{t['manual']}</a> · <a href="{REPO}/blob/main/CHANGELOG.md">{t['canvis']}</a></p>
   </div>
   <figure class="hero-captura">
     <img src="{base}img/{l}/{capture_filename(primera)}" alt="{e(t['captures'][primera])}" width="1600" height="1012">
@@ -302,6 +307,7 @@ def pagina(t, l, base, v):
   <div class="accions">
     <a class="boto" data-so="win" href="{descarrega}">{ICONA_WIN}{t['baixa_win']}</a>
     <a class="boto" data-so="linux" href="{descarrega}">{ICONA_LINUX}{t['baixa_linux']}</a>
+    <a class="boto" data-so="android" href="{descarrega}">{ICONA_ANDROID}{t['baixa_android']}</a>
   </div>
 </section>
 
@@ -337,9 +343,9 @@ def pagina(t, l, base, v):
 (function(){{
   var root=document.documentElement;
   // Destaca el botó de descàrrega del sistema del visitant
-  var linux=/Linux|X11/.test(navigator.userAgent)&&!/Android/.test(navigator.userAgent);
+  var ua=navigator.userAgent,so=/Android/.test(ua)?'android':/Linux|X11/.test(ua)?'linux':'win';
   document.querySelectorAll('.boto[data-so]').forEach(function(b){{
-    if(b.dataset.so!==(linux?'linux':'win'))b.classList.add('secundari');
+    if(b.dataset.so!==so)b.classList.add('secundari');
   }});
   // Galeria: botons, teclat i gest horitzontal; no avança automàticament.
   var gallery=document.getElementById('captures');
@@ -412,13 +418,12 @@ def main():
     v = versio()
     (eixida / "index.html").write_text(pagina(T["ca"], "ca", "", v), encoding="utf-8")
     (eixida / "es" / "index.html").write_text(pagina(T["es"], "es", "../", v), encoding="utf-8")
-    # La prova en línia: la pàgina de l'app, que sense servidor arranca en mode de prova
-    sys.path.insert(0, str(ROOT))
-    import build  # noqa: E402
+    # L'app web (la mateixa que va dins de l'APK), a app/; prova/ era l'adreça de la v2
+    build.web(eixida / "app")
     (eixida / "prova").mkdir(exist_ok=True)
-    (eixida / "prova" / "index.html").write_text(build.pagina(), encoding="utf-8")
-    for l in ("val", "es"):
-        shutil.copy(ROOT / "src" / "mapes" / f"mapa-exemple-{l}.jpg", eixida / "prova" / f"mapa-exemple-{l}.jpg")
+    (eixida / "prova" / "index.html").write_text(
+        '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../app/">'
+        '<link rel="canonical" href="../app/"><title>La Comunitat</title><a href="../app/">La Comunitat</a>\n', encoding="utf-8")
     (eixida / ".nojekyll").write_text("")
     print(f"Web generada a {eixida}")
 
