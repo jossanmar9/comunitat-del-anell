@@ -154,7 +154,7 @@ Elige si es un ataque de un personaje o si la provoca la Sombra, e indica las Tr
 - **Ataque:** hasta 1 dado por Tropa Aliada (mínimo 1, máximo 3). Puedes tirar menos. Recuerda mover el Ojo a la región.
 - **La provoca la Sombra:** 1 dado por Tropa de la Sombra, máximo 3.
 
-Marca si hay Nazgûl en la región y si la ubicación es un Refugio. Al anotar los resultados, puedes añadir la **Heroicidad** que gastéis: cada una retira 1 Tropa de la Sombra.
+Marca si hay Nazgûl en la región y si la ubicación es un Refugio. Al anotar los resultados, puedes añadir el **Valor** que gastéis: cada uno retira 1 Tropa de la Sombra.
 
 ![La tirada de batalla.](imatges/es/12-batalla.jpg)
 

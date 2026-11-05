@@ -115,7 +115,10 @@ window.addEventListener('beforeunload',e=>{if(saving||saveFailed){e.preventDefau
 function loadDocs(camp,docs){
   S.camp=camp;CAMP=docs['campaign/main']||(camp?{name:''}:null);
   const g=docs['game/state'];G=g&&g.v===2?g:null;
+  // Els objectius que han canviat de nom (v3.0.2) es posen amb el nom nou, també als passos per a desfer
+  const nou=st=>{if(st&&Array.isArray(st.objectives))st.objectives.forEach(o=>{if(o&&OBJ_ANTICS[o.name])o.name=OBJ_ANTICS[o.name]})};
   LOG=(docs['game/log']&&docs['game/log'].list)||[];UNDO=(docs['game/undo']&&docs['game/undo'].stack)||[];
+  nou(G);UNDO.forEach(u=>nou(u&&u.state));
   lastResult=G&&G.result?G.created+':'+G.result:'';
   st.forceSetup=false;
 }
@@ -458,7 +461,7 @@ function logHtml(){return `<h3>${esc(t('Registre'))}</h3><ol class="log2">${LOG.
 
 /* --- resum de la partida --- */
 const HOPE_KEY="{d} d'esperança: {why}. Ara {h}.";
-function scenarioOf(objs){const set=objs.slice().sort().join('|');const sc=SCENARIOS.find(x=>x.obj.map(i=>OBJECTIVES[i]).sort().join('|')===set);return sc?sc.name:null}
+function scenarioOf(objs){const set=objs.map(n=>OBJ_ANTICS[n]||n).sort().join('|');const sc=SCENARIOS.find(x=>x.obj.map(i=>OBJECTIVES[i]).sort().join('|')===set);return sc?sc.name:null}
 function dur(ms){if(!(ms>0))return '—';const m=Math.round(ms/60000);if(m<60)return t('{n} min',{n:m});const h=Math.floor(m/60);return t('{h} h {m} min',{h,m:m%60})}
 function gameStats(){
   const lost={},won={};let nLost=0,nWon=0,searches=0,battles=0,shadow=0;

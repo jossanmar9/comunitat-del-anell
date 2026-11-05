@@ -4,6 +4,23 @@ Tots els canvis rellevants de **La Comunitat** es documenten en este fitxer.
 
 El projecte utilitza versions `MAJOR.MINOR.PATCH` i etiqueta les versions publicades com `vX.Y.Z`.
 
+## [3.0.2] - 2026-11-05
+
+### Corregit
+- Textos de les cartes de personatge i d'objectiu revisats un a un amb les cartes del joc, en valencià i en castellà. Els errors més importants:
+  - Frodo i Sam: faltaven la regla de viatjar (gastar 1 Sigil o fer una cerca) i «Posar-se l'Anell».
+  - Merry i Pippin: «Distracció» compta natzguls, no tropes de l'Ombra.
+  - Arwen, Boromir i Éowyn recluten sense gastar Amistat en qualsevol ubicació dels elfs, de Gondor o de Rohan, no només en una ciutat.
+  - Boromir: «Temptat pel poder» prohibeix donar cartes de Destí.
+  - Éomer: «Mariscal de la Marca» ignora la pèrdua d'una tropa aliada qualsevol.
+  - Legolas: «Tir certer» (abans «Tir segur») mou un natzgul, no una tropa.
+  - Gollum: faltaven les limitacions i «Ens enganyen!»; «Tafaner» pren cartes de Sigil.
+  - «Saruman, el teu bastó està trencat» dona 1 Destí (no Resistència), i «Infiltrar-se a Minas Morgul» no obliga a usar Faramir.
+  - Els objectius amb tirada («Enfrontar-se al Balrog», «El cau de l'Aranya») expliquen la tirada, i els de Capturar diuen el cost alternatiu exacte.
+- Quatre objectius tenen ara un nom en valencià més fidel a la carta: «Saruman, la teua vara està trencada», «Mai més una donzella guerrera», «Portar la llum al Bosc Negre» i «El cau d'Ella-Aranya». Les partides guardades amb els noms antics s'actualitzen soles en obrir-les.
+- La fitxa de les espases es diu «Valor» en valencià i en castellà (abans «Heroicidad» en algunes pantalles en castellà); el Bosc Fosc ara és el Bosc Negre, com al mapa.
+- Noms de les habilitats com en les cartes en castellà (Montaraz del Norte, Sombragris, Ingenio enano, ¡Cantaos algo!…) i Éomer comença a Estemnet.
+
 ## [3.0.1] - 2026-11-02
 
 ### Afegit

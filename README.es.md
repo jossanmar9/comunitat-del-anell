@@ -42,7 +42,7 @@ Es **la misma app en Windows, en Linux, en Android y en el navegador**. En el or
 | **Marcadores** | Esperanza (de 0 a 8), nivel de Amenaza (cuántas cartas de Sombra se roban), cartas «El cielo se oscurece» salidas, cartas que quedan en el mazo, objetivos completados y ronda. Se corrigen a mano y todo se puede **deshacer** hasta 30 pasos. |
 | **El turno paso a paso** | Las 4 + 1 acciones, robar 2 cartas (descuenta el mazo y resta Esperanza si se acaba) y resolver las cartas de Sombra que tocan, en el orden del reglamento. |
 | **Tiradas de búsqueda** | Cuántos dados tirar según los Nazgûl y las Tropas de la Sombra, y qué se pierde con el resultado. Tiene en cuenta los Refugios, Mordor y ponerse el Anillo. |
-| **Batallas** | Ataque de un personaje o provocada por la Sombra: cuántos dados, la Heroicidad gastada y cuántas Tropas hay que quitar de cada bando. Avisa si se pierde un Refugio. |
+| **Batallas** | Ataque de un personaje o provocada por la Sombra: cuántos dados, el Valor gastado y cuántas Tropas hay que quitar de cada bando. Avisa si se pierde un Refugio. |
 | **Cartas especiales** | *El cielo se oscurece* con sus cuatro pasos («¡Te veo!» incluido), la carta de Sombra y destruir el Anillo Único. |
 | **Preparación** | Cinco niveles de dificultad, escenarios sugeridos, los 24 objetivos, los 13 personajes con retrato y la lista de preparación del tablero, paso a paso. |
 | **Resumen e historial** | Al terminar, dónde se ha perdido la Esperanza, rondas, duración y tiradas. El historial guarda todas las partidas terminadas, con victorias y derrotas por dificultad. |

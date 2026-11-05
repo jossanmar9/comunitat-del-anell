@@ -50,7 +50,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "3.0.1"
+VERSION = "3.0.2"
 FROZEN = getattr(sys, "frozen", False)          # executable de Windows fet amb PyInstaller
 DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
 INSTALLAT = (DIR / "installat").exists()       # el posen l'instal·lador de Windows i el paquet .deb
